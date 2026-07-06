@@ -89,7 +89,7 @@ pinocchio = { version = "0.10.2", features = ["cpi"] }
 pinocchio-log = "0.5.1"
 pinocchio-system = "0.5.0"
 pinocchio-pubkey = "0.3.0"
-pinocchio-token = "0.5.0"
+pinocchio-token = "0.6.0"
 pinocchio-associated-token-account = "0.3.0"
 
 # testing
