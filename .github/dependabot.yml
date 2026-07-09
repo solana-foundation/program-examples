@@ -5,6 +5,7 @@ multi-ecosystem-groups:
     schedule:
       interval: cron
       cronjob: "0 9 1,15 * *"
+      timezone: UTC
 
 updates:
   - package-ecosystem: cargo
