@@ -6,13 +6,13 @@ multi-ecosystem-groups:
       interval: cron
       cronjob: "0 9 1,15 * *"
       timezone: UTC
+    open-pull-requests-limit: 10
 
 updates:
   - package-ecosystem: cargo
     directory: "/"
     multi-ecosystem-group: all-deps
     patterns: ["*"]
-    open-pull-requests-limit: 10
     cooldown:
       default-days: 7
     allow:
