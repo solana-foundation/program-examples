@@ -1,18 +1,31 @@
 version: 2
+
+multi-ecosystem-groups:
+  all-deps:
+    schedule:
+      interval: cron
+      cronjob: "0 9 1,15 * *"
+
 updates:
-  - package-ecosystem: "cargo"
+  - package-ecosystem: cargo
     directory: "/"
-    schedule:
-      interval: weekly
-    # ignore:
-    # # these need to be updated together, so dependabot PRs
-    # # are just noise. So, ignore them:
-    # - dependency-name: sp-core
-    # - dependency-name: sp-keyring
-    # - dependency-name: sp-runtime
-    # - dependency-name: sp-core-hashing
-    # - dependency-name: sp-version
+    multi-ecosystem-group: all-deps
+    patterns: ["*"]
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
+
   - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: weekly
+    directory: "/"
+    multi-ecosystem-group: all-deps
+    patterns: ["*"]
+    cooldown:
+      default-days: 7
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
