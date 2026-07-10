@@ -222,10 +222,9 @@ describe("fundraiser bankrun", async () => {
   });
 
   it("Refund is rejected while the campaign is still open", async () => {
-    // The campaign was created with a 5-day duration and has only just started,
-    // so a refund must be rejected until the campaign has ended. (A successful
-    // refund requires advancing the validator clock past `duration`, e.g. with
-    // bankrun's `setClock`.)
+    // One day into the 5-day campaign, so a refund must be rejected until it
+    // ends. (The successful-refund case advances the clock past `duration`.)
+    await setElapsedDays(1);
     const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
     let rejected = false;
