@@ -135,12 +135,13 @@ describe("Favorites Solana Native", () => {
     tx.recentBlockhash = blockhash;
     tx.sign(payer);
     tx.recentBlockhash = blockhash;
+    let threw = false;
     try {
       await client.processTransaction(tx);
-      assert(false, "Expected transaction to fail with wrong PDA seeds");
     } catch (_err) {
-      assert(true);
+      threw = true;
     }
+    assert(threw, "Expected transaction to fail with wrong PDA seeds");
   });
 
   test("Get the favorite pda and cross-check the data", async () => {
