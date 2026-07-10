@@ -52,6 +52,23 @@ describe("fundraiser bankrun", async () => {
     return signature;
   };
 
+  // Pin the bankrun clock to a deterministic point in the campaign so the
+  // day-based time gates are exercised regardless of the runtime's default
+  // clock behaviour: `days` days after the fundraiser's recorded start time.
+  const setElapsedDays = async (days: number) => {
+    const state = await program.account.fundraiser.fetch(fundraiser);
+    const clock = await context.banksClient.getClock();
+    context.setClock(
+      new Clock(
+        clock.slot,
+        clock.epochStartTimestamp,
+        clock.epoch,
+        clock.leaderScheduleEpoch,
+        BigInt(state.timeStarted.toString()) + BigInt(days * 24 * 60 * 60),
+      ),
+    );
+  };
+
   it("Test Preparation", async () => {
     const airdrop = await provider.connection
       .requestAirdrop(maker.publicKey, 1 * anchor.web3.LAMPORTS_PER_SOL)
@@ -99,6 +116,9 @@ describe("fundraiser bankrun", async () => {
 
     console.log("\nInitialized fundraiser Account");
     console.log("Your transaction signature", tx);
+
+    // Place "now" one day into the 5-day campaign so contributions are open.
+    await setElapsedDays(1);
   });
 
   it("Contribute to Fundraiser", async () => {
@@ -227,10 +247,7 @@ describe("fundraiser bankrun", async () => {
         .then(confirm);
     } catch (error) {
       rejected = true;
-      assert.ok(
-        String(error).includes("FundraiserNotEnded"),
-        `expected a FundraiserNotEnded error, got: ${error}`,
-      );
+      assert.ok(String(error).includes("FundraiserNotEnded"), `expected a FundraiserNotEnded error, got: ${error}`);
     }
 
     assert.ok(rejected, "refund should be rejected while the campaign is still open");
@@ -240,20 +257,9 @@ describe("fundraiser bankrun", async () => {
     const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
     // Advance the clock past the 5-day campaign window so refunds are allowed.
-    const clock = await context.banksClient.getClock();
-    context.setClock(
-      new Clock(
-        clock.slot,
-        clock.epochStartTimestamp,
-        clock.epoch,
-        clock.leaderScheduleEpoch,
-        clock.unixTimestamp + BigInt(6 * 24 * 60 * 60),
-      ),
-    );
+    await setElapsedDays(6);
 
-    const before = BigInt(
-      (await provider.connection.getTokenAccountBalance(contributorATA)).value.amount,
-    );
+    const before = BigInt((await provider.connection.getTokenAccountBalance(contributorATA)).value.amount);
 
     const tx = await program.methods
       .refund()
@@ -274,9 +280,7 @@ describe("fundraiser bankrun", async () => {
     console.log("\nRefunded contributions", tx);
 
     // The 2_000_000 contributed is returned to the contributor.
-    const after = BigInt(
-      (await provider.connection.getTokenAccountBalance(contributorATA)).value.amount,
-    );
+    const after = BigInt((await provider.connection.getTokenAccountBalance(contributorATA)).value.amount);
     assert.equal(after - before, BigInt(2_000_000), "contributor should be refunded their contribution");
 
     // The vault is emptied and the contributor account is closed.
