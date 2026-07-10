@@ -1,6 +1,15 @@
 import { Buffer } from "node:buffer";
 import * as borsh from "borsh";
 
+export const AddressInfoSchema = {
+  struct: {
+    name: "string",
+    house_number: "u8",
+    street: "string",
+    city: "string",
+  },
+} as const;
+
 export class AddressInfo {
   name: string;
   house_number: number;
@@ -19,30 +28,11 @@ export class AddressInfo {
     this.city = props.city;
   }
 
-  toBase58() {
-    return borsh.serialize(AddressInfoSchema, this).toString();
-  }
-
   toBuffer() {
     return Buffer.from(borsh.serialize(AddressInfoSchema, this));
   }
 
-  static fromBuffer(buffer: Buffer) {
-    return borsh.deserialize(AddressInfoSchema, AddressInfo, buffer);
+  static fromBuffer(buffer: Buffer): AddressInfo {
+    return borsh.deserialize(AddressInfoSchema, buffer) as AddressInfo;
   }
 }
-
-export const AddressInfoSchema = new Map([
-  [
-    AddressInfo,
-    {
-      kind: "struct",
-      fields: [
-        ["name", "string"],
-        ["house_number", "u8"],
-        ["street", "string"],
-        ["city", "string"],
-      ],
-    },
-  ],
-]);

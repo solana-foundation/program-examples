@@ -6,7 +6,6 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { BN } from "bn.js";
 import * as borsh from "borsh";
 import { assert, expect } from "chai";
 import { describe, test } from "mocha";
@@ -103,15 +102,15 @@ describe("Favorites Solana Native", () => {
 
     console.log("Deserialized data:", favoritesData);
 
-    expect(new BN(favoritesData.number as Buffer, "le").toNumber()).to.equal(favData.number);
+    expect(Number(favoritesData.number)).to.equal(favData.number);
     expect(favoritesData.color).to.equal(favData.color);
     expect(favoritesData.hobbies).to.deep.equal(favData.hobbies);
   });
 
   test("Check if the test fails if the pda seeds aren't same", async () => {
-    // We put the wrong seeds knowingly to see if the test fails because of checks
-    const favoritesPda = PublicKey.findProgramAddressSync(
-      [Buffer.from("favorite"), payer.publicKey.toBuffer()],
+    // Derive a PDA using WRONG seeds so the program's on-chain seed check rejects it
+    const wrongPda = PublicKey.findProgramAddressSync(
+      [Buffer.from("wrong_seed"), payer.publicKey.toBuffer()],
       programId,
     )[0];
     const favData = {
@@ -124,7 +123,7 @@ describe("Favorites Solana Native", () => {
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-        { pubkey: favoritesPda, isSigner: false, isWritable: true },
+        { pubkey: wrongPda, isSigner: false, isWritable: true },
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ],
       programId,
@@ -138,7 +137,7 @@ describe("Favorites Solana Native", () => {
     tx.recentBlockhash = blockhash;
     try {
       await client.processTransaction(tx);
-      console.error("Expected the test to fail");
+      assert(false, "Expected transaction to fail with wrong PDA seeds");
     } catch (_err) {
       assert(true);
     }

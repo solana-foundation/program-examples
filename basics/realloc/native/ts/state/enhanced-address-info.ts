@@ -1,6 +1,17 @@
 import { Buffer } from "node:buffer";
 import * as borsh from "borsh";
 
+export const EnhancedAddressInfoSchema = {
+  struct: {
+    name: "string",
+    house_number: "u8",
+    street: "string",
+    city: "string",
+    state: "string",
+    zip: "u32",
+  },
+} as const;
+
 export class EnhancedAddressInfo {
   name: string;
   house_number: number;
@@ -25,32 +36,11 @@ export class EnhancedAddressInfo {
     this.zip = props.zip;
   }
 
-  toBase58() {
-    return borsh.serialize(EnhancedAddressInfoSchema, this).toString();
-  }
-
   toBuffer() {
     return Buffer.from(borsh.serialize(EnhancedAddressInfoSchema, this));
   }
 
-  static fromBuffer(buffer: Buffer) {
-    return borsh.deserialize(EnhancedAddressInfoSchema, EnhancedAddressInfo, buffer);
+  static fromBuffer(buffer: Buffer): EnhancedAddressInfo {
+    return borsh.deserialize(EnhancedAddressInfoSchema, buffer) as EnhancedAddressInfo;
   }
 }
-
-export const EnhancedAddressInfoSchema = new Map([
-  [
-    EnhancedAddressInfo,
-    {
-      kind: "struct",
-      fields: [
-        ["name", "string"],
-        ["house_number", "u8"],
-        ["street", "string"],
-        ["city", "string"],
-        ["state", "string"],
-        ["zip", "u32"],
-      ],
-    },
-  ],
-]);

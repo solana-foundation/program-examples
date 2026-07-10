@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.4",
+    "borsh": "^2.0.0",
     "fs": "^0.0.1-security"
   },
   "devDependencies": {

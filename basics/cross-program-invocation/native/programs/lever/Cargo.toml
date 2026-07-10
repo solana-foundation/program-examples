@@ -10,9 +10,9 @@ custom-heap = []
 custom-panic = []
 
 [dependencies]
-borsh = "1.5.7"
-borsh-derive = "1.5.7"
-solana-program = "3.0"
+borsh = "1.6.1"
+borsh-derive = "1.6.1"
+solana-program = "4.0"
 solana-system-interface = {version = "2.0.0", features = ["bincode"]}
 
 [lib]

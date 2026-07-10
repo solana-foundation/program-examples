@@ -1,6 +1,15 @@
 import { Buffer } from "node:buffer";
 import * as borsh from "borsh";
 
+export const WorkInfoSchema = {
+  struct: {
+    name: "string",
+    position: "string",
+    company: "string",
+    years_employed: "u8",
+  },
+} as const;
+
 export class WorkInfo {
   name: string;
   position: string;
@@ -19,30 +28,11 @@ export class WorkInfo {
     this.years_employed = props.years_employed;
   }
 
-  toBase58() {
-    return borsh.serialize(WorkInfoSchema, this).toString();
-  }
-
   toBuffer() {
     return Buffer.from(borsh.serialize(WorkInfoSchema, this));
   }
 
-  static fromBuffer(buffer: Buffer) {
-    return borsh.deserialize(WorkInfoSchema, WorkInfo, buffer);
+  static fromBuffer(buffer: Buffer): WorkInfo {
+    return borsh.deserialize(WorkInfoSchema, buffer) as WorkInfo;
   }
 }
-
-export const WorkInfoSchema = new Map([
-  [
-    WorkInfo,
-    {
-      kind: "struct",
-      fields: [
-        ["name", "string"],
-        ["position", "string"],
-        ["company", "string"],
-        ["years_employed", "u8"],
-      ],
-    },
-  ],
-]);
