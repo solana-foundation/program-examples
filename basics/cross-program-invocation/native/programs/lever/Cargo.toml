@@ -10,10 +10,10 @@ custom-heap = []
 custom-panic = []
 
 [dependencies]
-borsh = "1.6.1"
-borsh-derive = "1.6.1"
-solana-program = "4.0"
-solana-system-interface = {version = "2.0.0", features = ["bincode"]}
+borsh.workspace = true
+borsh-derive.workspace = true
+solana-program.workspace = true
+solana-system-interface.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]
