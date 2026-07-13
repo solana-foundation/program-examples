@@ -93,4 +93,61 @@ describe("Swap", () => {
       values.defaultSupply.sub(values.depositAmountB).add(input).toNumber(),
     );
   });
+
+  it("Withdraw Liquidity successfully", async () => {
+    const initialLiquidity = await connection.getTokenAccountBalance(values.liquidityAccount);
+    const withdrawAmount = new BN(initialLiquidity.value.amount).div(new BN(2)); 
+
+    await program.methods
+      .withdrawLiquidity(withdrawAmount)
+      .accounts({
+        amm: values.ammKey,
+        pool: values.poolKey,
+        poolAuthority: values.poolAuthority,
+        depositor: values.admin.publicKey,
+        mintLiquidity: values.mintLiquidity,
+        mintA: values.mintAKeypair.publicKey,
+        mintB: values.mintBKeypair.publicKey,
+        poolAccountA: values.poolAccountA,
+        poolAccountB: values.poolAccountB,
+        depositorAccountLiquidity: values.liquidityAccount,
+        depositorAccountA: values.holderAccountA,
+        depositorAccountB: values.holderAccountB,
+      })
+      .signers([values.admin])
+      .rpc();
+
+    const postLiquidity = await connection.getTokenAccountBalance(values.liquidityAccount);
+    expect(new BN(postLiquidity.value.amount).toString()).to.equal(
+      new BN(initialLiquidity.value.amount).sub(withdrawAmount).toString()
+    );
+  });
+
+  it("Should fail if slippage limit is violated (min_output_amount too high)", async () => {
+    const input = new BN(10 ** 6);
+    const impossibleMinOutput = input.mul(new BN(10)); 
+
+    try {
+      await program.methods
+        .swapExactTokensForTokens(true, input, impossibleMinOutput)
+        .accounts({
+          amm: values.ammKey,
+          pool: values.poolKey,
+          poolAuthority: values.poolAuthority,
+          trader: values.admin.publicKey,
+          mintA: values.mintAKeypair.publicKey,
+          mintB: values.mintBKeypair.publicKey,
+          poolAccountA: values.poolAccountA,
+          poolAccountB: values.poolAccountB,
+          traderAccountA: values.holderAccountA,
+          traderAccountB: values.holderAccountB,
+        })
+        .signers([values.admin])
+        .rpc();
+        
+      expect.fail("The transaction should have failed due to high slippage, but it succeeded.");
+    } catch (err: any) {
+      expect(err).to.exist;
+    }
+  });
 });
