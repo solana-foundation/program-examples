@@ -96,7 +96,10 @@ describe("Swap", () => {
 
   it("Withdraw Liquidity successfully", async () => {
     const initialLiquidity = await connection.getTokenAccountBalance(values.liquidityAccount);
-    const withdrawAmount = new BN(initialLiquidity.value.amount).div(new BN(2)); 
+    const initialA = await connection.getTokenAccountBalance(values.holderAccountA);
+    const initialB = await connection.getTokenAccountBalance(values.holderAccountB);
+
+    const withdrawAmount = new BN(initialLiquidity.value.amount).div(new BN(2));
 
     await program.methods
       .withdrawLiquidity(withdrawAmount)
@@ -118,14 +121,22 @@ describe("Swap", () => {
       .rpc();
 
     const postLiquidity = await connection.getTokenAccountBalance(values.liquidityAccount);
+    const postA = await connection.getTokenAccountBalance(values.holderAccountA);
+    const postB = await connection.getTokenAccountBalance(values.holderAccountB);
+
     expect(new BN(postLiquidity.value.amount).toString()).to.equal(
       new BN(initialLiquidity.value.amount).sub(withdrawAmount).toString()
     );
+
+    expect(new BN(postA.value.amount).gt(new BN(initialA.value.amount))).to.be.true;
+    expect(new BN(postB.value.amount).gt(new BN(initialB.value.amount))).to.be.true;
   });
 
   it("Should fail if slippage limit is violated (min_output_amount too high)", async () => {
     const input = new BN(10 ** 6);
-    const impossibleMinOutput = input.mul(new BN(10)); 
+    const impossibleMinOutput = input.mul(new BN(10));
+
+    let targetError: any = null;
 
     try {
       await program.methods
@@ -144,10 +155,14 @@ describe("Swap", () => {
         })
         .signers([values.admin])
         .rpc();
-        
-      expect.fail("The transaction should have failed due to high slippage, but it succeeded.");
     } catch (err: any) {
-      expect(err).to.exist;
+      targetError = err;
     }
+
+    if (!targetError) {
+      expect.fail("The transaction should have failed due to high slippage bounds, but it succeeded.");
+    }
+    const errorMessage = targetError.toString();
+    expect(errorMessage).to.include("OutputTooSmall");
   });
 });
