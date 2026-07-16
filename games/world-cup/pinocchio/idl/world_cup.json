@@ -318,6 +318,7 @@
         }
       }
     ],
+    "constants": [],
     "definedTypes": [
       {
         "kind": "definedTypeNode",
@@ -1795,5 +1796,5 @@
     "version": "0.1.0"
   },
   "standard": "codama",
-  "version": "1.0.0"
+  "version": "1.6.0"
 }
