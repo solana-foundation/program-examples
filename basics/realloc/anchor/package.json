@@ -7,7 +7,7 @@
   "dependencies": {
     "@anchor-lang/core": "1.0.0-rc.5",
     "@solana/web3.js": "^1.98.4",
-    "litesvm": "^0.4.0"
+    "litesvm": "0.8.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

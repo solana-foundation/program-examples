@@ -31,8 +31,8 @@ importers:
         specifier: ^4.3.4
         version: 4.4.1
       litesvm:
-        specifier: ^0.3.3
-        version: 0.3.3(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        specifier: 0.8.0
+        version: 0.8.0(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10)
       mocha:
         specifier: ^9.0.3
         version: 9.2.2
@@ -176,9 +176,6 @@ packages:
   base-x@3.0.9:
     resolution: {integrity: sha512-H7JU6iBHTal1gp56aKoaa//YUxEaAOUiydvrV/pILqIHXTtqxSkATOnDA2u+jZ/61sD+L/412+7kzXRtWukhpQ==}
 
-  base-x@5.0.1:
-    resolution: {integrity: sha512-M7uio8Zt++eg3jPj+rHMfCC+IuygQHHCOU+IYsVtik6FWjuYpVt/+MRKcgsAMHh8mMFAwnB+Bs+mTrFiXjMzKg==}
-
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
@@ -204,9 +201,6 @@ packages:
 
   bs58@4.0.1:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
-
-  bs58@6.0.0:
-    resolution: {integrity: sha512-PD0wEnEYg6ijszw/u8s+iI3H17cTymlrwkKhDhPZq+Sokl3AU4htyBFTjAeNAlCCmg0f53g6ih3jATyCKftTfw==}
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
@@ -444,41 +438,44 @@ packages:
     resolution: {integrity: sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==}
     engines: {'0': node >= 0.2.0}
 
-  litesvm-darwin-arm64@0.3.3:
-    resolution: {integrity: sha512-81YimsV3ezWjWLgoKixsXfVznaaecbURE3RtECgNb6Din6Za03pKGKGEN4gkyecHkv8uoPaEZv5cl6ARsgeN1Q==}
+  litesvm-darwin-arm64@0.8.0:
+    resolution: {integrity: sha512-XYa0oOA7FVbMYKvIDbBznWUjkHQD8J/fn5kPMBSX4QWf4yfFda/+L4JHeSngx+dBCM0LyEyLeakVrnmdR1KYPQ==}
     engines: {node: '>= 20'}
     cpu: [arm64]
     os: [darwin]
 
-  litesvm-darwin-x64@0.3.3:
-    resolution: {integrity: sha512-pYietuU165Bl+2eDnVp2Eidiedfjt+pljyyBAfJPbYriaFyG577mU364NiNcsfQ8ZZWbe+ygIEAVq4Ol247+1g==}
+  litesvm-darwin-x64@0.8.0:
+    resolution: {integrity: sha512-lrxU6VXEqY7MHHIskdjB88xM9OiGR2ZcXf+fMESnetCk6rVUM6Llfb386wsMiqvi1+DowJwShxluBsCutWo2Sw==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [darwin]
 
-  litesvm-linux-arm64-musl@0.3.3:
-    resolution: {integrity: sha512-mkI15rWtNbaJxVFUfh+qnolqnDCZEqhwSZo/XZ48TZNsQ69vAqY00KhyFhTVJ+jeaYCAZTSNamuFIiRBxqVmNg==}
+  litesvm-linux-arm64-gnu@0.8.0:
+    resolution: {integrity: sha512-D0pdYTQkoibPCfza2x1urSjIpHdwHVagHs0fBMHpzxSEvXND2qqDR3jXYf6xcE0sAq0knXjQmGz7WzP/HhFeFw==}
     engines: {node: '>= 20'}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
 
-  litesvm-linux-x64-gnu@0.3.3:
-    resolution: {integrity: sha512-Qai2/E8Eq03w8VKnJDREyiWxwavjykW/H6onE179ayMnBjVVmkj5fN7XF50VV4z73kasx5bpDzBNK8fcaxMdzA==}
+  litesvm-linux-arm64-musl@0.8.0:
+    resolution: {integrity: sha512-g7vgYPJZC6cT1gaWA1M2SbZu+Sngs9FuxsybDSE1Mmelmaejlguf7X/ymUuhehaSjEY+QSi+ydWtwzgE95JL0w==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [linux]
+
+  litesvm-linux-x64-gnu@0.8.0:
+    resolution: {integrity: sha512-nn599p+XuOJoQN2XTSaY4Yz1ZqYxLNUbvt30kImuRUs2ZlIv5FANzM+VUsZgSzWV0phW8m6stX3mpdVv0iIuFQ==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
-  litesvm-linux-x64-musl@0.3.3:
-    resolution: {integrity: sha512-bpWZ2f506hbfu1y6bkmuZf+qqtnLDxggpOMTQbibjd+q6faEO3sETWwKGlIgHB99P8wyU+aXKwLSGQX2sJEw6Q==}
+  litesvm-linux-x64-musl@0.8.0:
+    resolution: {integrity: sha512-UH4v1GM4hNOjEIzx/dBZQ5mxWGFOd85qs7IBou070dLjH0vdZMh4avQCQyc127+A7aRfdc8+wK7t4SEIn4EEgw==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
 
-  litesvm@0.3.3:
-    resolution: {integrity: sha512-QHXjAIXzvG0uAMOza6aJcYl19yTKz3guwq/z0Zml4KnQxyQvPhjaBpUFc5sf2ey/NxMVdqFhoXmL02CXOOomjw==}
+  litesvm@0.8.0:
+    resolution: {integrity: sha512-P0Ly11FSr1f77bKwaRf0VQQZYdsw6Oi3OLKBxgBN5iJcB7W7lTjFB1tnVcJqdn1NMz6upqU/04rZFCC/JfYBWg==}
     engines: {node: '>= 20'}
 
   locate-path@6.0.0:
@@ -913,8 +910,6 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  base-x@5.0.1: {}
-
   base64-js@1.5.1: {}
 
   binary-extensions@2.3.0: {}
@@ -941,10 +936,6 @@ snapshots:
   bs58@4.0.1:
     dependencies:
       base-x: 3.0.9
-
-  bs58@6.0.0:
-    dependencies:
-      base-x: 5.0.1
 
   buffer-from@1.1.2: {}
 
@@ -1166,32 +1157,35 @@ snapshots:
 
   jsonparse@1.3.1: {}
 
-  litesvm-darwin-arm64@0.3.3:
+  litesvm-darwin-arm64@0.8.0:
     optional: true
 
-  litesvm-darwin-x64@0.3.3:
+  litesvm-darwin-x64@0.8.0:
     optional: true
 
-  litesvm-linux-arm64-musl@0.3.3:
+  litesvm-linux-arm64-gnu@0.8.0:
     optional: true
 
-  litesvm-linux-x64-gnu@0.3.3:
+  litesvm-linux-arm64-musl@0.8.0:
     optional: true
 
-  litesvm-linux-x64-musl@0.3.3:
+  litesvm-linux-x64-gnu@0.8.0:
     optional: true
 
-  litesvm@0.3.3(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10):
+  litesvm-linux-x64-musl@0.8.0:
+    optional: true
+
+  litesvm@0.8.0(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10):
     dependencies:
       '@solana/web3.js': 1.98.4(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10)
-      bs58: 6.0.0
       fastestsmallesttextencoderdecoder: 1.0.22
     optionalDependencies:
-      litesvm-darwin-arm64: 0.3.3
-      litesvm-darwin-x64: 0.3.3
-      litesvm-linux-arm64-musl: 0.3.3
-      litesvm-linux-x64-gnu: 0.3.3
-      litesvm-linux-x64-musl: 0.3.3
+      litesvm-darwin-arm64: 0.8.0
+      litesvm-darwin-x64: 0.8.0
+      litesvm-linux-arm64-gnu: 0.8.0
+      litesvm-linux-arm64-musl: 0.8.0
+      litesvm-linux-x64-gnu: 0.8.0
+      litesvm-linux-x64-musl: 0.8.0
     transitivePeerDependencies:
       - bufferutil
       - encoding
