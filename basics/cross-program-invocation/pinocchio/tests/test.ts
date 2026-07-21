@@ -1,6 +1,7 @@
+import assert from "node:assert";
 import { Buffer } from "node:buffer";
+import { describe, test } from "node:test";
 import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { assert } from "chai";
 import { start } from "solana-bankrun";
 
 describe("Pinocchio: CPI", async () => {
@@ -29,7 +30,7 @@ describe("Pinocchio: CPI", async () => {
     await client.processTransaction(tx);
   }
 
-  it("Initialize the lever!", async () => {
+  test("Initialize the lever!", async () => {
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: powerAccount.publicKey, isSigner: true, isWritable: true },
@@ -46,7 +47,7 @@ describe("Pinocchio: CPI", async () => {
     assert.deepEqual(Buffer.from(acct.data), Buffer.from([0])); // is_on = false
   });
 
-  it("Pull the lever!", async () => {
+  test("Pull the lever!", async () => {
     const name = "Chris";
     const ix = new TransactionInstruction({
       keys: [
@@ -63,7 +64,7 @@ describe("Pinocchio: CPI", async () => {
     assert.deepEqual(Buffer.from(acct.data), Buffer.from([1])); // is_on = true
   });
 
-  it("Pull it again!", async () => {
+  test("Pull it again!", async () => {
     const name = "Ashley";
     const ix = new TransactionInstruction({
       keys: [
@@ -80,7 +81,7 @@ describe("Pinocchio: CPI", async () => {
     assert.deepEqual(Buffer.from(acct.data), Buffer.from([0])); // is_on = false (flipped back)
   });
 
-  it("Lever rejects switch_power directly with no name", async () => {
+  test("Lever rejects switch_power directly with no name", async () => {
     // Sending only the discriminator (no name bytes) is fine because UTF-8 of empty is empty,
     // but invoking the lever directly with an unknown discriminator should fail.
     const ix = new TransactionInstruction({

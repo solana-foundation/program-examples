@@ -1,3 +1,5 @@
+import assert from "node:assert";
+import { beforeEach, describe, test } from "node:test";
 import {
   type Blockhash,
   type Keypair,
@@ -7,8 +9,6 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 import * as borsh from "borsh";
-import { assert, expect } from "chai";
-import { describe, test } from "mocha";
 import { type BanksClient, type ProgramTestContext, start } from "solana-bankrun";
 
 const MyInstruction = {
@@ -102,9 +102,9 @@ describe("Favorites Solana Native", () => {
 
     console.log("Deserialized data:", favoritesData);
 
-    expect(Number(favoritesData.number)).to.equal(favData.number);
-    expect(favoritesData.color).to.equal(favData.color);
-    expect(favoritesData.hobbies).to.deep.equal(favData.hobbies);
+    assert.strictEqual(Number(favoritesData.number), favData.number);
+    assert.strictEqual(favoritesData.color, favData.color);
+    assert.deepStrictEqual(favoritesData.hobbies, favData.hobbies);
   });
 
   test("Check if the test fails if the pda seeds aren't same", async () => {

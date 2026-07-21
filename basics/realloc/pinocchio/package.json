@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "test": "pnpm ts-mocha -p ./tests/tsconfig.test.json -t 1000000 ./tests/realloc.test.ts",
+    "test": "tsx --test ./tests/realloc.test.ts",
     "build-and-test": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./tests/fixtures && pnpm test",
     "build": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./program/target/so",
     "deploy": "solana program deploy ./program/target/so/program.so"
@@ -12,13 +12,9 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
-    "@types/chai": "^4.3.1",
-    "@types/mocha": "^9.1.1",
-    "chai": "^4.3.4",
-    "mocha": "^9.0.3",
     "solana-bankrun": "^0.3.0",
-    "ts-mocha": "^10.0.0",
     "typescript": "^5.3.3",
-    "@types/node": "^20.9.0"
+    "@types/node": "^22.19.1",
+    "tsx": "^4.22.0"
   }
 }

@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { before, describe, test } from "node:test";
 import { Keypair, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import * as borsh from "borsh";
 import { LiteSVM, TransactionMetadata } from "litesvm";
@@ -45,7 +46,7 @@ describe("Native CPI Example", () => {
     powerAccount = Keypair.generate();
   });
 
-  it("Initialize the lever!", () => {
+  test("Initialize the lever!", () => {
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: powerAccount.publicKey, isSigner: true, isWritable: true },
@@ -68,7 +69,7 @@ describe("Native CPI Example", () => {
     }
   });
 
-  it("Pull the lever!", () => {
+  test("Pull the lever!", () => {
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: powerAccount.publicKey, isSigner: false, isWritable: true },
@@ -90,7 +91,7 @@ describe("Native CPI Example", () => {
     }
   });
 
-  it("Pull it again!", () => {
+  test("Pull it again!", () => {
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: powerAccount.publicKey, isSigner: false, isWritable: true },

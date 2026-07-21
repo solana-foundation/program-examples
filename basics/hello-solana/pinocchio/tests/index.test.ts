@@ -1,5 +1,6 @@
+import assert from "node:assert";
+import { before, describe, test } from "node:test";
 import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { assert } from "chai";
 import { type ProgramTestContext, start } from "solana-bankrun";
 
 describe("hello-solana", () => {
@@ -11,7 +12,7 @@ describe("hello-solana", () => {
     context = await start([{ name: "hello_solana_program_pinocchio", programId: PROGRAM_ID }], []);
   });
 
-  it("Say hello!", async () => {
+  test("Say hello!", async () => {
     const client = context.banksClient;
     const payer = context.payer;
     const blockhash = context.lastBlockhash;
