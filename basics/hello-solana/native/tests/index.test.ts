@@ -1,6 +1,6 @@
+import assert from "node:assert";
 import { describe, test } from "node:test";
 import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { assert } from "chai";
 import { start } from "solana-bankrun";
 
 describe("hello-solana", async () => {

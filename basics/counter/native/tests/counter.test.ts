@@ -1,6 +1,6 @@
+import assert from "node:assert";
 import { describe, test } from "node:test";
 import { Keypair, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
-import { assert } from "chai";
 import { start } from "solana-bankrun";
 import { COUNTER_ACCOUNT_SIZE, createIncrementInstruction, deserializeCounterAccount, PROGRAM_ID } from "../ts";
 
