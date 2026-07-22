@@ -360,18 +360,21 @@ packages:
     engines: {node: '>= 20'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   litesvm-linux-x64-gnu@0.3.3:
     resolution: {integrity: sha512-Qai2/E8Eq03w8VKnJDREyiWxwavjykW/H6onE179ayMnBjVVmkj5fN7XF50VV4z73kasx5bpDzBNK8fcaxMdzA==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   litesvm-linux-x64-musl@0.3.3:
     resolution: {integrity: sha512-bpWZ2f506hbfu1y6bkmuZf+qqtnLDxggpOMTQbibjd+q6faEO3sETWwKGlIgHB99P8wyU+aXKwLSGQX2sJEw6Q==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   litesvm@0.3.3:
     resolution: {integrity: sha512-QHXjAIXzvG0uAMOza6aJcYl19yTKz3guwq/z0Zml4KnQxyQvPhjaBpUFc5sf2ey/NxMVdqFhoXmL02CXOOomjw==}
@@ -440,6 +443,7 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   webidl-conversions@3.0.1:
