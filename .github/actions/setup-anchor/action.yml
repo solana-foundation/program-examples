@@ -1,7 +1,3 @@
-# Vendored from heyAyushh/setup-anchor@v4.999 (0dfcdd2), patched so the version
-# check parses only the `anchor-cli` line: newer avm's anchor proxy prints extra
-# Solana install output on `anchor --version`, and the multi-line value broke
-# $GITHUB_OUTPUT. Upstream fix pending: https://github.com/heyAyushh/setup-anchor
 name: 'Setup Anchor'
 description: 'Install Anchor, Solana CLI tools, and Node.js.'
 branding:
