@@ -1,0 +1,143 @@
+# Vendored from heyAyushh/setup-anchor@v4.999 (0dfcdd2), patched so the version
+# check parses only the `anchor-cli` line: newer avm's anchor proxy prints extra
+# Solana install output on `anchor --version`, and the multi-line value broke
+# $GITHUB_OUTPUT. Upstream fix pending: https://github.com/heyAyushh/setup-anchor
+name: 'Setup Anchor'
+description: 'Install Anchor, Solana CLI tools, and Node.js.'
+branding:
+  icon: anchor
+  color: blue
+inputs:
+  node-version:
+    description: 'Version of node.js to use'
+    required: false
+    default: 'lts/*'
+  solana-cli-version:
+    description: 'Version of Solana CLI to use'
+    required: false
+    default: 'stable'
+  anchor-version:
+    description: 'Version of Anchor to use'
+    required: false
+    default: '0.31.1'
+  use-avm:
+    description: 'Use Anchor Version Manager (AVM) to install Anchor'
+    required: false
+    default: "true"
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    
+    - name: Output Node Version
+      id: node_v
+      shell: bash
+      run: |
+        echo "node_v=$(node -v)" >> $GITHUB_OUTPUT
+        echo "Using Node version: $(node -v)"
+    
+    - name: Setup Solana
+      uses: heyAyushh/setup-solana@v5.9
+      with:
+        solana-cli-version: ${{ inputs.solana-cli-version }}
+    
+    - name: Verify Solana installation
+      shell: bash
+      run: |
+        if ! command -v solana &> /dev/null; then
+          echo "ERROR: Solana CLI installation failed"
+          exit 1
+        fi
+        echo "Solana CLI version: $(solana --version)"
+        solana_version=$(echo $(solana --version) | awk '{print $2}')
+        echo "SOLANA_VERSION=$solana_version" >> $GITHUB_ENV
+
+    - name: Generate cache key
+      id: cache-key
+      shell: bash
+      run: |
+        echo "key=${{ runner.os }}-anchor-v${{ inputs.anchor-version }}-solana-v$SOLANA_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Cache Anchor and Cargo
+      id: cache-anchor
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/avm
+          ~/.cargo/bin/anchor
+          ~/.avm
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ steps.cache-key.outputs.key }}
+
+    - name: Check for existing anchor installation
+      id: check-anchor
+      shell: bash
+      run: |
+        if command -v anchor &> /dev/null; then
+          installed_version=$(anchor --version | awk '/^anchor-cli / {v=$2} END {print v}')
+          echo "anchor_exists=true" >> $GITHUB_OUTPUT
+          echo "installed_version=$installed_version" >> $GITHUB_OUTPUT
+          echo "Found existing Anchor installation: $installed_version"
+        else
+          echo "anchor_exists=false" >> $GITHUB_OUTPUT
+          echo "No existing Anchor installation found"
+        fi
+
+    - name: Clean existing Anchor installation if version mismatch
+      if: steps.check-anchor.outputs.anchor_exists == 'true' && steps.check-anchor.outputs.installed_version != inputs.anchor-version
+      shell: bash
+      run: |
+        echo "Removing existing Anchor version to install requested version"
+        rm -rf ~/.cargo/bin/anchor
+        rm -rf ~/.avm
+
+    - name: Install Anchor with AVM
+      if: (steps.cache-anchor.outputs.cache-hit != 'true') || (steps.check-anchor.outputs.anchor_exists != 'true')
+      shell: bash
+      run: |
+        echo "Installing Anchor v${{ inputs.anchor-version }} via AVM..."
+        set -e
+        if ! command -v avm &> /dev/null; then
+           echo "Installing AVM..."
+           cargo install --git https://github.com/coral-xyz/anchor avm --force
+        fi
+        avm --version
+        avm install ${{ inputs.anchor-version }}
+        avm use ${{ inputs.anchor-version }}
+
+        if ! command -v anchor &> /dev/null; then
+          echo "ERROR: AVM installation failed, falling back to direct cargo install"
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ inputs.anchor-version }} anchor-cli --force
+          if ! command -v anchor &> /dev/null; then
+            echo "ERROR: Cargo installation failed."
+            exit 1
+          fi
+        else
+          echo "AVM installation successful: $(anchor --version)"
+          exit 0
+        fi
+
+    - name: Verify Anchor and Rust installation
+      shell: bash
+      run: |
+        if ! command -v anchor &> /dev/null; then
+          echo "ERROR: Anchor installation verification failed"
+          exit 1
+        fi
+
+        anchor_version=$(anchor --version)
+        echo "Anchor installed successfully: $anchor_version"
+
+        # Verify version matches requested version
+        if [[ ! "$anchor_version" == *"${{ inputs.anchor-version }}"* ]]; then
+          echo "WARNING: Installed version ($anchor_version) may not match requested version (${{ inputs.anchor-version }})"
+        fi
+        
+        rust_version=$(rustc --version | awk '{print $2}')
+        echo "Rust version: $rust_version"

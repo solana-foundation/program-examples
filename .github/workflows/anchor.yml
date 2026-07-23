@@ -111,7 +111,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
-      - uses: heyAyushh/setup-anchor@v4.999
+      - uses: ./.github/actions/setup-anchor
         with:
           anchor-version: 1.0.2
           solana-cli-version: stable
