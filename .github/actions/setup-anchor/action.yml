@@ -1,3 +1,4 @@
+# Vendored from https://github.com/heyAyushh/setup-anchor @v4.999 (MIT, see LICENSE)
 name: 'Setup Anchor'
 description: 'Install Anchor, Solana CLI tools, and Node.js.'
 branding:
