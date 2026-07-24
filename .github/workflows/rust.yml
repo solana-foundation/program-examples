@@ -54,6 +54,9 @@ jobs:
         with:
           toolchain: stable
           components: clippy
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          shared-key: clippy
       - name: Linting
         # Allow diverging_sub_expression: false positive from Anchor 1.0's #[program] macro expansion
         run: cargo clippy -- -D warnings -A clippy::diverging_sub_expression

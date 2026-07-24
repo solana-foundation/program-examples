@@ -130,6 +130,12 @@ jobs:
         with:
           node-version: "lts/*"
           check-latest: true
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          shared-key: cargo-registry
+          cache-targets: false
       - name: Setup build environment
         id: setup
         run: |
