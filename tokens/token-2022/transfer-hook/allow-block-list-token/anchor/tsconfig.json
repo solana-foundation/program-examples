@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "node",
     "types": ["jest", "node"],
     "lib": ["es2020"],
     "target": "es2020",

@@ -1,4 +1,4 @@
-import { BorshCoder } from "@anchor-lang/core";
+import { BorshCoder, type Idl } from "@anchor-lang/core";
 import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { LiteSVM } from "litesvm";
 
@@ -9,7 +9,7 @@ describe("Account Data!", () => {
   let programId: PublicKey;
   let payer: Keypair;
   let addressInfoAccount: Keypair;
-  const coder = new BorshCoder(IDL);
+  const coder = new BorshCoder(IDL as Idl);
 
   before(() => {
     litesvm = new LiteSVM();

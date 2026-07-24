@@ -2,11 +2,9 @@ import * as anchor from "@anchor-lang/core";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { BankrunProvider } from "anchor-bankrun";
 import { startAnchor } from "solana-bankrun";
-import type { CreateToken } from "../target/types/create_token";
+import IDL from "../target/idl/create_token.json" with { type: "json" };
+import type { CreateToken } from "../target/types/create_token.ts";
 
-// Use require() for JSON import — the 'import ... with { type: "json" }' syntax
-// requires TypeScript 5.3+, but this project uses typescript ^4.3.5 with ts-mocha.
-const IDL = require("../target/idl/create_token.json");
 const PROGRAM_ID = new PublicKey(IDL.address);
 const METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 

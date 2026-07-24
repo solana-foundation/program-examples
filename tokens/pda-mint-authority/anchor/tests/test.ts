@@ -23,7 +23,7 @@ describe("NFT Minter", () => {
   it("Create a token!", async () => {
     const transactionSignature = await program.methods
       .createToken(metadata.name, metadata.symbol, metadata.uri)
-      .accounts({
+      .accountsPartial({
         payer: payer.publicKey,
       })
       .rpc();
@@ -42,7 +42,7 @@ describe("NFT Minter", () => {
 
     const transactionSignature = await program.methods
       .mintToken(amount)
-      .accounts({
+      .accountsPartial({
         payer: payer.publicKey,
         associatedTokenAccount: associatedTokenAccountAddress,
       })

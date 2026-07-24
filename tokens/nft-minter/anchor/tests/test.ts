@@ -25,7 +25,7 @@ describe("NFT Minter", () => {
 
     const transactionSignature = await program.methods
       .mintNft(metadata.name, metadata.symbol, metadata.uri)
-      .accounts({
+      .accountsPartial({
         payer: payer.publicKey,
         mintAccount: mintKeypair.publicKey,
         associatedTokenAccount: associatedTokenAccountAddress,

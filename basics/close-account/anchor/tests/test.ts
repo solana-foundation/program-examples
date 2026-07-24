@@ -25,7 +25,7 @@ describe("Anchor: Close an account", () => {
   it("Create an account", async () => {
     await program.methods
       .createUser("John Doe")
-      .accounts({
+      .accountsPartial({
         user: payer.publicKey,
         userAccount: userAccountAddress,
         system_program: SystemProgram.programId,
@@ -43,7 +43,7 @@ describe("Anchor: Close an account", () => {
   it("Close an account", async () => {
     await program.methods
       .closeUser()
-      .accounts({
+      .accountsPartial({
         user: payer.publicKey,
         userAccount: userAccountAddress,
       })

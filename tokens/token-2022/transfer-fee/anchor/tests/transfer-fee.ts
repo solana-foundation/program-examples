@@ -40,7 +40,7 @@ describe("transfer-fee", () => {
 
     const transactionSignature = await program.methods
       .initialize(transferFeeBasisPoints, new anchor.BN(maximumFee))
-      .accounts({ mintAccount: mintKeypair.publicKey })
+      .accountsPartial({ mintAccount: mintKeypair.publicKey })
       .signers([mintKeypair])
       .rpc({ skipPreflight: true });
     console.log("Your transaction signature", transactionSignature);
@@ -75,7 +75,7 @@ describe("transfer-fee", () => {
   it("Transfer", async () => {
     const transactionSignature = await program.methods
       .transfer(new anchor.BN(100))
-      .accounts({
+      .accountsPartial({
         sender: wallet.publicKey,
         recipient: recipient.publicKey,
         mintAccount: mintKeypair.publicKey,
@@ -89,7 +89,7 @@ describe("transfer-fee", () => {
   it("Transfer Again, fee limit by maximumFee", async () => {
     const transactionSignature = await program.methods
       .transfer(new anchor.BN(200))
-      .accounts({
+      .accountsPartial({
         sender: wallet.publicKey,
         recipient: recipient.publicKey,
         mintAccount: mintKeypair.publicKey,
@@ -103,7 +103,7 @@ describe("transfer-fee", () => {
   it("Harvest Transfer Fees to Mint Account", async () => {
     const transactionSignature = await program.methods
       .harvest()
-      .accounts({ mintAccount: mintKeypair.publicKey })
+      .accountsPartial({ mintAccount: mintKeypair.publicKey })
       .remainingAccounts([
         {
           pubkey: recipientTokenAccountAddress,
@@ -118,7 +118,7 @@ describe("transfer-fee", () => {
   it("Withdraw Transfer Fees from Mint Account", async () => {
     const transactionSignature = await program.methods
       .withdraw()
-      .accounts({
+      .accountsPartial({
         mintAccount: mintKeypair.publicKey,
         tokenAccount: senderTokenAccountAddress,
       })
@@ -132,7 +132,7 @@ describe("transfer-fee", () => {
 
     const transactionSignature = await program.methods
       .updateFee(transferFeeBasisPoints, new anchor.BN(maximumFee))
-      .accounts({ mintAccount: mintKeypair.publicKey })
+      .accountsPartial({ mintAccount: mintKeypair.publicKey })
       .rpc({ skipPreflight: true });
     console.log("Your transaction signature", transactionSignature);
   });

@@ -31,7 +31,7 @@ describe("Transfer Tokens", () => {
   it("Create an SPL Token!", async () => {
     const transactionSignature = await program.methods
       .createToken(metadata.name, metadata.symbol, metadata.uri)
-      .accounts({
+      .accountsPartial({
         payer: payer.publicKey,
         mintAccount: mintKeypair.publicKey,
       })
@@ -50,7 +50,7 @@ describe("Transfer Tokens", () => {
     // Mint the tokens to the associated token account.
     const transactionSignature = await program.methods
       .mintToken(amount)
-      .accounts({
+      .accountsPartial({
         mintAuthority: payer.publicKey,
         recipient: payer.publicKey,
         mintAccount: mintKeypair.publicKey,
@@ -69,7 +69,7 @@ describe("Transfer Tokens", () => {
 
     const transactionSignature = await program.methods
       .transferTokens(amount)
-      .accounts({
+      .accountsPartial({
         sender: payer.publicKey,
         recipient: recipient.publicKey,
         mintAccount: mintKeypair.publicKey,
