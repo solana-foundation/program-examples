@@ -1,6 +1,6 @@
 import * as anchor from "@anchor-lang/core";
 import { Keypair } from "@solana/web3.js";
-import type { CreateToken } from "../target/types/create_token";
+import type { CreateToken } from "../target/types/create_token.ts";
 
 describe("Create Tokens", () => {
   const provider = anchor.AnchorProvider.env();

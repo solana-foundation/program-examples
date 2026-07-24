@@ -4,7 +4,7 @@ import type NodeWallet from "@anchor-lang/core/dist/cjs/nodewallet";
 import { ASSOCIATED_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/utils/token";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Keypair, SystemProgram } from "@solana/web3.js";
-import type { MintNft } from "../target/types/mint_nft";
+import type { MintNft } from "../target/types/mint_nft.ts";
 
 describe("mint-nft", () => {
   // Configure the client to use the local cluster.

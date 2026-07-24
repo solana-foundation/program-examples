@@ -28,7 +28,7 @@ describe("Anchor: Close an account", () => {
       .accountsPartial({
         user: payer.publicKey,
         userAccount: userAccountAddress,
-        system_program: SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
       })
       .rpc();
 

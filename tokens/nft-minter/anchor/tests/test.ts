@@ -1,7 +1,7 @@
 import * as anchor from "@anchor-lang/core";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { Keypair } from "@solana/web3.js";
-import type { NftMinter } from "../target/types/nft_minter";
+import type { NftMinter } from "../target/types/nft_minter.ts";
 
 describe("NFT Minter", () => {
   const provider = anchor.AnchorProvider.env();

@@ -2,7 +2,7 @@ import type { Program } from "@anchor-lang/core";
 import * as anchor from "@anchor-lang/core";
 import { sendAndConfirmTransaction } from "@solana/web3.js";
 import BN from "bn.js";
-import type { Anchor } from "../target/types/anchor";
+import type { Anchor } from "../target/types/anchor.ts";
 
 describe("anchor", () => {
   // Configure the client to use the local cluster.
