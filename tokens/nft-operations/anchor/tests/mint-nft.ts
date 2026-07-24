@@ -1,7 +1,5 @@
 import type { Program } from "@anchor-lang/core";
 import * as anchor from "@anchor-lang/core";
-import type NodeWallet from "@anchor-lang/core/dist/cjs/nodewallet";
-import { ASSOCIATED_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/utils/token";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Keypair, SystemProgram } from "@solana/web3.js";
 import type { MintNft } from "../target/types/mint_nft.ts";
@@ -11,7 +9,7 @@ describe("mint-nft", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const wallet = provider.wallet as NodeWallet;
+  const wallet = provider.wallet as anchor.Wallet;
 
   const program = anchor.workspace.MintNft as Program<MintNft>;
 
@@ -96,7 +94,7 @@ describe("mint-nft", () => {
         collectionMint,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
       })
       .signers([mintKeypair])
