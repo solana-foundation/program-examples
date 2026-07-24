@@ -38,8 +38,11 @@ pub fn process_initialize(ctx: Context<Initialize>, args: TokenMetadataArgs) -> 
     // Add 4 extra bytes for size of MetadataExtension (2 bytes for type, 2 bytes for length)
     let data_len = 4 + token_metadata.get_packed_len()?;
 
-    // Calculate lamports required for the additional metadata
-    let lamports = Rent::get()?.minimum_balance(data_len);
+    // Calculate lamports required for the additional metadata bytes only.
+    // The mint's base account overhead (128 bytes) is already funded by Anchor's `init`,
+    // so subtract minimum_balance(0) to avoid double-charging that overhead.
+    let rent = Rent::get()?;
+    let lamports = rent.minimum_balance(data_len).saturating_sub(rent.minimum_balance(0));
 
     // Transfer additional lamports to mint account
     transfer(
