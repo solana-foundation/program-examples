@@ -22,8 +22,8 @@ custom-panic = []
 [dependencies]
 anchor-lang = "1.0.2"
 anchor-spl = "1.0.2"
-spl-token-metadata-interface = "0.3.3"
-spl-type-length-value = "0.4.3"
+spl-token-metadata-interface = "0.8.0"
+spl-type-length-value = "0.9.1"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

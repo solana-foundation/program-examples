@@ -80,7 +80,7 @@ pub fn process_update_field(ctx: Context<UpdateField>, args: UpdateFieldArgs) ->
         CpiContext::new(
             ctx.accounts.token_program.key(),
             TokenMetadataUpdateField {
-                token_program_id: ctx.accounts.token_program.to_account_info(),
+                program_id: ctx.accounts.token_program.to_account_info(),
                 metadata: ctx.accounts.mint_account.to_account_info(),
                 update_authority: ctx.accounts.authority.to_account_info(),
             },

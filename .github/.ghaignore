@@ -36,9 +36,6 @@ tokens/token-2022/group/anchor
 # error in tests
 tokens/external-delegate-token-master/anchor
 
-# build failed - program outdated
-tokens/token-2022/metadata/anchor
-
 # dependency issues
 tokens/token-2022/nft-meta-data-pointer/anchor-example/anchor
 
