@@ -1,0 +1,295 @@
+# Single setup action for every build workflow: declare what to install and
+# which version, get caching for free. Solana installs straight from
+# release.anza.xyz ("stable"/"beta" resolve through scripts/channel-info.sh,
+# vendored from heyAyushh/setup-solana v5.9, MIT — see LICENSE; the scripts
+# themselves come from anza-xyz/agave, Apache-2.0). Anchor/AVM logic folded in
+# from the previously vendored setup-anchor action.
+name: 'Setup CI Environment'
+description: 'Shared setup for pnpm/Node, Solana, Anchor, just, sbpf, and cargo caching'
+
+inputs:
+  install-pnpm:
+    description: 'Install pnpm and Node.js with a pnpm store cache'
+    required: false
+    default: 'true'
+  node-version:
+    description: 'Node.js version (ignored when node-version-file is set)'
+    required: false
+    default: 'lts/*'
+  node-version-file:
+    description: 'Path to a version file (e.g. .nvmrc); overrides node-version'
+    required: false
+    default: ''
+  pnpm-lock-glob:
+    description: 'Lockfile glob that keys the pnpm store cache'
+    required: false
+    default: '**/pnpm-lock.yaml'
+  install-solana:
+    description: 'Install the Solana CLI'
+    required: false
+    default: 'true'
+  solana-version:
+    description: "Solana version: exact (e.g. '4.0.3') or channel ('stable' | 'beta')"
+    required: false
+    default: 'stable'
+  install-anchor:
+    description: 'Install Anchor via AVM'
+    required: false
+    default: 'false'
+  anchor-version:
+    description: 'Anchor version to install'
+    required: false
+    default: '1.0.2'
+  install-just:
+    description: 'Install just'
+    required: false
+    default: 'false'
+  install-sbpf:
+    description: 'Install the sbpf assembler'
+    required: false
+    default: 'false'
+  sbpf-rev:
+    description: >-
+      blueshift-gg/sbpf git rev. Pinned to v0.1.9: the tip moved to v0.2.2,
+      which emits an sBPF binary the runtime loader rejects at execution
+      ("Program is not deployed"). Keep in sync with the ASM workflow's pinned
+      Solana version.
+    required: false
+    default: '0223df0e7ba622d4956b4ecf3cf2397f6945b76b'
+  cargo-cache:
+    description: 'Cache the cargo registry (and optionally targets) via rust-cache'
+    required: false
+    default: 'true'
+  cargo-cache-key:
+    description: 'Shared key for the cargo cache'
+    required: false
+    default: 'cargo-registry'
+  cargo-cache-workspaces:
+    description: 'Workspaces argument for rust-cache'
+    required: false
+    default: '.'
+  cargo-cache-targets:
+    description: 'Also cache target dirs (keep off for SBF builds: too large)'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install pnpm
+      if: inputs.install-pnpm == 'true'
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+    - name: Setup Node.js
+      if: inputs.install-pnpm == 'true' && inputs.node-version-file == ''
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+        check-latest: true
+        cache: pnpm
+        cache-dependency-path: ${{ inputs.pnpm-lock-glob }}
+
+    - name: Setup Node.js (version file)
+      if: inputs.install-pnpm == 'true' && inputs.node-version-file != ''
+      uses: actions/setup-node@v5
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+        check-latest: true
+        cache: pnpm
+        cache-dependency-path: ${{ inputs.pnpm-lock-glob }}
+
+    - name: Cargo cache
+      if: inputs.cargo-cache == 'true'
+      uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      with:
+        workspaces: ${{ inputs.cargo-cache-workspaces }}
+        shared-key: ${{ inputs.cargo-cache-key }}
+        cache-targets: ${{ inputs.cargo-cache-targets }}
+
+    - name: Resolve Solana version
+      if: inputs.install-solana == 'true'
+      id: solana-release
+      shell: bash
+      run: |
+        version='${{ inputs.solana-version }}'
+        if [[ "$version" =~ ^[0-9] ]]; then
+          resolved="$version"
+          # Exact pins get a stable cache key
+          echo "cache_key=solana-${{ runner.os }}-v$resolved" >> $GITHUB_OUTPUT
+        else
+          chmod +x "${{ github.action_path }}/scripts/channel-info.sh"
+          read -r BETA_CHANNEL_LATEST_TAG STABLE_CHANNEL_LATEST_TAG <<< "$("${{ github.action_path }}/scripts/channel-info.sh")"
+          case "$version" in
+            stable) tag="$STABLE_CHANNEL_LATEST_TAG" ;;
+            beta) tag="$BETA_CHANNEL_LATEST_TAG" ;;
+            *) echo "::error::Unsupported solana-version '$version' (use an exact version, 'stable', or 'beta')"; exit 1 ;;
+          esac
+          if [[ -z "$tag" || "$tag" == "none" ]]; then
+            echo "::error::No release tag for Solana channel '$version'"
+            exit 1
+          fi
+          resolved="${tag#v}"
+          # Channels move: include year+week so the cache refreshes weekly
+          echo "cache_key=solana-${{ runner.os }}-v$resolved-$(date +%Y%V)" >> $GITHUB_OUTPUT
+        fi
+        echo "Using Solana CLI version $resolved"
+        echo "install_version=v$resolved" >> $GITHUB_OUTPUT
+        echo "version=$resolved" >> $GITHUB_OUTPUT
+
+    # Clean existing installations to prevent version conflicts (a job may
+    # call this action twice, e.g. stable then beta)
+    - name: Clean existing Solana installation
+      if: inputs.install-solana == 'true'
+      shell: bash
+      run: |
+        rm -rf ~/.cache/solana
+        rm -rf ~/.local/share/solana
+        rm -rf ~/.solana
+        rm -rf ~/.config/solana
+        rm -rf ~/.cargo/bin/cargo-build-sbf
+        rm -rf ~/.cargo/bin/cargo-test-sbf
+
+    - name: Cache Solana environment
+      if: inputs.install-solana == 'true'
+      id: cache-solana
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/solana/
+          ~/.local/share/solana/
+          ~/.solana/
+          ~/.config/solana/
+          ~/.cargo/bin/cargo-build-sbf
+          ~/.cargo/bin/cargo-test-sbf
+        key: ${{ steps.solana-release.outputs.cache_key }}
+
+    - name: Install Solana CLI tools
+      if: inputs.install-solana == 'true' && steps.cache-solana.outputs.cache-hit != 'true'
+      shell: bash
+      run: sh -c "$(curl -sSfL https://release.anza.xyz/${{ steps.solana-release.outputs.install_version }}/install)"
+
+    - name: Verify Solana version
+      if: inputs.install-solana == 'true'
+      shell: bash
+      run: |
+        echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+
+        INSTALLED_VERSION=$(solana --version | grep -oP 'solana-cli \K[0-9]+\.[0-9]+\.[0-9]+')
+        EXPECTED_VERSION="${{ steps.solana-release.outputs.version }}"
+
+        echo "Installed version: $INSTALLED_VERSION"
+        echo "Expected version: $EXPECTED_VERSION"
+
+        if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION" ]]; then
+          echo "Version mismatch! Expected $EXPECTED_VERSION but got $INSTALLED_VERSION"
+          rm -rf ~/.cache/solana
+          rm -rf ~/.local/share/solana
+          sh -c "$(curl -sSfL https://release.anza.xyz/v$EXPECTED_VERSION/install)"
+        fi
+
+        echo "Final Solana version:"
+        solana --version
+        cargo-build-sbf --version
+
+    - name: Generate Anchor cache key
+      if: inputs.install-anchor == 'true'
+      id: anchor-cache-key
+      shell: bash
+      run: echo "key=${{ runner.os }}-anchor-v${{ inputs.anchor-version }}-solana-v${{ steps.solana-release.outputs.version }}" >> $GITHUB_OUTPUT
+
+    - name: Cache Anchor and Cargo binaries
+      if: inputs.install-anchor == 'true'
+      id: cache-anchor
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/avm
+          ~/.cargo/bin/anchor
+          ~/.avm
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ steps.anchor-cache-key.outputs.key }}
+
+    - name: Check for existing Anchor installation
+      if: inputs.install-anchor == 'true'
+      id: check-anchor
+      shell: bash
+      run: |
+        if command -v anchor &> /dev/null; then
+          installed_version=$(anchor --version | awk '/^anchor-cli / {v=$2} END {print v}')
+          echo "anchor_exists=true" >> $GITHUB_OUTPUT
+          echo "installed_version=$installed_version" >> $GITHUB_OUTPUT
+          echo "Found existing Anchor installation: $installed_version"
+        else
+          echo "anchor_exists=false" >> $GITHUB_OUTPUT
+          echo "No existing Anchor installation found"
+        fi
+
+    - name: Clean existing Anchor installation if version mismatch
+      if: inputs.install-anchor == 'true' && steps.check-anchor.outputs.anchor_exists == 'true' && steps.check-anchor.outputs.installed_version != inputs.anchor-version
+      shell: bash
+      run: |
+        echo "Removing existing Anchor version to install requested version"
+        rm -rf ~/.cargo/bin/anchor
+        rm -rf ~/.avm
+
+    - name: Install Anchor with AVM
+      if: inputs.install-anchor == 'true' && ((steps.cache-anchor.outputs.cache-hit != 'true') || (steps.check-anchor.outputs.anchor_exists != 'true'))
+      shell: bash
+      run: |
+        echo "Installing Anchor v${{ inputs.anchor-version }} via AVM..."
+        set -e
+        if ! command -v avm &> /dev/null; then
+           echo "Installing AVM..."
+           cargo install --git https://github.com/coral-xyz/anchor avm --force
+        fi
+        avm --version
+        avm install ${{ inputs.anchor-version }}
+        avm use ${{ inputs.anchor-version }}
+
+        if ! command -v anchor &> /dev/null; then
+          echo "ERROR: AVM installation failed, falling back to direct cargo install"
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ inputs.anchor-version }} anchor-cli --force
+          if ! command -v anchor &> /dev/null; then
+            echo "ERROR: Cargo installation failed."
+            exit 1
+          fi
+        else
+          echo "AVM installation successful: $(anchor --version)"
+        fi
+
+    - name: Verify Anchor installation
+      if: inputs.install-anchor == 'true'
+      shell: bash
+      run: |
+        if ! command -v anchor &> /dev/null; then
+          echo "ERROR: Anchor installation verification failed"
+          exit 1
+        fi
+
+        anchor_version=$(anchor --version)
+        echo "Anchor installed successfully: $anchor_version"
+
+        if [[ ! "$anchor_version" == *"${{ inputs.anchor-version }}"* ]]; then
+          echo "WARNING: Installed version ($anchor_version) may not match requested version (${{ inputs.anchor-version }})"
+        fi
+
+    - name: Install just
+      if: inputs.install-just == 'true'
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+
+    - name: Cache sbpf assembler
+      if: inputs.install-sbpf == 'true'
+      id: cache-sbpf
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin/sbpf
+        key: ${{ runner.os }}-sbpf-${{ inputs.sbpf-rev }}
+
+    - name: Install sbpf assembler
+      if: inputs.install-sbpf == 'true' && steps.cache-sbpf.outputs.cache-hit != 'true'
+      shell: bash
+      run: cargo install --git https://github.com/blueshift-gg/sbpf.git --rev ${{ inputs.sbpf-rev }}

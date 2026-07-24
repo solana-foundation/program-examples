@@ -95,24 +95,14 @@ jobs:
     name: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - name: Use Node.js
-        uses: actions/setup-node@v5
+      - uses: ./.github/actions/setup
         with:
           node-version-file: ${{ matrix.project }}/.nvmrc
-          check-latest: true
-          cache: pnpm
-          cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          workspaces: ${{ matrix.project }}
-          shared-key: ${{ matrix.project }}
-      - name: Install just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-      - name: Setup Solana
-        uses: heyAyushh/setup-solana@667aa7cbe39ba7d585e752a99fb8918c870d1bac # v5.9
-        with:
-          solana-cli-version: stable
+          pnpm-lock-glob: ${{ matrix.project }}/pnpm-lock.yaml
+          install-just: 'true'
+          cargo-cache-workspaces: ${{ matrix.project }}
+          cargo-cache-key: ${{ matrix.project }}
+          cargo-cache-targets: 'true'
       - name: Build and test
         working-directory: ${{ matrix.project }}
         run: |

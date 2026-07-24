@@ -122,33 +122,14 @@ jobs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
       - uses: actions/checkout@v7
-      # pnpm/action-setup installs the packageManager version pinned in
-      # package.json (unpinned latest pnpm fails CI with ERR_PNPM_IGNORED_BUILDS)
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      # Solana pinned to 4.0.3, the last version the ASM examples passed on
+      # (paired with the sbpf rev pinned in the setup action). Floating
+      # "stable" moved to 4.1.1 in the same window the toolchain broke. The
+      # beta leg below stays on the moving channel on purpose.
+      - uses: ./.github/actions/setup
         with:
-          node-version: "lts/*"
-          check-latest: true
-          cache: pnpm
-          cache-dependency-path: '**/pnpm-lock.yaml'
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-        with:
-          shared-key: cargo-registry
-          cache-targets: false
-      - name: Cache sbpf assembler
-        id: cache-sbpf
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/bin/sbpf
-          key: ${{ runner.os }}-sbpf-0223df0e7ba622d4956b4ecf3cf2397f6945b76b
-      # Pinned to v0.1.9 (0223df0e): the unpinned tip moved to v0.2.2, which
-      # emits an sBPF binary the runtime loader rejects at execution
-      # ("Program is not deployed"), breaking every ASM example. Keep in sync
-      # with the pinned Solana version below.
-      - name: Install sbpf assembler
-        if: steps.cache-sbpf.outputs.cache-hit != 'true'
-        run: cargo install --git https://github.com/blueshift-gg/sbpf.git --rev 0223df0e7ba622d4956b4ecf3cf2397f6945b76b
+          solana-version: '4.0.3'
+          install-sbpf: 'true'
       - name: Setup build environment
         id: setup
         run: |
@@ -230,14 +211,6 @@ jobs:
 
           # Make the script executable
           chmod +x build_and_test.sh
-      - name: Setup Solana Stable
-        uses: heyAyushh/setup-solana@667aa7cbe39ba7d585e752a99fb8918c870d1bac # v5.9
-        with:
-          # Pinned to 4.0.3, the last version the ASM examples passed on (paired
-          # with sbpf v0.1.9 above). Floating "stable" moved to 4.1.1 in the same
-          # window the toolchain broke. The beta leg below stays unpinned on
-          # purpose (it is continue-on-error and tracks the moving channel).
-          solana-cli-version: 4.0.3
       - name: Build and Test with Stable
         run: |
           source build_and_test.sh
@@ -245,16 +218,18 @@ jobs:
           rustc -V
           process_projects "stable"
       # Beta runs only on the nightly schedule and never blocks: the beta
-      # channel may not have a valid release (e.g. v4.0 returns 404 from
-      # release.anza.xyz — upstream issue with heyAyushh/setup-solana), and
-      # beta setup clears the stable install first.
+      # channel may not have a tagged release, and beta setup clears the
+      # stable install first.
       - name: Setup Solana Beta
         id: setup-beta
         if: github.event_name == 'schedule'
         continue-on-error: true
-        uses: heyAyushh/setup-solana@667aa7cbe39ba7d585e752a99fb8918c870d1bac # v5.9
+        uses: ./.github/actions/setup
         with:
-          solana-cli-version: beta
+          solana-version: beta
+          install-pnpm: 'false'
+          cargo-cache: 'false'
+          install-sbpf: 'false'
       - name: Build and Test with Beta
         id: test-beta
         if: github.event_name == 'schedule' && steps.setup-beta.outcome == 'success'

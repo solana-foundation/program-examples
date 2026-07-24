@@ -123,15 +123,10 @@ jobs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: ./.github/actions/setup
         with:
-          shared-key: cargo-registry
-          cache-targets: false
-      - uses: ./.github/actions/setup-anchor
-        with:
-          anchor-version: 1.0.2
-          solana-cli-version: stable
+          install-anchor: 'true'
+          anchor-version: '1.0.2'
       - name: Display Versions
         run: |
           solana -V
