@@ -1,6 +1,6 @@
 import * as anchor from "@anchor-lang/core";
 import { Keypair, SystemProgram, sendAndConfirmTransaction, Transaction } from "@solana/web3.js";
-import type { CheckingAccountProgram } from "../target/types/checking_account_program";
+import type { CheckingAccountProgram } from "../target/types/checking_account_program.ts";
 
 describe("Anchor example", () => {
   const provider = anchor.AnchorProvider.env();

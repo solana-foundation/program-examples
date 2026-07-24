@@ -123,8 +123,13 @@ jobs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
       - uses: actions/checkout@v7
+      # Solana 3.1.8 matches the [toolchain] solana_version every anchor
+      # example pins in Anchor.toml. Installing anything else makes anchor
+      # build fetch 3.1.8 through agave-install at build time, which fails
+      # whenever the weekly toolchain cache is cold.
       - uses: ./.github/actions/setup
         with:
+          solana-version: '3.1.8'
           install-anchor: 'true'
           anchor-version: '1.0.2'
       - name: Display Versions

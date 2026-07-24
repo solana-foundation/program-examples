@@ -4,7 +4,7 @@ import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js"
 import { BankrunProvider } from "anchor-bankrun";
 import { startAnchor } from "solana-bankrun";
 import IDL from "../target/idl/checking_account_program.json" with { type: "json" };
-import type { CheckingAccountProgram } from "../target/types/checking_account_program";
+import type { CheckingAccountProgram } from "../target/types/checking_account_program.ts";
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 

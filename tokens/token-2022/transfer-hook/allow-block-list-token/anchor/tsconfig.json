@@ -1,13 +1,13 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node",
     "types": ["jest", "node"],
-    "typeRoots": ["./node_modules/@types"],
-    "lib": ["es2015"],
-    "target": "es6",
+    "lib": ["es2020"],
+    "target": "es2020",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   }
 }

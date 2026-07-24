@@ -17,11 +17,7 @@ describe("Account Data!", () => {
     payer = Keypair.generate();
     addressInfoAccount = Keypair.generate();
 
-    const programPath = new URL(
-      "../target/deploy/account_data_anchor_program.so",
-      // @ts-expect-error
-      import.meta.url,
-    ).pathname;
+    const programPath = new URL("../target/deploy/account_data_anchor_program.so", import.meta.url).pathname;
     litesvm.addProgramFromFile(programId, programPath);
 
     litesvm.airdrop(payer.publicKey, BigInt(100000000000));

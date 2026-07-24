@@ -1,6 +1,6 @@
 import * as anchor from "@anchor-lang/core";
 import { Keypair } from "@solana/web3.js";
-import type { AccountDataAnchorProgram } from "../target/types/account_data_anchor_program";
+import type { AccountDataAnchorProgram } from "../target/types/account_data_anchor_program.ts";
 
 describe("Account Data!", () => {
   const provider = anchor.AnchorProvider.env();
