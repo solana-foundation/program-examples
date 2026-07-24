@@ -11,6 +11,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   MAX_JOBS: 64
   MIN_PROJECTS_PER_JOB: 4
@@ -25,15 +32,18 @@ env:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       changed_projects: ${{ steps.analyze.outputs.changed_projects }}
       total_projects: ${{ steps.analyze.outputs.total_projects }}
       matrix: ${{ steps.matrix.outputs.matrix }}
+      projects_per_job: ${{ steps.matrix.outputs.projects_per_job }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         id: changes
         if: github.event_name == 'pull_request'
         with:
@@ -88,6 +98,7 @@ jobs:
           # Generate matrix based on number of projects
           if [ "$total_projects" -lt "$min_projects_for_matrix" ]; then
             echo "matrix=[0]" >> $GITHUB_OUTPUT
+            echo "projects_per_job=$total_projects" >> $GITHUB_OUTPUT
           else
             projects_per_job=$(( (total_projects + max_jobs - 1) / max_jobs ))
             projects_per_job=$(( projects_per_job > min_projects_per_job ? projects_per_job : min_projects_per_job ))
@@ -95,12 +106,14 @@ jobs:
 
             indices=$(seq 0 $(( num_jobs - 1 )))
             echo "matrix=[$(echo $indices | tr ' ' ',')]" >> $GITHUB_OUTPUT
+            echo "projects_per_job=$projects_per_job" >> $GITHUB_OUTPUT
           fi
 
   build-and-test:
     needs: changes
     if: needs.changes.outputs.total_projects != '0'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -110,7 +123,7 @@ jobs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: ./.github/actions/setup-anchor
         with:
           anchor-version: 1.0.2
@@ -125,7 +138,7 @@ jobs:
       - name: Build and Test
         env:
           TOTAL_PROJECTS: ${{ needs.changes.outputs.total_projects }}
-          PROJECTS_PER_JOB: ${{ env.MIN_PROJECTS_PER_JOB }}
+          PROJECTS_PER_JOB: ${{ needs.changes.outputs.projects_per_job }}
         run: |
           function build_and_test() {
             local project=$1
@@ -214,6 +227,7 @@ jobs:
     needs: [changes, build-and-test]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Create job summary

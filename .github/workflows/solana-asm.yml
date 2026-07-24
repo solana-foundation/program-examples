@@ -11,6 +11,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   MAX_JOBS: 64
   MIN_PROJECTS_PER_JOB: 4
@@ -23,15 +30,18 @@ env:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       changed_projects: ${{ steps.analyze.outputs.changed_projects }}
       total_projects: ${{ steps.analyze.outputs.total_projects }}
       matrix: ${{ steps.matrix.outputs.matrix }}
+      projects_per_job: ${{ steps.matrix.outputs.projects_per_job }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         id: changes
         if: github.event_name == 'pull_request'
         with:
@@ -87,6 +97,7 @@ jobs:
 
           if [ "$total_projects" -lt "$min_projects_for_matrix" ]; then
             echo "matrix=[0]" >> $GITHUB_OUTPUT
+            echo "projects_per_job=$total_projects" >> $GITHUB_OUTPUT
           else
             projects_per_job=$(( (total_projects + max_jobs - 1) / max_jobs ))
             projects_per_job=$(( projects_per_job > min_projects_per_job ? projects_per_job : min_projects_per_job ))
@@ -94,12 +105,14 @@ jobs:
 
             indices=$(seq 0 $(( num_jobs - 1 )))
             echo "matrix=[$(echo $indices | tr ' ' ',')]" >> $GITHUB_OUTPUT
+            echo "projects_per_job=$projects_per_job" >> $GITHUB_OUTPUT
           fi
 
   build-and-test:
     needs: changes
     if: needs.changes.outputs.total_projects != '0'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -161,8 +174,8 @@ jobs:
             local solana_version=$1
 
             readarray -t all_projects < <(echo '${{ needs.changes.outputs.changed_projects }}' | jq -r '.[]?')
-            start_index=$(( ${{ matrix.index }} * ${{ env.MIN_PROJECTS_PER_JOB }} ))
-            end_index=$(( start_index + ${{ env.MIN_PROJECTS_PER_JOB }} ))
+            start_index=$(( ${{ matrix.index }} * ${{ needs.changes.outputs.projects_per_job }} ))
+            end_index=$(( start_index + ${{ needs.changes.outputs.projects_per_job }} ))
             end_index=$(( end_index > ${{ needs.changes.outputs.total_projects }} ? ${{ needs.changes.outputs.total_projects }} : end_index ))
 
             echo "Projects to build and test in this job"
@@ -196,7 +209,7 @@ jobs:
           # example. Keep in sync with the pinned Solana version below.
           cargo install --git https://github.com/blueshift-gg/sbpf.git --rev 0223df0e7ba622d4956b4ecf3cf2397f6945b76b
       - name: Setup Solana Stable
-        uses: heyAyushh/setup-solana@v5.9
+        uses: heyAyushh/setup-solana@667aa7cbe39ba7d585e752a99fb8918c870d1bac # v5.9
         with:
           # Pinned to 4.0.3, the last version the ASM examples passed on (paired
           # with sbpf v0.1.9 above). Floating "stable" moved to 4.1.1 in the same
@@ -214,7 +227,7 @@ jobs:
       # with heyAyushh/setup-solana — beta setup clears the stable install first.
       - name: Setup Solana Beta
         continue-on-error: true
-        uses: heyAyushh/setup-solana@v5.9
+        uses: heyAyushh/setup-solana@667aa7cbe39ba7d585e752a99fb8918c870d1bac # v5.9
         with:
           solana-cli-version: beta
       - name: Build and Test with Beta
@@ -240,6 +253,7 @@ jobs:
     needs: [changes, build-and-test]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Create job summary
