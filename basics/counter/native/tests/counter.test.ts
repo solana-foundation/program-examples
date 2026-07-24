@@ -27,7 +27,7 @@ describe("Counter Solana Native", async () => {
       space: COUNTER_ACCOUNT_SIZE,
       programId: PROGRAM_ID,
     });
-    const incrementIx: TransactionInstruction = createIncrementInstruction({ counter }, {});
+    const incrementIx: TransactionInstruction = createIncrementInstruction({ counter });
     const tx = new Transaction().add(allocIx).add(incrementIx);
 
     // Explicitly set the feePayer to be our wallet (this is set to first signer by default)
@@ -81,7 +81,7 @@ describe("Counter Solana Native", async () => {
     console.log(`[allocate] count is: ${counterAccount.count.toNumber()}`);
 
     // Check increment tx
-    const incrementIx: TransactionInstruction = createIncrementInstruction({ counter }, {});
+    const incrementIx: TransactionInstruction = createIncrementInstruction({ counter });
     tx = new Transaction().add(incrementIx);
     tx.feePayer = payer.publicKey;
     tx.recentBlockhash = blockhash;

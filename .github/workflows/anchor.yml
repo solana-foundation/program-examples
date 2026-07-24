@@ -164,6 +164,17 @@ jobs:
               return 1
             fi
 
+            # Typecheck (after anchor build so generated target/types exist)
+            if [ -f tsconfig.json ]; then
+              if ! pnpm exec tsc --noEmit -p tsconfig.json; then
+                echo "::error::typecheck failed for $project"
+                echo "$project: typecheck failed" >> $GITHUB_WORKSPACE/failed_projects.txt
+                rm -rf target
+                cd - > /dev/null
+                return 1
+              fi
+            fi
+
             # Run anchor test. Anchor 1.0.x syncs program ids to the ephemeral
             # keypair during its own build, so no separate keys sync is needed —
             # re-verify this if anchor-version is bumped.

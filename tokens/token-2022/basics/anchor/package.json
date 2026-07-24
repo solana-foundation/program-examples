@@ -18,6 +18,7 @@
     "prettier": "^2.6.2",
     "solana-bankrun": "^0.3.0",
     "ts-mocha": "^10.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@types/node": "^20.9.0"
   }
 }

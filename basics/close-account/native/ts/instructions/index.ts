@@ -5,3 +5,5 @@ export const MyInstruction = {
   CreateUser: 0,
   CloseUser: 1,
 } as const;
+
+export type MyInstruction = (typeof MyInstruction)[keyof typeof MyInstruction];

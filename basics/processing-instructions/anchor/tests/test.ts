@@ -1,5 +1,5 @@
 import * as anchor from "@anchor-lang/core";
-import type { ProcessingInstructions } from "../target/types/processing_instructions";
+import type { ProcessingInstructions } from "../target/types/processing_instructions.ts";
 
 describe("custom-instruction-data", () => {
   const provider = anchor.AnchorProvider.env();

@@ -149,6 +149,16 @@ jobs:
               return 1
             fi
 
+            # Typecheck
+            if [ -f tsconfig.json ]; then
+              if ! pnpm exec tsc --noEmit -p tsconfig.json; then
+                echo "::error::typecheck failed for $project"
+                echo "$project: typecheck failed with $solana_version" >> $GITHUB_WORKSPACE/failed_projects.txt
+                cd - > /dev/null
+                return 1
+              fi
+            fi
+
             # Build
             if ! pnpm build; then
               echo "::error::build failed for $project"

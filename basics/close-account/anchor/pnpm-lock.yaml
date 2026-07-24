@@ -27,6 +27,9 @@ importers:
       '@types/mocha':
         specifier: ^9.0.0
         version: 9.1.1
+      '@types/node':
+        specifier: ^20.9.0
+        version: 20.12.11
       anchor-bankrun:
         specifier: ^0.4.0
         version: 0.4.0(@coral-xyz/anchor@0.32.1(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.4(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10))(solana-bankrun@0.3.0(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@5.0.10))
