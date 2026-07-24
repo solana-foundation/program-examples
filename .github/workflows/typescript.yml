@@ -1,4 +1,4 @@
-name: TypeScript
+name: Lint
 
 on:
   push:

@@ -30,3 +30,15 @@ updates:
       - dependency-name: "*"
         update-types:
           - version-update:semver-patch
+
+  - package-ecosystem: npm
+    directories:
+      - "**/*"
+    multi-ecosystem-group: all-deps
+    patterns: ["*"]
+    cooldown:
+      default-days: 7
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
