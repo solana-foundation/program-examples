@@ -1,0 +1,147 @@
+name: 'Setup CI Environment'
+description: 'Shared setup for Rust, Solana, and pnpm'
+
+inputs:
+  install-rust:
+    description: 'Install Rust toolchain'
+    required: false
+    default: 'true'
+  rust-toolchain:
+    description: 'Rust toolchain to install'
+    required: false
+    default: '1.92'
+  rust-components:
+    description: 'Rust components to install'
+    required: false
+    default: 'rustfmt, clippy'
+  enable-rust-cache:
+    description: 'Enable Rust caching (restore/save)'
+    required: false
+    default: 'true'
+  save-rust-cache:
+    description: 'Save the Rust cache after this job (only enable for the build job)'
+    required: false
+    default: 'false'
+  rust-cache-key:
+    description: 'Key for the Rust cache'
+    required: false
+    default: 'build'
+  install-solana:
+    description: 'Install Solana CLI'
+    required: false
+    default: 'true'
+  solana-version:
+    description: "Solana CLI version to install (e.g., 'v4.0.0')"
+    required: false
+    default: 'v4.0.0'
+  install-just:
+    description: 'Install just'
+    required: false
+    default: 'true'
+  install-pnpm:
+    description: 'Install pnpm and Node.js'
+    required: false
+    default: 'true'
+  install-pnpm-dependencies:
+    description: 'Install pnpm dependencies'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Rust
+      if: inputs.install-rust == 'true'
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ inputs.rust-toolchain }}
+        components: ${{ inputs.rust-components }}
+
+    - name: Rust cache
+      if: inputs.install-rust == 'true' && inputs.enable-rust-cache == 'true'
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: '. -> target'
+        shared-key: ${{ inputs.rust-cache-key }}
+        save-if: ${{ inputs.save-rust-cache }}
+        cache-on-failure: true
+
+    - name: Resolve Solana release
+      if: inputs.install-solana == 'true'
+      id: solana-release
+      shell: bash
+      run: |
+        version='${{ inputs.solana-version }}'
+        if [[ "$version" =~ ^[0-9] ]]; then
+          version="v$version"
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Solana CLI
+      if: inputs.install-solana == 'true'
+      id: solana-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.local/share/solana
+          ~/.cache/solana
+        key: ${{ runner.os }}-solana-${{ inputs.solana-version }}
+
+    - name: Install Solana CLI
+      if: inputs.install-solana == 'true' && steps.solana-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        curl -sSfL "https://release.anza.xyz/${{ steps.solana-release.outputs.version }}/install" | sh
+
+    - name: Add Solana to PATH
+      if: inputs.install-solana == 'true'
+      shell: bash
+      run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+    - name: Create Solana keypair
+      if: inputs.install-solana == 'true'
+      shell: bash
+      run: |
+        mkdir -p ~/.config/solana
+        [ -f ~/.config/solana/id.json ] || solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json
+
+    - name: Add local bin to PATH
+      shell: bash
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Install just
+      if: inputs.install-just == 'true'
+      uses: extractions/setup-just@v4
+      with:
+        just-version: '1.50.0'
+
+    - name: Install pnpm
+      if: inputs.install-pnpm == 'true'
+      uses: pnpm/action-setup@v4
+
+    - name: Setup Node.js
+      if: inputs.install-pnpm == 'true'
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: '.nvmrc'
+
+    - name: Get pnpm store directory
+      if: inputs.install-pnpm == 'true'
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: Cache pnpm store
+      if: inputs.install-pnpm == 'true'
+      id: pnpm-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-
+
+    - name: Install pnpm dependencies
+      if: inputs.install-pnpm == 'true' && inputs.install-pnpm-dependencies == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile

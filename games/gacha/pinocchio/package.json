@@ -1,0 +1,51 @@
+{
+  "name": "gacha-monorepo",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "generate-idl": "cd program && GENERATE_IDL=1 cargo check",
+    "generate-clients": "tsx ./scripts/generate-clients.ts",
+    "lint": "pnpm run generate-clients && pnpm --filter @solana/gacha build && eslint .",
+    "lint:fix": "pnpm run generate-clients && pnpm --filter @solana/gacha build && eslint . --fix"
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.5.0",
+    "@codama/renderers-js": "^2.2.0",
+    "@codama/renderers-rust": "^3.1.0",
+    "@eslint/js": "^9.39.4",
+    "@solana/eslint-config-solana": "6.0.0",
+    "@solana/gacha": "workspace:*",
+    "@solana/kit": "^6.10.0",
+    "@solana/kit-plugin-rpc": "^0.11.1",
+    "@solana/kit-plugin-signer": "^0.10.0",
+    "@solana/prettier-config-solana": "^0.0.6",
+    "@types/eslint": "^9.6.1",
+    "@types/eslint__js": "^9.14.0",
+    "@types/node": "^25.7.0",
+    "codama": "^1.7.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-jest": "^29.12.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-sort-keys-fix": "^1.1.2",
+    "eslint-plugin-typescript-sort-keys": "^3.3.0",
+    "globals": "^16.5.0",
+    "prettier": "^3.8.3",
+    "tsx": "^4.22.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.60.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "bn.js": "5.2.3",
+      "flatted": "3.4.2",
+      "minimatch": "9.0.9",
+      "picomatch": "4.0.4",
+      "rollup": "4.60.2",
+      "ws@^8.0.0": "8.20.1"
+    }
+  }
+}

@@ -343,4 +343,10 @@ A bracket-prediction game: entrants pay a fee to submit a 32-game bracket, an or
 
 [pinocchio](./games/world-cup/pinocchio)
 
+### Gacha (provably-fair pack pulls)
+
+A provably-fair gacha / loot-box game — the on-chain mechanic behind RWA pack platforms like Collector Crypt and Phygitals. An admin configures weighted reward tiers with limited supply; buyers open pulls revealed with an RFC 9381 ECVRF (the [`cc-vrf`](https://vrf.collectorcrypt.com) model), committed before the randomness is known and publicly verifiable off-chain. A full Pinocchio + Codama project with TypeScript + Rust clients.
+
+[pinocchio](./games/gacha/pinocchio)
+
 ---

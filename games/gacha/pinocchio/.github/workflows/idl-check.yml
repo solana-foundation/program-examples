@@ -1,0 +1,20 @@
+name: IDL Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-generated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup
+        with:
+          install-solana: 'false'
+          rust-cache-key: 'idl-check'
+
+      - name: Check generated files
+        run: just check-generated

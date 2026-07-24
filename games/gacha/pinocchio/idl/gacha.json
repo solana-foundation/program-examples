@@ -1,0 +1,984 @@
+{
+  "additionalPrograms": [],
+  "kind": "rootNode",
+  "program": {
+    "accounts": [
+      {
+        "data": {
+          "fields": [],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "eventAuthority",
+        "pda": {
+          "kind": "pdaLinkNode",
+          "name": "eventAuthority"
+        }
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "discriminator",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "tierCount",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "admin",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "operator",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "entryFee",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "pullsCount",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "weights",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 8
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "supplies",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 8
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "remaining",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 8
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "pool",
+        "pda": {
+          "kind": "pdaLinkNode",
+          "name": "pool"
+        }
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "discriminator",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "status",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "tierSelected",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "pool",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "buyer",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "index",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "alpha",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 32
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "beta",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 64
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "settledSlot",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "pull"
+      },
+      {
+        "data": {
+          "fields": [],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "vault",
+        "pda": {
+          "kind": "pdaLinkNode",
+          "name": "vault"
+        }
+      }
+    ],
+    "constants": [],
+    "definedTypes": [
+      {
+        "kind": "definedTypeNode",
+        "name": "initPoolData",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "operator",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "entryFee",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "tierCount",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "weights",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 8
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "supplies",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 8
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "settlePullData",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "beta",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 64
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "proof",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 80
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "accountDiscriminator",
+        "type": {
+          "kind": "enumTypeNode",
+          "size": {
+            "endian": "le",
+            "format": "u8",
+            "kind": "numberTypeNode"
+          },
+          "variants": [
+            {
+              "discriminator": 0,
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "pool"
+            },
+            {
+              "discriminator": 1,
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "pull"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "pullStatus",
+        "type": {
+          "kind": "enumTypeNode",
+          "size": {
+            "endian": "le",
+            "format": "u8",
+            "kind": "numberTypeNode"
+          },
+          "variants": [
+            {
+              "discriminator": 0,
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "pending"
+            },
+            {
+              "discriminator": 1,
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "settled"
+            }
+          ]
+        }
+      }
+    ],
+    "errors": [
+      {
+        "code": 100,
+        "kind": "errorNode",
+        "message": "Account must be a signer",
+        "name": "notSigner"
+      },
+      {
+        "code": 101,
+        "kind": "errorNode",
+        "message": "Account must be writable",
+        "name": "accountNotWritable"
+      },
+      {
+        "code": 102,
+        "kind": "errorNode",
+        "message": "Expected system program",
+        "name": "notSystemProgram"
+      },
+      {
+        "code": 103,
+        "kind": "errorNode",
+        "message": "Not enough account keys provided",
+        "name": "notEnoughAccountKeys"
+      },
+      {
+        "code": 104,
+        "kind": "errorNode",
+        "message": "Invalid instruction",
+        "name": "invalidInstruction"
+      },
+      {
+        "code": 105,
+        "kind": "errorNode",
+        "message": "Invalid account data",
+        "name": "invalidAccountData"
+      },
+      {
+        "code": 106,
+        "kind": "errorNode",
+        "message": "Invalid account discriminator",
+        "name": "invalidAccountDiscriminator"
+      },
+      {
+        "code": 107,
+        "kind": "errorNode",
+        "message": "Arithmetic overflow",
+        "name": "arithmeticOverflow"
+      },
+      {
+        "code": 108,
+        "kind": "errorNode",
+        "message": "Account is not owned by this program",
+        "name": "notProgramOwned"
+      },
+      {
+        "code": 200,
+        "kind": "errorNode",
+        "message": "Invalid pool PDA derivation",
+        "name": "invalidPoolPda"
+      },
+      {
+        "code": 201,
+        "kind": "errorNode",
+        "message": "Pool account already exists",
+        "name": "poolAlreadyExists"
+      },
+      {
+        "code": 202,
+        "kind": "errorNode",
+        "message": "Signer is not the pool admin",
+        "name": "unauthorized"
+      },
+      {
+        "code": 203,
+        "kind": "errorNode",
+        "message": "Tier configuration is invalid (zero weight or zero supply)",
+        "name": "invalidTierConfig"
+      },
+      {
+        "code": 204,
+        "kind": "errorNode",
+        "message": "Tier count is zero or exceeds the maximum",
+        "name": "tooManyTiers"
+      },
+      {
+        "code": 205,
+        "kind": "errorNode",
+        "message": "Entry fee does not cover the pull account rent",
+        "name": "invalidEntryFee"
+      },
+      {
+        "code": 300,
+        "kind": "errorNode",
+        "message": "Invalid pull PDA derivation",
+        "name": "invalidPullPda"
+      },
+      {
+        "code": 301,
+        "kind": "errorNode",
+        "message": "Pull already exists for this index",
+        "name": "pullAlreadyExists"
+      },
+      {
+        "code": 302,
+        "kind": "errorNode",
+        "message": "Pull is not awaiting a reveal",
+        "name": "pullNotPending"
+      },
+      {
+        "code": 303,
+        "kind": "errorNode",
+        "message": "Pull does not belong to the provided pool",
+        "name": "poolMismatch"
+      },
+      {
+        "code": 400,
+        "kind": "errorNode",
+        "message": "Signer is not the registered pool operator",
+        "name": "notOperator"
+      },
+      {
+        "code": 401,
+        "kind": "errorNode",
+        "message": "No tier has remaining supply",
+        "name": "poolExhausted"
+      },
+      {
+        "code": 500,
+        "kind": "errorNode",
+        "message": "Invalid vault PDA derivation",
+        "name": "invalidVaultPda"
+      },
+      {
+        "code": 600,
+        "kind": "errorNode",
+        "message": "Invalid event authority PDA",
+        "name": "invalidEventAuthority"
+      },
+      {
+        "code": 601,
+        "kind": "errorNode",
+        "message": "Invalid event data",
+        "name": "invalidEventData"
+      }
+    ],
+    "events": [],
+    "instructions": [
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pool admin; funds and owns the pool"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "admin"
+          },
+          {
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": {
+                "kind": "pdaLinkNode",
+                "name": "pool"
+              },
+              "seeds": [
+                {
+                  "kind": "pdaSeedValueNode",
+                  "name": "admin",
+                  "value": {
+                    "kind": "accountValueNode",
+                    "name": "admin"
+                  }
+                }
+              ]
+            },
+            "docs": [
+              "The pool PDA being created"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pool"
+          },
+          {
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": {
+                "kind": "pdaLinkNode",
+                "name": "vault"
+              },
+              "seeds": [
+                {
+                  "kind": "pdaSeedValueNode",
+                  "name": "admin",
+                  "value": {
+                    "kind": "accountValueNode",
+                    "name": "admin"
+                  }
+                }
+              ]
+            },
+            "docs": [
+              "Pot vault PDA"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "vault"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "11111111111111111111111111111111"
+            },
+            "docs": [
+              "The system program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "systemProgram"
+          },
+          {
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": {
+                "kind": "pdaLinkNode",
+                "name": "eventAuthority"
+              },
+              "seeds": []
+            },
+            "docs": [
+              "The event authority PDA"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "Bv65bJKK9kwTERuyHdCrXqWf2gKBFwkTx2rnscXaBZsS"
+            },
+            "docs": [
+              "This program (for self-CPI event emission)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "selfProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 0
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "initPoolData",
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "initPoolData"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "initPool"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The buyer opening and paying for a pull"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "buyer"
+          },
+          {
+            "docs": [
+              "The pool being pulled from"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pool"
+          },
+          {
+            "docs": [
+              "The pull PDA being created"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pull"
+          },
+          {
+            "docs": [
+              "Pot vault PDA for the pool"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "vault"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "11111111111111111111111111111111"
+            },
+            "docs": [
+              "The system program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "systemProgram"
+          },
+          {
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": {
+                "kind": "pdaLinkNode",
+                "name": "eventAuthority"
+              },
+              "seeds": []
+            },
+            "docs": [
+              "The event authority PDA"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "Bv65bJKK9kwTERuyHdCrXqWf2gKBFwkTx2rnscXaBZsS"
+            },
+            "docs": [
+              "This program (for self-CPI event emission)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "selfProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 1
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "buyPull"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Registered VRF operator revealing the pull"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "operator"
+          },
+          {
+            "docs": [
+              "The pool being pulled from"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pool"
+          },
+          {
+            "docs": [
+              "The pending pull being settled"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pull"
+          },
+          {
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": {
+                "kind": "pdaLinkNode",
+                "name": "eventAuthority"
+              },
+              "seeds": []
+            },
+            "docs": [
+              "The event authority PDA"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "Bv65bJKK9kwTERuyHdCrXqWf2gKBFwkTx2rnscXaBZsS"
+            },
+            "docs": [
+              "This program (for self-CPI event emission)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "selfProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 2
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "settlePullData",
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "settlePullData"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "settlePull"
+      }
+    ],
+    "kind": "programNode",
+    "name": "gacha",
+    "pdas": [
+      {
+        "kind": "pdaNode",
+        "name": "eventAuthority",
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": {
+              "encoding": "utf8",
+              "kind": "stringTypeNode"
+            },
+            "value": {
+              "kind": "stringValueNode",
+              "string": "event_authority"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "pdaNode",
+        "name": "pool",
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": {
+              "encoding": "utf8",
+              "kind": "stringTypeNode"
+            },
+            "value": {
+              "kind": "stringValueNode",
+              "string": "pool"
+            }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "admin",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "pdaNode",
+        "name": "vault",
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": {
+              "encoding": "utf8",
+              "kind": "stringTypeNode"
+            },
+            "value": {
+              "kind": "stringValueNode",
+              "string": "vault"
+            }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "admin",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          }
+        ]
+      }
+    ],
+    "publicKey": "Bv65bJKK9kwTERuyHdCrXqWf2gKBFwkTx2rnscXaBZsS",
+    "version": "0.1.0"
+  },
+  "standard": "codama",
+  "version": "1.6.0"
+}

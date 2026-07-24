@@ -1,0 +1,31 @@
+[package]
+name = "gacha-program"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[lib]
+name = "gacha_program"
+crate-type = ["lib", "cdylib"]
+
+[lints]
+workspace = true
+
+[features]
+no-entrypoint = []
+
+[build-dependencies]
+codama = { workspace = true }
+serde_json = { workspace = true }
+
+[dependencies]
+codama = { workspace = true }
+const-crypto = { workspace = true }
+pinocchio = { workspace = true }
+pinocchio-system = { workspace = true }
+pinocchio-token = { workspace = true }
+pinocchio-token-2022 = { workspace = true }
+solana-address = { workspace = true }
+solana-security-txt = { workspace = true }
+thiserror = { workspace = true }

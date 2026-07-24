@@ -1,0 +1,44 @@
+**/target
+.idea
+**/node_modules
+dist
+.next
+bun.lockb
+
+**/generated/
+
+# Solana test validator ledger data
+test-ledger/
+**/test-ledger/
+.validator-ledger
+
+# Log files
+*.log
+**/cu_report.md
+
+# Local config (contains generated mint addresses)
+config.json
+
+# Environment secrets
+.env
+.env.local
+**/.env.local
+
+keys/
+
+# Webapp output
+webapp/playwright-report/
+webapp/test-results/
+webapp/tsconfig.tsbuildinfo
+
+# TypeDoc generated API docs
+clients/typescript/docs/
+
+# Vercel project config
+.vercel
+
+.claude/
+
+# Editor / tool config
+.emdash.json
+.vscode/
