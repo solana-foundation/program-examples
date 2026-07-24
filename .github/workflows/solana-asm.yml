@@ -222,21 +222,34 @@ jobs:
           solana -V
           rustc -V
           process_projects "stable"
-      # continue-on-error because the beta channel may not have a valid release
-      # (e.g. v4.0 returns 404 from release.anza.xyz). This is an upstream issue
-      # with heyAyushh/setup-solana — beta setup clears the stable install first.
+      # Beta runs only on the nightly schedule and never blocks: the beta
+      # channel may not have a valid release (e.g. v4.0 returns 404 from
+      # release.anza.xyz — upstream issue with heyAyushh/setup-solana), and
+      # beta setup clears the stable install first.
       - name: Setup Solana Beta
+        id: setup-beta
+        if: github.event_name == 'schedule'
         continue-on-error: true
         uses: heyAyushh/setup-solana@667aa7cbe39ba7d585e752a99fb8918c870d1bac # v5.9
         with:
           solana-cli-version: beta
       - name: Build and Test with Beta
+        id: test-beta
+        if: github.event_name == 'schedule' && steps.setup-beta.outcome == 'success'
         continue-on-error: true
         run: |
           source build_and_test.sh
           solana -V
           rustc -V
           process_projects "beta"
+      - name: Report Beta outcome
+        if: github.event_name == 'schedule'
+        run: |
+          case "${{ steps.setup-beta.outcome }}/${{ steps.test-beta.outcome }}" in
+            success/success) echo ":white_check_mark: Beta: build and tests passed" >> $GITHUB_STEP_SUMMARY ;;
+            success/*) echo ":x: Beta: build or tests failed (non-blocking)" >> $GITHUB_STEP_SUMMARY ;;
+            *) echo ":warning: Beta: skipped — beta toolchain setup failed (channel likely has no release)" >> $GITHUB_STEP_SUMMARY ;;
+          esac
 
       - name: Set failed projects output
         id: set-failed
