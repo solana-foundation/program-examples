@@ -1,15 +1,8 @@
-import {
-  type Blockhash,
-  type Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import * as borsh from "borsh";
 import { assert, expect } from "chai";
-import { describe, test } from "mocha";
-import { type BanksClient, type ProgramTestContext, start } from "solana-bankrun";
+import { LiteSVM, TransactionMetadata } from "litesvm";
+import { beforeEach, describe, test } from "mocha";
 
 const MyInstruction = {
   CreateFav: 0,
@@ -50,23 +43,19 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
 }
 
 describe("Favorites Solana Native", () => {
-  // Randomly generate the program keypair and load the program to solana-bankrun
   const programId = PublicKey.unique();
 
-  let context: ProgramTestContext;
-  let client: BanksClient;
+  let svm: LiteSVM;
   let payer: Keypair;
-  let blockhash: Blockhash;
 
-  beforeEach(async () => {
-    context = await start([{ name: "favorites_native", programId }], []);
-    client = context.banksClient;
-    // Get the payer keypair from the context, this will be used to sign transactions with enough lamports
-    payer = context.payer;
-    blockhash = context.lastBlockhash;
+  beforeEach(() => {
+    svm = new LiteSVM();
+    payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(10_000_000_000));
+    svm.addProgramFromFile(programId, "./tests/fixtures/favorites_native.so");
   });
 
-  test("Set the favorite pda and cross-check the updated data", async () => {
+  test("Set the favorite pda and cross-check the updated data", () => {
     const favoritesPda = PublicKey.findProgramAddressSync(
       [Buffer.from("favorite"), payer.publicKey.toBuffer()],
       programId,
@@ -88,14 +77,19 @@ describe("Favorites Solana Native", () => {
       data: borshSerialize(CreateFavSchema, favData),
     });
 
-    const tx = new Transaction().add(ix);
+    const tx = new Transaction();
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.feePayer = payer.publicKey;
-    tx.recentBlockhash = blockhash;
+    tx.add(ix);
     tx.sign(payer);
-    tx.recentBlockhash = blockhash;
-    await client.processTransaction(tx);
 
-    const account = await client.getAccount(favoritesPda);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
+
+    const account = svm.getAccount(favoritesPda);
+    if (!account) throw new Error("Favorites PDA account not found");
     const data = Buffer.from(account.data);
 
     const favoritesData = borsh.deserialize(FavoritesDataSchema, data) as FavoritesData;
@@ -107,8 +101,7 @@ describe("Favorites Solana Native", () => {
     expect(favoritesData.hobbies).to.deep.equal(favData.hobbies);
   });
 
-  test("Check if the test fails if the pda seeds aren't same", async () => {
-    // Derive a PDA using WRONG seeds so the program's on-chain seed check rejects it
+  test("Check if the test fails if the pda seeds aren't same", () => {
     const wrongPda = PublicKey.findProgramAddressSync(
       [Buffer.from("wrong_seed"), payer.publicKey.toBuffer()],
       programId,
@@ -130,22 +123,17 @@ describe("Favorites Solana Native", () => {
       data: borshSerialize(CreateFavSchema, favData),
     });
 
-    const tx = new Transaction().add(ix);
+    const tx = new Transaction();
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.feePayer = payer.publicKey;
-    tx.recentBlockhash = blockhash;
+    tx.add(ix);
     tx.sign(payer);
-    tx.recentBlockhash = blockhash;
-    let threw = false;
-    try {
-      await client.processTransaction(tx);
-    } catch (_err) {
-      threw = true;
-    }
-    assert(threw, "Expected transaction to fail with wrong PDA seeds");
+
+    const result = svm.sendTransaction(tx);
+    assert(!(result instanceof TransactionMetadata), "Expected transaction to fail with wrong PDA seeds");
   });
 
-  test("Get the favorite pda and cross-check the data", async () => {
-    // Creating a new account with payer's pubkey
+  test("Get the favorite pda and cross-check the data", () => {
     const favoritesPda = PublicKey.findProgramAddressSync(
       [Buffer.from("favorite"), payer.publicKey.toBuffer()],
       programId,
@@ -167,14 +155,17 @@ describe("Favorites Solana Native", () => {
       data: borshSerialize(CreateFavSchema, favData),
     });
 
-    const tx1 = new Transaction().add(ix);
+    const tx1 = new Transaction();
+    tx1.recentBlockhash = svm.latestBlockhash();
     tx1.feePayer = payer.publicKey;
-    tx1.recentBlockhash = blockhash;
+    tx1.add(ix);
     tx1.sign(payer);
-    tx1.recentBlockhash = blockhash;
-    await client.processTransaction(tx1);
 
-    // Getting the user's data through the get_pda instruction
+    const result1 = svm.sendTransaction(tx1);
+    if (!(result1 instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result1)}`);
+    }
+
     const ix2 = new TransactionInstruction({
       keys: [
         { pubkey: payer.publicKey, isSigner: true, isWritable: true },
@@ -184,11 +175,15 @@ describe("Favorites Solana Native", () => {
       data: borshSerialize(GetFavSchema, { instruction: MyInstruction.GetFav }),
     });
 
-    const tx = new Transaction().add(ix2);
-    tx.feePayer = payer.publicKey;
-    tx.recentBlockhash = blockhash;
-    tx.sign(payer);
-    tx.recentBlockhash = blockhash;
-    await client.processTransaction(tx);
+    const tx2 = new Transaction();
+    tx2.recentBlockhash = svm.latestBlockhash();
+    tx2.feePayer = payer.publicKey;
+    tx2.add(ix2);
+    tx2.sign(payer);
+
+    const result2 = svm.sendTransaction(tx2);
+    if (!(result2 instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result2)}`);
+    }
   });
 });

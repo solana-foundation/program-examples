@@ -1,6 +1,3 @@
-# bankrun runtime rejects an instruction the current build-sbf toolchain emits
-basics/favorites/native
-
 # uses generated client from shank, can't rewrite to solana-bankrun
 tools/shank-and-solita/native
 
