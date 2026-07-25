@@ -1,7 +1,3 @@
-# build and test error
-basics/realloc/native
-basics/cross-program-invocation/native
-
 # bankrun runtime rejects an instruction the current build-sbf toolchain emits
 basics/favorites/native
 
