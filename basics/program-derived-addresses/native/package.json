@@ -9,12 +9,12 @@
   "dependencies": {
     "@solana/web3.js": "^1.98.4",
     "fs": "^0.0.1-security",
-    "borsh": "^2.0.0"
+    "borsh": "^2.0.0",
+    "litesvm": "0.8.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
-    "solana-bankrun": "^0.3.0",
-    "typescript": "^5.3.3",
+    "typescript": "^5.5.0",
     "@types/node": "^22.19.1",
     "tsx": "^4.22.0"
   }

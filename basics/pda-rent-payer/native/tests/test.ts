@@ -1,36 +1,42 @@
 import { Buffer } from "node:buffer";
-import { describe, test } from "node:test";
+import { before, describe, test } from "node:test";
 import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import * as borsh from "borsh";
-import { start } from "solana-bankrun";
+import { LiteSVM, TransactionMetadata } from "litesvm";
 
-describe("PDA Rent-Payer", async () => {
+const MyInstruction = {
+  InitRentVault: 0,
+  CreateNewAccount: 1,
+} as const;
+
+const InitRentVaultSchema = {
+  struct: {
+    instruction: "u8",
+    fund_lamports: "u64",
+  },
+};
+
+const CreateNewAccountSchema = {
+  struct: {
+    instruction: "u8",
+  },
+};
+
+function borshSerialize(schema: borsh.Schema, data: object): Buffer {
+  return Buffer.from(borsh.serialize(schema, data));
+}
+
+describe("PDA Rent-Payer", () => {
   const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "pda_rent_payer_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+  let svm: LiteSVM;
+  let payer: Keypair;
 
-  const MyInstruction = {
-    InitRentVault: 0,
-    CreateNewAccount: 1,
-  } as const;
-
-  const InitRentVaultSchema = {
-    struct: {
-      instruction: "u8",
-      fund_lamports: "u64",
-    },
-  };
-
-  const CreateNewAccountSchema = {
-    struct: {
-      instruction: "u8",
-    },
-  };
-
-  function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-  }
+  before(() => {
+    svm = new LiteSVM();
+    payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(10_000_000_000));
+    svm.addProgramFromFile(PROGRAM_ID, "./tests/fixtures/pda_rent_payer_program.so");
+  });
 
   function deriveRentVaultPda() {
     const pda = PublicKey.findProgramAddressSync([Buffer.from("rent_vault")], PROGRAM_ID);
@@ -38,9 +44,8 @@ describe("PDA Rent-Payer", async () => {
     return pda;
   }
 
-  test("Initialize the Rent Vault", async () => {
-    const blockhash = context.lastBlockhash;
-    const [rentVaultPda, _] = deriveRentVaultPda();
+  test("Initialize the Rent Vault", () => {
+    const [rentVaultPda] = deriveRentVaultPda();
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: rentVaultPda, isSigner: false, isWritable: true },
@@ -55,16 +60,18 @@ describe("PDA Rent-Payer", async () => {
     });
 
     const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.add(ix).sign(payer);
 
-    await client.processTransaction(tx);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
   });
 
-  test("Create a new account using the Rent Vault", async () => {
-    const blockhash = context.lastBlockhash;
+  test("Create a new account using the Rent Vault", () => {
     const newAccount = Keypair.generate();
-    const [rentVaultPda, _] = deriveRentVaultPda();
+    const [rentVaultPda] = deriveRentVaultPda();
     const ix = new TransactionInstruction({
       keys: [
         { pubkey: newAccount.publicKey, isSigner: true, isWritable: true },
@@ -78,10 +85,12 @@ describe("PDA Rent-Payer", async () => {
     });
 
     const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer, newAccount); // Add instruction and Sign the transaction
+    tx.recentBlockhash = svm.latestBlockhash();
+    tx.add(ix).sign(payer, newAccount);
 
-    // Now we process the transaction
-    await client.processTransaction(tx);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
   });
 });

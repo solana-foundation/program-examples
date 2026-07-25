@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
-import { describe, test } from "node:test";
+import { before, describe, test } from "node:test";
 import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import * as borsh from "borsh";
-import { start } from "solana-bankrun";
+import { LiteSVM, TransactionMetadata } from "litesvm";
 
 const AddressInfoSchema = {
   struct: {
@@ -24,15 +24,20 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
   return Buffer.from(borsh.serialize(schema, data));
 }
 
-describe("Account Data!", async () => {
+describe("Account Data!", () => {
   const addressInfoAccount = Keypair.generate();
   const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "account_data_native_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
+  let svm: LiteSVM;
+  let payer: Keypair;
 
-  test("Create the address info account", async () => {
-    const payer = context.payer;
+  before(() => {
+    svm = new LiteSVM();
+    payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(10_000_000_000));
+    svm.addProgramFromFile(PROGRAM_ID, "./tests/fixtures/account_data_native_program.so");
+  });
 
+  test("Create the address info account", () => {
     console.log(`Program Address      : ${PROGRAM_ID}`);
     console.log(`Payer Address      : ${payer.publicKey}`);
     console.log(`Address Info Acct  : ${addressInfoAccount.publicKey}`);
@@ -56,16 +61,19 @@ describe("Account Data!", async () => {
       }),
     });
 
-    const blockhash = context.lastBlockhash;
-
     const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.add(ix).sign(payer, addressInfoAccount);
-    await client.processTransaction(tx);
+
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
   });
 
-  test("Read the new account's data", async () => {
-    const accountInfo = await client.getAccount(addressInfoAccount.publicKey);
+  test("Read the new account's data", () => {
+    const accountInfo = svm.getAccount(addressInfoAccount.publicKey);
+    if (!accountInfo) throw new Error("Account not found");
 
     const readAddressInfo = borsh.deserialize(AddressInfoSchema, Buffer.from(accountInfo.data)) as AddressInfo;
     console.log(`Name     : ${readAddressInfo.name}`);

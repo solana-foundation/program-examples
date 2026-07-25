@@ -1,27 +1,33 @@
 import { Buffer } from "node:buffer";
-import { describe, test } from "node:test";
+import { before, describe, test } from "node:test";
 import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import * as borsh from "borsh";
-import { start } from "solana-bankrun";
+import { LiteSVM, TransactionMetadata } from "litesvm";
 
-describe("Create a system account", async () => {
+const AddressDataSchema = {
+  struct: {
+    name: "string",
+    address: "string",
+  },
+};
+
+function borshSerialize(schema: borsh.Schema, data: object): Buffer {
+  return Buffer.from(borsh.serialize(schema, data));
+}
+
+describe("Create a system account", () => {
   const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+  let svm: LiteSVM;
+  let payer: Keypair;
 
-  const AddressDataSchema = {
-    struct: {
-      name: "string",
-      address: "string",
-    },
-  };
+  before(() => {
+    svm = new LiteSVM();
+    payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(10_000_000_000));
+    svm.addProgramFromFile(PROGRAM_ID, "./tests/fixtures/program.so");
+  });
 
-  function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-  }
-
-  test("Create the account", async () => {
+  test("Create the account", () => {
     const newKeypair = Keypair.generate();
 
     const addressData = {
@@ -29,8 +35,6 @@ describe("Create a system account", async () => {
       address: "123 Main St. San Francisco, CA",
     };
 
-    // We're just going to serialize our object here so we can check
-    // the size on the client side against the program logs
     const addressDataBuffer = borshSerialize(AddressDataSchema, addressData);
     console.log(`Address data buffer length: ${addressDataBuffer.length}`);
 
@@ -45,10 +49,12 @@ describe("Create a system account", async () => {
     });
 
     const tx = new Transaction();
-    const blockhash = context.lastBlockhash;
-    tx.recentBlockhash = blockhash;
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.add(ix).sign(payer, newKeypair);
 
-    await client.processTransaction(tx);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
   });
 });
