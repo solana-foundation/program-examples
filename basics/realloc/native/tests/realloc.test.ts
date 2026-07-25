@@ -87,7 +87,6 @@ describe("Realloc!", () => {
       throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
     }
 
-    printEnhancedAddressInfo(testAccount.publicKey);
     printWorkInfo(testAccount.publicKey);
   });
 

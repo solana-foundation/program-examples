@@ -3,7 +3,7 @@
   "scripts": {
     "test": "pnpm ts-mocha -p ./tsconfig.json -t 1000000 ./tests/test.ts",
     "build-and-test": "cargo build-sbf --sbf-out-dir=./tests/fixtures --manifest-path=programs/lever/Cargo.toml && cargo build-sbf --sbf-out-dir=./tests/fixtures --manifest-path=programs/hand/Cargo.toml && pnpm test",
-    "build": "cargo build-sbf --sbf-out-dir=./programs/target/so --manifest-path=programs/lever/Cargo.toml && cargo build-sbf --sbf-out-dir=./programs/target/so --manifest-path=programs/hand/Cargo.toml",
+    "build": "cargo build-sbf --sbf-out-dir=./target/so --manifest-path=programs/lever/Cargo.toml && cargo build-sbf --sbf-out-dir=./target/so --manifest-path=programs/hand/Cargo.toml",
     "deploy": "solana program deploy ./program/target/so/program.so"
   },
   "dependencies": {
