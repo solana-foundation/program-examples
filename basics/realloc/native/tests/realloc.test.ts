@@ -1,6 +1,6 @@
-import { describe, test } from "node:test";
+import { before, describe, test } from "node:test";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { start } from "solana-bankrun";
+import { LiteSVM, TransactionMetadata } from "litesvm";
 import {
   AddressInfo,
   createCreateInstruction,
@@ -10,15 +10,21 @@ import {
   WorkInfo,
 } from "../ts";
 
-describe("Realloc!", async () => {
+describe("Realloc!", () => {
   const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "realloc_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
 
+  let svm: LiteSVM;
+  let payer: Keypair;
   const testAccount = Keypair.generate();
 
-  test("Create the account with data", async () => {
+  before(() => {
+    svm = new LiteSVM();
+    payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(10_000_000_000));
+    svm.addProgramFromFile(PROGRAM_ID, "./tests/fixtures/realloc_program.so");
+  });
+
+  test("Create the account with data", () => {
     console.log(`${testAccount.publicKey}`);
     const ix = createCreateInstruction(
       testAccount.publicKey,
@@ -31,14 +37,18 @@ describe("Realloc!", async () => {
     );
 
     const tx = new Transaction();
-    tx.recentBlockhash = context.lastBlockhash;
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.add(ix).sign(payer, testAccount);
-    await client.processTransaction(tx);
 
-    await printAddressInfo(testAccount.publicKey);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
+
+    printAddressInfo(testAccount.publicKey);
   });
 
-  test("Reallocate WITHOUT zero init", async () => {
+  test("Reallocate WITHOUT zero init", () => {
     const ix = createReallocateWithoutZeroInitInstruction(
       testAccount.publicKey,
       payer.publicKey,
@@ -47,15 +57,18 @@ describe("Realloc!", async () => {
       12345,
     );
     const tx = new Transaction();
-    const [blockHash, _blockHeight] = await client.getLatestBlockhash();
-    tx.recentBlockhash = blockHash;
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.add(ix).sign(payer);
-    await client.processTransaction(tx);
 
-    await printEnhancedAddressInfo(testAccount.publicKey);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
+
+    printEnhancedAddressInfo(testAccount.publicKey);
   });
 
-  test("Reallocate WITH zero init", async () => {
+  test("Reallocate WITH zero init", () => {
     const ix = createReallocateZeroInitInstruction(
       testAccount.publicKey,
       payer.publicKey,
@@ -66,20 +79,22 @@ describe("Realloc!", async () => {
       2,
     );
     const tx = new Transaction();
-    const [blockHash, _blockHeight] = await client.getLatestBlockhash();
-    tx.recentBlockhash = blockHash;
+    tx.recentBlockhash = svm.latestBlockhash();
     tx.add(ix).sign(payer);
-    await client.processTransaction(tx);
 
-    await printEnhancedAddressInfo(testAccount.publicKey);
-    await printWorkInfo(testAccount.publicKey);
+    const result = svm.sendTransaction(tx);
+    if (!(result instanceof TransactionMetadata)) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result)}`);
+    }
+
+    printEnhancedAddressInfo(testAccount.publicKey);
+    printWorkInfo(testAccount.publicKey);
   });
 
-  async function printAddressInfo(pubkey: PublicKey): Promise<void> {
-    await sleep(2);
-    const data = (await client.getAccount(pubkey))?.data;
-    if (data) {
-      const addressInfo = AddressInfo.fromBuffer(Buffer.from(data));
+  function printAddressInfo(pubkey: PublicKey): void {
+    const account = svm.getAccount(pubkey);
+    if (account) {
+      const addressInfo = AddressInfo.fromBuffer(Buffer.from(account.data));
       console.log("Address info:");
       console.log(`   Name:       ${addressInfo.name}`);
       console.log(`   House Num:  ${addressInfo.house_number}`);
@@ -88,11 +103,10 @@ describe("Realloc!", async () => {
     }
   }
 
-  async function printEnhancedAddressInfo(pubkey: PublicKey): Promise<void> {
-    await sleep(2);
-    const data = (await client.getAccount(pubkey))?.data;
-    if (data) {
-      const enhancedAddressInfo = EnhancedAddressInfo.fromBuffer(Buffer.from(data));
+  function printEnhancedAddressInfo(pubkey: PublicKey): void {
+    const account = svm.getAccount(pubkey);
+    if (account) {
+      const enhancedAddressInfo = EnhancedAddressInfo.fromBuffer(Buffer.from(account.data));
       console.log("Enhanced Address info:");
       console.log(`   Name:       ${enhancedAddressInfo.name}`);
       console.log(`   House Num:  ${enhancedAddressInfo.house_number}`);
@@ -103,21 +117,15 @@ describe("Realloc!", async () => {
     }
   }
 
-  async function printWorkInfo(pubkey: PublicKey): Promise<void> {
-    await sleep(2);
-    const data = (await client.getAccount(pubkey))?.data;
-    if (data) {
-      const workInfo = WorkInfo.fromBuffer(Buffer.from(data));
+  function printWorkInfo(pubkey: PublicKey): void {
+    const account = svm.getAccount(pubkey);
+    if (account) {
+      const workInfo = WorkInfo.fromBuffer(Buffer.from(account.data));
       console.log("Work info:");
       console.log(`   Name:       ${workInfo.name}`);
       console.log(`   Position:   ${workInfo.position}`);
       console.log(`   Company:    ${workInfo.company}`);
       console.log(`   Years:      ${workInfo.years_employed}`);
     }
-  }
-
-  function sleep(s: number) {
-    const SECONDS = 1000;
-    return new Promise((resolve) => setTimeout(resolve, s * SECONDS));
   }
 });
