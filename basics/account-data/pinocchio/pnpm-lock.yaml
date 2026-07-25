@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@solana/web3.js':
         specifier: ^1.98.4
-        version: 1.98.4(bufferutil@4.0.9)(typescript@4.9.5)(utf-8-validate@5.0.10)
+        version: 1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
     devDependencies:
       '@types/bn.js':
         specifier: ^5.1.0
@@ -29,7 +29,7 @@ importers:
         version: 4.5.0
       litesvm:
         specifier: ^0.3.3
-        version: 0.3.3(bufferutil@4.0.9)(typescript@4.9.5)(utf-8-validate@5.0.10)
+        version: 0.3.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
       mocha:
         specifier: ^9.0.3
         version: 9.2.2
@@ -37,8 +37,8 @@ importers:
         specifier: ^10.0.0
         version: 10.1.0(mocha@9.2.2)
       typescript:
-        specifier: ^4.3.5
-        version: 4.9.5
+        specifier: ^5.5.0
+        version: 5.9.3
 
 packages:
 
@@ -329,7 +329,7 @@ packages:
 
   glob@7.2.0:
     resolution: {integrity: sha512-lmLf6gtyrPq8tTjSmrO94wBeQbFR3HbLHbuyD69wuyQkImp2hWqMGB47OX65FBkPffO641IP9jWa1z4ivqG26Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   growl@1.10.5:
     resolution: {integrity: sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==}
@@ -628,9 +628,9 @@ packages:
     resolution: {integrity: sha512-Acylog8/luQ8L7il+geoSxhEkazvkslg7PSNKOX59mbB9cOveP5aq9h74Y7YU8yDpJwetzQQrfIwtf4Wp4LKcw==}
     engines: {node: '>=4'}
 
-  typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
     hasBin: true
 
   undici-types@6.21.0:
@@ -642,6 +642,7 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   webidl-conversions@3.0.1:
@@ -729,30 +730,30 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
-  '@solana/codecs-core@2.1.0(typescript@4.9.5)':
+  '@solana/codecs-core@2.1.0(typescript@5.9.3)':
     dependencies:
-      '@solana/errors': 2.1.0(typescript@4.9.5)
-      typescript: 4.9.5
+      '@solana/errors': 2.1.0(typescript@5.9.3)
+      typescript: 5.9.3
 
-  '@solana/codecs-numbers@2.1.0(typescript@4.9.5)':
+  '@solana/codecs-numbers@2.1.0(typescript@5.9.3)':
     dependencies:
-      '@solana/codecs-core': 2.1.0(typescript@4.9.5)
-      '@solana/errors': 2.1.0(typescript@4.9.5)
-      typescript: 4.9.5
+      '@solana/codecs-core': 2.1.0(typescript@5.9.3)
+      '@solana/errors': 2.1.0(typescript@5.9.3)
+      typescript: 5.9.3
 
-  '@solana/errors@2.1.0(typescript@4.9.5)':
+  '@solana/errors@2.1.0(typescript@5.9.3)':
     dependencies:
       chalk: 5.4.1
       commander: 13.1.0
-      typescript: 4.9.5
+      typescript: 5.9.3
 
-  '@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@4.9.5)(utf-8-validate@5.0.10)':
+  '@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@babel/runtime': 7.27.0
       '@noble/curves': 1.9.0
       '@noble/hashes': 1.8.0
       '@solana/buffer-layout': 4.0.1
-      '@solana/codecs-numbers': 2.1.0(typescript@4.9.5)
+      '@solana/codecs-numbers': 2.1.0(typescript@5.9.3)
       agentkeepalive: 4.6.0
       bn.js: 5.2.1
       borsh: 0.7.0
@@ -1091,9 +1092,9 @@ snapshots:
   litesvm-linux-x64-musl@0.3.3:
     optional: true
 
-  litesvm@0.3.3(bufferutil@4.0.9)(typescript@4.9.5)(utf-8-validate@5.0.10):
+  litesvm@0.3.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10):
     dependencies:
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(typescript@4.9.5)(utf-8-validate@5.0.10)
+      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
       bs58: 6.0.0
       fastestsmallesttextencoderdecoder: 1.0.22
     optionalDependencies:
@@ -1306,7 +1307,7 @@ snapshots:
 
   type-detect@4.1.0: {}
 
-  typescript@4.9.5: {}
+  typescript@5.9.3: {}
 
   undici-types@6.21.0: {}
 

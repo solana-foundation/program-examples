@@ -22,6 +22,6 @@
     "prettier": "^2.6.2",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.0"
   }
 }

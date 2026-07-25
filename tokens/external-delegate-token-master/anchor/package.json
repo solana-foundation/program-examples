@@ -30,6 +30,6 @@
     "prettier": "^2.6.2",
     "solana-bankrun": "^0.2.0",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.0"
   }
 }
