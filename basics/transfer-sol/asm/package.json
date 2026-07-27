@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.47.3",
-    "buffer-layout": "^1.2.2",
-    "fs": "^0.0.1-security"
+    "buffer-layout": "^1.2.2"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

@@ -10,8 +10,7 @@
     "@solana/spl-token": "^0.3.7",
     "@solana/web3.js": "^1.98.4",
     "borsh": "^2.0.0",
-    "buffer": "^6.0.3",
-    "fs": "^0.0.1-security"
+    "buffer": "^6.0.3"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
