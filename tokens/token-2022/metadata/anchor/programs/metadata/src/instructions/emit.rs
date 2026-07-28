@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
 use anchor_spl::token_interface::{Mint, Token2022};
-use spl_token_metadata_interface::instruction::emit;
+use anchor_spl::token_2022_extensions::spl_token_metadata_interface::instruction::emit;
 
 #[derive(Accounts)]
 pub struct Emit<'info> {

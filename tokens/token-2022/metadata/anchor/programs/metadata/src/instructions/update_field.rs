@@ -7,7 +7,7 @@ use anchor_spl::{
     },
     token_interface::{token_metadata_update_field, Mint, Token2022, TokenMetadataUpdateField},
 };
-use spl_token_metadata_interface::state::{Field, TokenMetadata};
+use anchor_spl::token_2022_extensions::spl_token_metadata_interface::state::{Field, TokenMetadata};
 
 #[derive(Accounts)]
 pub struct UpdateField<'info> {
@@ -80,7 +80,7 @@ pub fn process_update_field(ctx: Context<UpdateField>, args: UpdateFieldArgs) ->
         CpiContext::new(
             ctx.accounts.token_program.key(),
             TokenMetadataUpdateField {
-                token_program_id: ctx.accounts.token_program.to_account_info(),
+                program_id: ctx.accounts.token_program.to_account_info(),
                 metadata: ctx.accounts.mint_account.to_account_info(),
                 update_authority: ctx.accounts.authority.to_account_info(),
             },

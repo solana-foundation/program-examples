@@ -4,7 +4,7 @@ use crate::{state::player_data::PlayerData, NftAuthority};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Token2022};
 use session_keys::{Session, SessionToken};
-use solana_program::program::invoke_signed;
+use anchor_lang::solana_program::program::invoke_signed;
 
 pub fn chop_tree(ctx: Context<ChopTree>, counter: u16, amount: u64) -> Result<()> {
     let account: &mut ChopTree<'_> = ctx.accounts;
@@ -33,11 +33,11 @@ pub fn chop_tree(ctx: Context<ChopTree>, counter: u16, amount: u64) -> Result<()
 
     // Update the metadata account with an additional metadata field in this case the player level
     invoke_signed(
-        &spl_token_metadata_interface::instruction::update_field(
-            &spl_token_2022::id(),
+        &anchor_spl::token_2022_extensions::spl_token_metadata_interface::instruction::update_field(
+            &anchor_spl::token_2022::spl_token_2022::id(),
             ctx.accounts.mint.to_account_info().key,
             ctx.accounts.nft_authority.to_account_info().key,
-            spl_token_metadata_interface::state::Field::Key("wood".to_string()),
+            anchor_spl::token_2022_extensions::spl_token_metadata_interface::state::Field::Key("wood".to_string()),
             ctx.accounts.player.wood.to_string(),
         ),
         &[

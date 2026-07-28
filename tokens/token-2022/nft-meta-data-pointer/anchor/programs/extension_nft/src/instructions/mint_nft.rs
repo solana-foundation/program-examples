@@ -1,5 +1,4 @@
 pub use crate::errors::GameErrorCode;
-pub use crate::errors::ProgramErrorCode;
 pub use crate::state::game_data::GameData;
 use anchor_lang::{ prelude::*, system_program };
 use anchor_spl::{
@@ -7,8 +6,8 @@ use anchor_spl::{
     token_2022,
     token_interface::{ spl_token_2022::instruction::AuthorityType, Token2022 },
 };
-use solana_program::program::{ invoke, invoke_signed };
-use spl_token_2022::{ extension::ExtensionType, state::Mint };
+use anchor_lang::solana_program::program::{invoke, invoke_signed};
+use anchor_spl::token_2022::spl_token_2022::{extension::ExtensionType, state::Mint};
 
 pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
     msg!("Mint nft with meta data extension and additional meta data");
@@ -18,7 +17,7 @@ pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
     {
         Ok(space) => space,
         Err(_) => {
-            return err!(ProgramErrorCode::InvalidMintAccountSpace);
+            return err!(GameErrorCode::InvalidMintAccountSpace);
         }
     };
 
@@ -58,7 +57,7 @@ pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
 
     // Initialize the metadata pointer (Need to do this before initializing the mint)
     let init_meta_data_pointer_ix = match
-        spl_token_2022::extension::metadata_pointer::instruction::initialize(
+        anchor_spl::token_2022::spl_token_2022::extension::metadata_pointer::instruction::initialize(
             &Token2022::id(),
             &ctx.accounts.mint.key(),
             Some(ctx.accounts.nft_authority.key()),
@@ -67,7 +66,7 @@ pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
     {
         Ok(ix) => ix,
         Err(_) => {
-            return err!(ProgramErrorCode::CantInitializeMetadataPointer);
+            return err!(GameErrorCode::CantInitializeMetadataPointer);
         }
     };
 
@@ -95,8 +94,8 @@ pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
     msg!("Init metadata {0}", ctx.accounts.nft_authority.to_account_info().key);
 
     // Init the metadata account
-    let init_token_meta_data_ix = &spl_token_metadata_interface::instruction::initialize(
-        &spl_token_2022::id(),
+    let init_token_meta_data_ix = &anchor_spl::token_2022_extensions::spl_token_metadata_interface::instruction::initialize(
+        &anchor_spl::token_2022::spl_token_2022::id(),
         ctx.accounts.mint.key,
         ctx.accounts.nft_authority.to_account_info().key,
         ctx.accounts.mint.key,
@@ -117,11 +116,11 @@ pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
 
     // Update the metadata account with an additional metadata field in this case the player level
     invoke_signed(
-        &spl_token_metadata_interface::instruction::update_field(
-            &spl_token_2022::id(),
+        &anchor_spl::token_2022_extensions::spl_token_metadata_interface::instruction::update_field(
+            &anchor_spl::token_2022::spl_token_2022::id(),
             ctx.accounts.mint.key,
             ctx.accounts.nft_authority.to_account_info().key,
-            spl_token_metadata_interface::state::Field::Key("level".to_string()),
+            anchor_spl::token_2022_extensions::spl_token_metadata_interface::state::Field::Key("level".to_string()),
             "1".to_string()
         ),
         &[

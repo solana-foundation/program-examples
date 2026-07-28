@@ -1,13 +1,9 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::rent::{
-    DEFAULT_EXEMPTION_THRESHOLD, DEFAULT_LAMPORTS_PER_BYTE_YEAR,
-};
 use anchor_lang::system_program::{transfer, Transfer};
 use anchor_spl::token_interface::{
     token_metadata_initialize, Mint, Token2022, TokenMetadataInitialize,
 };
-use spl_token_metadata_interface::state::TokenMetadata;
-use spl_type_length_value::variable_len_pack::VariableLenPack;
+use anchor_spl::token_2022_extensions::spl_token_metadata_interface::state::TokenMetadata;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -38,12 +34,11 @@ pub fn process_initialize(ctx: Context<Initialize>, args: TokenMetadataArgs) -> 
         ..Default::default()
     };
 
-    // Add 4 extra bytes for size of MetadataExtension (2 bytes for type, 2 bytes for length)
-    let data_len = 4 + token_metadata.get_packed_len()?;
+    // TLV size of the metadata extension (type, length, and value)
+    let data_len = token_metadata.tlv_size_of()?;
 
     // Calculate lamports required for the additional metadata
-    let lamports =
-        data_len as u64 * DEFAULT_LAMPORTS_PER_BYTE_YEAR * DEFAULT_EXEMPTION_THRESHOLD as u64;
+    let lamports = Rent::get()?.minimum_balance(data_len);
 
     // Transfer additional lamports to mint account
     transfer(

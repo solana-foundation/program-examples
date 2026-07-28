@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use instructions::*;
 mod instructions;
 
-declare_id!("BJHEDXSQfD9kBFvhw8ZCGmPFRihzvbMoxoHUKpXdpn4D");
+declare_id!("HZcin721jw6Uc14yybjYqXRPw4w2GzmXCBYnMddYueyU");
 
 #[program]
 pub mod metadata {

@@ -23,12 +23,7 @@ custom-panic = []
 [dependencies]
 anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
 anchor-spl = { version = "1.0.2" }
-# session-keys pinned to 2.0.3 — check compatibility with Anchor 1.0/Solana 3.x
-session-keys = { version = "2.0.3", features = ["no-entrypoint"] }
-# Removed solana-program pin (=2.1.15) — Anchor 1.0 requires Solana 3.x deps
-spl-token-2022 = { version="6", features = [ "no-entrypoint" ] }
-spl-token = { version = "4.0.1", features = [ "no-entrypoint" ] }
-spl-token-metadata-interface = "0.7.0"
+session-keys = { version = "3.1.1", features = ["no-entrypoint"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

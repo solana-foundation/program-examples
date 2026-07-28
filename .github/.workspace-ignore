@@ -28,7 +28,7 @@ tokens/token-2022/interest-bearing/anchor/programs/interest-bearing
 tokens/token-2022/memo-transfer/anchor/programs/memo-transfer
 tokens/token-2022/metadata/anchor/programs/metadata
 tokens/token-2022/mint-close-authority/anchor/programs/mint-close-authority
-tokens/token-2022/nft-meta-data-pointer/anchor-example/anchor/programs/extension_nft
+tokens/token-2022/nft-meta-data-pointer/anchor/programs/extension_nft
 tokens/token-2022/non-transferable/anchor/programs/non-transferable
 tokens/token-2022/permanent-delegate/anchor/programs/permanent-delegate
 tokens/token-2022/transfer-fee/anchor/programs/transfer-fee

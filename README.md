@@ -220,7 +220,7 @@ Create tokens that store their onchain metadata inside the token mint, without n
 
 Create an NFT using the Token Extensions metadata pointer, storing onchain metadata (including custom fields) inside the mint account itself.
 
-[anchor](./tokens/token-2022/nft-meta-data-pointer/anchor-example/anchor)
+[anchor](./tokens/token-2022/nft-meta-data-pointer/anchor)
 
 ### Allow a designated account to close a mint
 
