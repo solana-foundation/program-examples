@@ -5,13 +5,7 @@
   "scripts": {
     "sync-package-json": "ts-node scripts/sync-package-json.ts",
     "format": "prettier --write .",
-    "check": "prettier --check .",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*": [
-      "prettier --write --ignore-unknown"
-    ]
+    "check": "prettier --check ."
   },
   "packageManager": "pnpm@10.33.0",
   "keywords": [],
@@ -20,7 +14,6 @@
   "devDependencies": {
     "@solana/prettier-config-solana": "^0.0.7",
     "@types/node": "^20.9.0",
-    "husky": "^9.0.11",
     "picocolors": "^1.0.0",
     "prettier": "^3.9.6",
     "ts-node": "^10.9.1",
