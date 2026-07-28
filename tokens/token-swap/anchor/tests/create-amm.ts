@@ -20,7 +20,7 @@ describe('Create AMM', () => {
     it('Creation', async () => {
         await program.methods
             .createAmm(values.id, values.fee)
-            .accounts({ amm: values.ammKey, admin: values.admin.publicKey })
+            .accountsPartial({ amm: values.ammKey, admin: values.admin.publicKey })
             .rpc();
 
         const ammAccount = await program.account.amm.fetch(values.ammKey);
@@ -35,7 +35,7 @@ describe('Create AMM', () => {
         await expectRevert(
             program.methods
                 .createAmm(values.id, values.fee)
-                .accounts({ amm: values.ammKey, admin: values.admin.publicKey })
+                .accountsPartial({ amm: values.ammKey, admin: values.admin.publicKey })
                 .rpc(),
         );
     });

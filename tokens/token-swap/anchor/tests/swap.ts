@@ -19,7 +19,7 @@ describe('Swap', () => {
 
         await program.methods
             .createAmm(values.id, values.fee)
-            .accounts({ amm: values.ammKey, admin: values.admin.publicKey })
+            .accountsPartial({ amm: values.ammKey, admin: values.admin.publicKey })
             .rpc();
 
         await mintingTokens({
@@ -31,7 +31,7 @@ describe('Swap', () => {
 
         await program.methods
             .createPool()
-            .accounts({
+            .accountsPartial({
                 amm: values.ammKey,
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
@@ -45,7 +45,7 @@ describe('Swap', () => {
 
         await program.methods
             .depositLiquidity(values.depositAmountA, values.depositAmountB)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
@@ -66,7 +66,7 @@ describe('Swap', () => {
         const input = new BN(10 ** 6);
         await program.methods
             .swapExactTokensForTokens(true, input, new BN(100))
-            .accounts({
+            .accountsPartial({
                 amm: values.ammKey,
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,

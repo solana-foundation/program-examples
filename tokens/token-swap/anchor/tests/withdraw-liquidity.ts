@@ -18,7 +18,7 @@ describe('Withdraw liquidity', () => {
 
         await program.methods
             .createAmm(values.id, values.fee)
-            .accounts({ amm: values.ammKey, admin: values.admin.publicKey })
+            .accountsPartial({ amm: values.ammKey, admin: values.admin.publicKey })
             .rpc();
 
         await mintingTokens({
@@ -30,7 +30,7 @@ describe('Withdraw liquidity', () => {
 
         await program.methods
             .createPool()
-            .accounts({
+            .accountsPartial({
                 amm: values.ammKey,
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
@@ -44,7 +44,7 @@ describe('Withdraw liquidity', () => {
 
         await program.methods
             .depositLiquidity(values.depositAmountA, values.depositAmountA)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
@@ -64,7 +64,7 @@ describe('Withdraw liquidity', () => {
     it('Withdraw everything', async () => {
         await program.methods
             .withdrawLiquidity(values.depositAmountA.sub(values.minimumLiquidity))
-            .accounts({
+            .accountsPartial({
                 amm: values.ammKey,
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,

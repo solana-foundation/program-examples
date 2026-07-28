@@ -18,7 +18,7 @@ describe('Deposit liquidity', () => {
 
         await program.methods
             .createAmm(values.id, values.fee)
-            .accounts({ amm: values.ammKey, admin: values.admin.publicKey })
+            .accountsPartial({ amm: values.ammKey, admin: values.admin.publicKey })
             .rpc();
 
         await mintingTokens({
@@ -30,7 +30,7 @@ describe('Deposit liquidity', () => {
 
         await program.methods
             .createPool()
-            .accounts({
+            .accountsPartial({
                 amm: values.ammKey,
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
@@ -46,7 +46,7 @@ describe('Deposit liquidity', () => {
     it('Deposit equal amounts', async () => {
         await program.methods
             .depositLiquidity(values.depositAmountA, values.depositAmountA)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
@@ -76,7 +76,7 @@ describe('Deposit liquidity', () => {
         // 1. Initial Deposit
         await program.methods
             .depositLiquidity(values.depositAmountA, values.depositAmountA)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
@@ -96,7 +96,7 @@ describe('Deposit liquidity', () => {
         const secondDepositAmount = new anchor.BN(100000);
         await program.methods
             .depositLiquidity(secondDepositAmount, secondDepositAmount)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
@@ -125,7 +125,7 @@ describe('Deposit liquidity', () => {
 
         await program.methods
             .depositLiquidity(initialAmountA, initialAmountB)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
@@ -153,7 +153,7 @@ describe('Deposit liquidity', () => {
 
         await program.methods
             .depositLiquidity(secondDepositA, secondDepositBInput)
-            .accounts({
+            .accountsPartial({
                 pool: values.poolKey,
                 poolAuthority: values.poolAuthority,
                 depositor: values.admin.publicKey,
