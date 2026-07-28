@@ -22,6 +22,8 @@ Specifically for code in this repo:
 
 1. Use pnpm as the default package manager for the project. You can [install pnpm by following the instructions](https://pnpm.io/installation). Commit `pnpm-lock.yaml` to the repository.
 
+    Note: this repository is intentionally **not** a pnpm workspace. Every example keeps its own `package.json` and lockfile so it can be copied out and run standalone. Dependency versions across examples are kept aligned with `pnpm sync-package-json`.
+
 2. Solana Programs written for the Anchor framework should be in directory [`anchor`](https://www.anchor-lang.com), Solana Native in [`native`](https://solana.com/developers/guides/getstarted/intro-to-native-rust), respectively.
 
 - Project path structure: `/program-examples/category/example-name/<framework_name>`
