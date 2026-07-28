@@ -16,8 +16,6 @@ tokens/create-token/native/program
 tokens/escrow/anchor/programs/escrow
 tokens/escrow/native/program
 tokens/external-delegate-token-master/anchor/programs/external-delegate-token-master
-tokens/nft-minter/anchor/programs/nft-minter
-tokens/nft-minter/native/program
 tokens/nft-operations/anchor/programs/mint-nft
 tokens/pda-mint-authority/anchor/programs/token-minter
 tokens/pda-mint-authority/native/program

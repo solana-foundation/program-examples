@@ -124,15 +124,9 @@ How to store state that changes size in Solana.
 
 [anchor](./tokens/create-token/anchor) [pinocchio](./tokens/create-token/pinocchio) [native](./tokens/create-token/native)
 
-### Minting NFTS
-
-[Mint an NFT from inside your own onchain program using the Token and Metaplex Token Metadata programs.](./tokens/nft-minter/README.md) Reminder: you don't need your own program just to mint an NFT, see the note at the top of this README.
-
-[anchor](./tokens/nft-minter/anchor) [native](./tokens/nft-minter/native)
-
 ### NFT operations
 
-Create an NFT collection, mint NFTs, and verify NFTs as part of a collection using Metaplex Token Metadata.
+Create an NFT collection, mint NFTs, and verify NFTs as part of a collection using Metaplex Token Metadata. Reminder: you don't need your own program just to mint an NFT, see the note at the top of this README.
 
 [anchor](./tokens/nft-operations/anchor)
 

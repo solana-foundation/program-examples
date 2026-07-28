@@ -10,7 +10,6 @@ tools/shank-and-solita/native
 
 # can't test on localnet
 tokens/pda-mint-authority/native
-tokens/nft-minter/native
 tokens/transfer-tokens/native
 tokens/create-token/native
 
