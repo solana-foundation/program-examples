@@ -7,15 +7,9 @@ declare_id!("ED6f4gweAE7hWPQPXMt4kWxzDJne8VQEm9zkb1tMpFNB");
 pub mod rent_example {
     use super::*;
 
-    pub fn create_system_account(
-        ctx: Context<CreateSystemAccount>,
-        address_data: AddressData,
-    ) -> Result<()> {
+    pub fn create_system_account(ctx: Context<CreateSystemAccount>, address_data: AddressData) -> Result<()> {
         msg!("Program invoked. Creating a system account...");
-        msg!(
-            "  New public key will be: {}",
-            &ctx.accounts.new_account.key().to_string()
-        );
+        msg!("  New public key will be: {}", &ctx.accounts.new_account.key().to_string());
 
         // Determine the necessary minimum rent by calculating the account's size
         //

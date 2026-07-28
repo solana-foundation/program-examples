@@ -29,18 +29,9 @@ fn test_account_data() {
         AccountMeta::new(solana_system_interface::program::ID, false),
     ];
 
-    let data = AddressInfo::new(
-        "Joe C".to_string(),
-        136,
-        "Mile High Dr.".to_string(),
-        "Solana Beach".to_string(),
-    );
+    let data = AddressInfo::new("Joe C".to_string(), 136, "Mile High Dr.".to_string(), "Solana Beach".to_string());
 
-    let ix = Instruction {
-        program_id,
-        accounts,
-        data: borsh::to_vec(&data).unwrap(),
-    };
+    let ix = Instruction { program_id, accounts, data: borsh::to_vec(&data).unwrap() };
 
     let tx = Transaction::new_signed_with_payer(
         &[ix],
@@ -51,10 +42,7 @@ fn test_account_data() {
 
     assert!(svm.send_transaction(tx).is_ok());
 
-    let address_info_account_data = &svm
-        .get_account(&address_info_account.pubkey())
-        .unwrap()
-        .data;
+    let address_info_account_data = &svm.get_account(&address_info_account.pubkey()).unwrap().data;
 
     let serialized_data = AddressInfo::try_from_slice(address_info_account_data).unwrap();
 

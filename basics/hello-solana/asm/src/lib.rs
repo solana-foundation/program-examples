@@ -19,18 +19,9 @@ mod tests {
 
         svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
 
-        let ix = Instruction {
-            program_id,
-            accounts: vec![AccountMeta::new(payer.pubkey(), true)],
-            data: vec![0],
-        };
+        let ix = Instruction { program_id, accounts: vec![AccountMeta::new(payer.pubkey(), true)], data: vec![0] };
 
-        let tx = Transaction::new_signed_with_payer(
-            &[ix],
-            Some(&payer.pubkey()),
-            &[&payer],
-            svm.latest_blockhash(),
-        );
+        let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
         let res = svm.send_transaction(tx);
         assert!(res.is_ok());

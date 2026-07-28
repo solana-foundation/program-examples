@@ -34,12 +34,7 @@ fn test_pda_rent_payer() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());

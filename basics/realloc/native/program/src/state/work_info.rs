@@ -10,11 +10,6 @@ pub struct WorkInfo {
 
 impl WorkInfo {
     pub fn new(name: String, position: String, company: String, years_employed: u8) -> Self {
-        WorkInfo {
-            name,
-            position,
-            company,
-            years_employed,
-        }
+        WorkInfo { name, position, company, years_employed }
     }
 }

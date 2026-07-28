@@ -10,11 +10,7 @@ pub enum MyInstruction {
     CreateNewAccount,
 }
 
-pub fn process_instruction(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     match instruction_data.split_first() {
         Some((0, data)) => init_rent_vault(program_id, accounts, data),
         Some((1, data)) => create_new_account(program_id, accounts, data),

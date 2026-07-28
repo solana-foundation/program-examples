@@ -11,11 +11,7 @@ use crate::instructions::create_token;
 /// `CreateTokenArgs`, matching the wire format of the `native` version:
 ///
 /// `[name: string, symbol: string, uri: string, decimals: u8]`
-pub fn process_instruction(
-    _program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     log!("Instruction: CreateToken");
     create_token(accounts, instruction_data)
 }

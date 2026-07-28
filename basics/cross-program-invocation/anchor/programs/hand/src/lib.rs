@@ -16,9 +16,7 @@ pub mod hand {
     pub fn pull_lever(ctx: Context<PullLever>, name: String) -> Result<()> {
         let cpi_ctx = CpiContext::new(
             ctx.accounts.lever_program.key(),
-            SwitchPower {
-                power: ctx.accounts.power.to_account_info(),
-            },
+            SwitchPower { power: ctx.accounts.power.to_account_info() },
         );
         switch_power(cpi_ctx, name)?;
         Ok(())

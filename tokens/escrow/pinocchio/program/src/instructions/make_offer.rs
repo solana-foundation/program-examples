@@ -47,11 +47,8 @@ pub fn make_offer(program_id: &Address, accounts: &[AccountView], data: &[u8]) -
 
     // Verify the supplied offer account is the canonical PDA for these seeds.
     let id_bytes = id.to_le_bytes();
-    let offer_pda = derive_address(
-        &[Offer::SEED_PREFIX, maker.address().as_ref(), &id_bytes],
-        Some(bump),
-        program_id.as_array(),
-    );
+    let offer_pda =
+        derive_address(&[Offer::SEED_PREFIX, maker.address().as_ref(), &id_bytes], Some(bump), program_id.as_array());
     if offer_account.address().as_array() != &offer_pda {
         return Err(ProgramError::InvalidSeeds);
     }
@@ -68,14 +65,8 @@ pub fn make_offer(program_id: &Address, accounts: &[AccountView], data: &[u8]) -
     let signers = [Signer::from(&seeds)];
 
     log!("Creating offer account");
-    CreateAccount {
-        from: payer,
-        to: offer_account,
-        lamports,
-        space: Offer::LEN as u64,
-        owner: program_id,
-    }
-    .invoke_signed(&signers)?;
+    CreateAccount { from: payer, to: offer_account, lamports, space: Offer::LEN as u64, owner: program_id }
+        .invoke_signed(&signers)?;
 
     // Create the vault: an associated token account for mint A owned by the offer PDA.
     log!("Creating vault");
@@ -91,13 +82,7 @@ pub fn make_offer(program_id: &Address, accounts: &[AccountView], data: &[u8]) -
 
     // Move the maker's tokens into the vault.
     log!("Depositing tokens into vault");
-    Transfer {
-        from: maker_token_account_a,
-        to: vault,
-        authority: maker,
-        amount: token_a_offered_amount,
-    }
-    .invoke()?;
+    Transfer { from: maker_token_account_a, to: vault, authority: maker, amount: token_a_offered_amount }.invoke()?;
 
     // Persist the offer terms.
     let offer = Offer {

@@ -30,14 +30,8 @@ pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     let lamports = Rent::get()?.try_minimum_balance(MINT_SIZE)?;
 
     log!("Creating mint account");
-    CreateAccount {
-        from: payer,
-        to: mint_account,
-        lamports,
-        space: MINT_SIZE as u64,
-        owner: &pinocchio_token::ID,
-    }
-    .invoke()?;
+    CreateAccount { from: payer, to: mint_account, lamports, space: MINT_SIZE as u64, owner: &pinocchio_token::ID }
+        .invoke()?;
 
     log!("Initializing mint account");
     InitializeMint2 {

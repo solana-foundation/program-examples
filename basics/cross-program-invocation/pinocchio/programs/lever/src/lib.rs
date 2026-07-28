@@ -20,11 +20,7 @@ const POWER_ACCOUNT_SPACE: u64 = 1;
 const IX_INITIALIZE: u8 = 0;
 const IX_SWITCH_POWER: u8 = 1;
 
-fn process_instruction(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     match instruction_data.split_first() {
         Some((&IX_INITIALIZE, _)) => initialize(program_id, accounts),
         Some((&IX_SWITCH_POWER, name)) => switch_power(accounts, name),
@@ -39,14 +35,7 @@ fn initialize(program_id: &Address, accounts: &[AccountView]) -> ProgramResult {
 
     let lamports = Rent::get()?.try_minimum_balance(POWER_ACCOUNT_SPACE as usize)?;
 
-    CreateAccount {
-        from: user,
-        to: power,
-        lamports,
-        space: POWER_ACCOUNT_SPACE,
-        owner: program_id,
-    }
-    .invoke()?;
+    CreateAccount { from: user, to: power, lamports, space: POWER_ACCOUNT_SPACE, owner: program_id }.invoke()?;
 
     let mut data = power.try_borrow_mut()?;
     data[0] = 0;

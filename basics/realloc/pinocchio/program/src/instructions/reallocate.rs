@@ -7,10 +7,7 @@ use pinocchio_system::instructions::Transfer;
 
 use crate::state::{EnhancedAddressInfo, WorkInfo};
 
-pub fn reallocate_without_zero_init(
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn reallocate_without_zero_init(accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [target_account, payer, _] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -20,12 +17,7 @@ pub fn reallocate_without_zero_init(
 
     let diff = lamports_required - target_account.lamports();
 
-    Transfer {
-        from: payer,
-        to: target_account,
-        lamports: diff,
-    }
-    .invoke()?;
+    Transfer { from: payer, to: target_account, lamports: diff }.invoke()?;
 
     target_account.resize(account_span)?;
 

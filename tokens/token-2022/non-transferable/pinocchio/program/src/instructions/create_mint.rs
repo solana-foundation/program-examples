@@ -34,9 +34,7 @@ const INITIALIZE_NON_TRANSFERABLE_MINT: u8 = 32;
 pub fn create_mint(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     // `system_program` and `token_program` are unused directly, but must be
     // supplied so they are present in the transaction for the CPIs below.
-    let [mint_account, mint_authority, payer, rent_sysvar, _system_program, _token_program] =
-        accounts
-    else {
+    let [mint_account, mint_authority, payer, rent_sysvar, _system_program, _token_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
@@ -48,14 +46,8 @@ pub fn create_mint(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     let lamports = rent.try_minimum_balance(MINT_SIZE)?;
 
     log!("Creating mint account");
-    CreateAccount {
-        from: payer,
-        to: mint_account,
-        lamports,
-        space: MINT_SIZE as u64,
-        owner: &TOKEN_2022_PROGRAM_ID,
-    }
-    .invoke()?;
+    CreateAccount { from: payer, to: mint_account, lamports, space: MINT_SIZE as u64, owner: &TOKEN_2022_PROGRAM_ID }
+        .invoke()?;
 
     // The `NonTransferable` extension must be initialized *before* the mint
     // itself — extensions live in the space past the base mint and Token-2022
@@ -74,16 +66,10 @@ pub fn create_mint(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
 
     log!("Initializing mint");
     let mint_data = build_initialize_mint_data(mint_authority, args.decimals);
-    let mint_accounts = [
-        InstructionAccount::writable(mint_account.address()),
-        InstructionAccount::readonly(rent_sysvar.address()),
-    ];
+    let mint_accounts =
+        [InstructionAccount::writable(mint_account.address()), InstructionAccount::readonly(rent_sysvar.address())];
     invoke(
-        &InstructionView {
-            program_id: &TOKEN_2022_PROGRAM_ID,
-            accounts: &mint_accounts,
-            data: &mint_data,
-        },
+        &InstructionView { program_id: &TOKEN_2022_PROGRAM_ID, accounts: &mint_accounts, data: &mint_data },
         &[mint_account, rent_sysvar],
     )?;
 

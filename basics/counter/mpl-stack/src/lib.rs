@@ -26,11 +26,7 @@ pub enum Instruction {
     Increment,
 }
 
-pub fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let (instruction_discriminant, instruction_data_inner) = instruction_data.split_at(1);
     match instruction_discriminant[0] {
         0 => {
@@ -44,17 +40,11 @@ pub fn process_instruction(
     Ok(())
 }
 
-pub fn process_increment_counter(
-    accounts: &[AccountInfo],
-    _instruction_data: &[u8],
-) -> Result<(), ProgramError> {
+pub fn process_increment_counter(accounts: &[AccountInfo], _instruction_data: &[u8]) -> Result<(), ProgramError> {
     let account_info_iter = &mut accounts.iter();
 
     let counter_account = next_account_info(account_info_iter)?;
-    assert!(
-        counter_account.is_writable,
-        "Counter account must be writable"
-    );
+    assert!(counter_account.is_writable, "Counter account must be writable");
 
     let mut counter = Counter::try_from_slice(&counter_account.try_borrow_mut_data()?)?;
     counter.count += 1;

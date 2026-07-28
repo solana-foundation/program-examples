@@ -20,9 +20,7 @@ fn test_pda_rent_payer() {
 
     let rent_value_pda = Pubkey::find_program_address(&[b"rent_vault"], &program_id).0;
 
-    let args = InitRentVaultArgs {
-        fund_lamports: 1000000000,
-    };
+    let args = InitRentVaultArgs { fund_lamports: 1000000000 };
 
     let data = borsh::to_vec(&MyInstruction::InitRentVault(args)).unwrap();
 
@@ -36,12 +34,7 @@ fn test_pda_rent_payer() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 

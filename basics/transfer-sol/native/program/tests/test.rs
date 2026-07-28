@@ -38,12 +38,7 @@ fn test_transfer_sol() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 
@@ -53,13 +48,7 @@ fn test_transfer_sol() {
     assert!(payer_balance_before > payer_balance_after);
     assert!(recipient_balance_before < recipient_balance_after);
 
-    let create_ix = create_account(
-        &payer.pubkey(),
-        &test_recipient2.pubkey(),
-        2 * LAMPORTS_PER_SOL,
-        0,
-        &program_id,
-    );
+    let create_ix = create_account(&payer.pubkey(), &test_recipient2.pubkey(), 2 * LAMPORTS_PER_SOL, 0, &program_id);
 
     let tx = Transaction::new_signed_with_payer(
         &[create_ix],

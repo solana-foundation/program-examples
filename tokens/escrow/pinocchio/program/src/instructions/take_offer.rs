@@ -112,22 +112,12 @@ pub fn take_offer(program_id: &Address, accounts: &[AccountView], _data: &[u8]) 
     let signers = [Signer::from(&seeds)];
 
     log!("Releasing token A from vault to taker");
-    Transfer {
-        from: vault,
-        to: taker_token_account_a,
-        authority: offer_account,
-        amount: vault_amount,
-    }
-    .invoke_signed(&signers)?;
+    Transfer { from: vault, to: taker_token_account_a, authority: offer_account, amount: vault_amount }
+        .invoke_signed(&signers)?;
 
     // Close the now-empty vault, returning its rent to the taker.
     log!("Closing vault");
-    CloseAccount {
-        account: vault,
-        destination: taker,
-        authority: offer_account,
-    }
-    .invoke_signed(&signers)?;
+    CloseAccount { account: vault, destination: taker, authority: offer_account }.invoke_signed(&signers)?;
 
     // Close the offer account, returning its rent to the payer that funded it.
     log!("Closing offer account");

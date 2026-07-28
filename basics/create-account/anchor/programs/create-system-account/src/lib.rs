@@ -9,10 +9,7 @@ pub mod create_system_account {
 
     pub fn create_system_account(ctx: Context<CreateSystemAccount>) -> Result<()> {
         msg!("Program invoked. Creating a system account...");
-        msg!(
-            "  New public key will be: {}",
-            &ctx.accounts.new_account.key().to_string()
-        );
+        msg!("  New public key will be: {}", &ctx.accounts.new_account.key().to_string());
 
         // The minimum lamports for rent exemption
         let lamports = (Rent::get()?).minimum_balance(0);
@@ -21,7 +18,7 @@ pub mod create_system_account {
             CpiContext::new(
                 ctx.accounts.system_program.key(),
                 CreateAccount {
-                    from: ctx.accounts.payer.to_account_info(), // From pubkey
+                    from: ctx.accounts.payer.to_account_info(),     // From pubkey
                     to: ctx.accounts.new_account.to_account_info(), // To pubkey
                 },
             ),

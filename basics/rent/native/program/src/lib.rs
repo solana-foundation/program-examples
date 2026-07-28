@@ -11,11 +11,7 @@ use solana_program::{
 
 entrypoint!(process_instruction);
 
-fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let accounts_iter = &mut accounts.iter();
     let payer = next_account_info(accounts_iter)?;
     let new_account = next_account_info(accounts_iter)?;

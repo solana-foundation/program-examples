@@ -41,13 +41,7 @@ pub fn transfer_tokens(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     .invoke()?;
 
     log!("Transferring tokens");
-    Transfer {
-        from: source_token_account,
-        to: destination_token_account,
-        authority,
-        amount,
-    }
-    .invoke()?;
+    Transfer { from: source_token_account, to: destination_token_account, authority, amount }.invoke()?;
 
     log!("Tokens transferred successfully");
     Ok(())

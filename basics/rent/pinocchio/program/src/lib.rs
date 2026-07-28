@@ -13,11 +13,7 @@ use pinocchio_system::instructions::CreateAccount;
 entrypoint!(process_instruction);
 nostd_panic_handler!();
 
-fn process_instruction(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [payer, new_account, _system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

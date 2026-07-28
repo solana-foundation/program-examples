@@ -9,14 +9,8 @@ use crate::instructions::{make_offer, take_offer};
 ///   - `0` -> MakeOffer (args: `[id: u64 (LE), token_a_offered_amount: u64 (LE),
 ///                              token_b_wanted_amount: u64 (LE), bump: u8]`)
 ///   - `1` -> TakeOffer (no args)
-pub fn process_instruction(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
-    let (discriminator, args) = instruction_data
-        .split_first()
-        .ok_or(ProgramError::InvalidInstructionData)?;
+pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+    let (discriminator, args) = instruction_data.split_first().ok_or(ProgramError::InvalidInstructionData)?;
 
     match *discriminator {
         0 => {

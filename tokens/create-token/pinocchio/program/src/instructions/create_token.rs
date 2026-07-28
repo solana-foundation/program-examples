@@ -10,9 +10,7 @@ use pinocchio_system::instructions::CreateAccount;
 use pinocchio_token::{instructions::InitializeMint2, state::Mint};
 
 use crate::instructions::util::read_borsh_string;
-use crate::instructions::util_metaplex::{
-    build_create_metadata_v3_data, METADATA_DATA_MAX, TOKEN_METADATA_PROGRAM_ID,
-};
+use crate::instructions::util_metaplex::{build_create_metadata_v3_data, METADATA_DATA_MAX, TOKEN_METADATA_PROGRAM_ID};
 
 /// Borsh-encoded arguments for the create-token instruction.
 ///
@@ -32,15 +30,8 @@ impl<'a> CreateTokenArgs<'a> {
         let name = read_borsh_string(data, &mut offset)?;
         let symbol = read_borsh_string(data, &mut offset)?;
         let uri = read_borsh_string(data, &mut offset)?;
-        let decimals = *data
-            .get(offset)
-            .ok_or(ProgramError::InvalidInstructionData)?;
-        Ok(Self {
-            name,
-            symbol,
-            uri,
-            decimals,
-        })
+        let decimals = *data.get(offset).ok_or(ProgramError::InvalidInstructionData)?;
+        Ok(Self { name, symbol, uri, decimals })
     }
 }
 
@@ -77,14 +68,8 @@ pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     let lamports = rent.try_minimum_balance(Mint::LEN)?;
 
     log!("Creating mint account");
-    CreateAccount {
-        from: payer,
-        to: mint_account,
-        lamports,
-        space: Mint::LEN as u64,
-        owner: &pinocchio_token::ID,
-    }
-    .invoke()?;
+    CreateAccount { from: payer, to: mint_account, lamports, space: Mint::LEN as u64, owner: &pinocchio_token::ID }
+        .invoke()?;
 
     log!("Initializing mint account");
     InitializeMint2 {
@@ -97,8 +82,7 @@ pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
 
     log!("Creating metadata account");
     let mut metadata_buffer = [0u8; METADATA_DATA_MAX];
-    let metadata_len =
-        build_create_metadata_v3_data(&mut metadata_buffer, args.name, args.symbol, args.uri)?;
+    let metadata_len = build_create_metadata_v3_data(&mut metadata_buffer, args.name, args.symbol, args.uri)?;
     let metadata_data = &metadata_buffer[..metadata_len];
     let metadata_accounts = [
         InstructionAccount::writable(metadata_account.address()),
@@ -109,22 +93,9 @@ pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
         InstructionAccount::readonly(mint_authority.address()),
         InstructionAccount::readonly(system_program.address()),
     ];
-    let instruction = InstructionView {
-        program_id: &TOKEN_METADATA_PROGRAM_ID,
-        accounts: &metadata_accounts,
-        data: metadata_data,
-    };
-    invoke(
-        &instruction,
-        &[
-            metadata_account,
-            mint_account,
-            mint_authority,
-            payer,
-            mint_authority,
-            system_program,
-        ],
-    )?;
+    let instruction =
+        InstructionView { program_id: &TOKEN_METADATA_PROGRAM_ID, accounts: &metadata_accounts, data: metadata_data };
+    invoke(&instruction, &[metadata_account, mint_account, mint_authority, payer, mint_authority, system_program])?;
 
     log!("Token mint created successfully");
     Ok(())

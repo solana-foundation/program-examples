@@ -40,13 +40,7 @@ pub fn mint_tokens(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     .invoke()?;
 
     log!("Minting tokens");
-    MintTo {
-        mint: mint_account,
-        account: token_account,
-        mint_authority,
-        amount,
-    }
-    .invoke()?;
+    MintTo { mint: mint_account, account: token_account, mint_authority, amount }.invoke()?;
 
     log!("Tokens minted successfully");
     Ok(())

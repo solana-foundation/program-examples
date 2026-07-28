@@ -12,11 +12,7 @@ pub enum MyInstruction {
     CreateNewAccount,
 }
 
-pub fn process_instruction(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    input: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(program_id: &Pubkey, accounts: &[AccountInfo], input: &[u8]) -> ProgramResult {
     let instruction = MyInstruction::try_from_slice(input)?;
     match instruction {
         MyInstruction::InitRentVault(args) => init_rent_vault(program_id, accounts, args),

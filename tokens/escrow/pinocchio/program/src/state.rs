@@ -35,9 +35,7 @@ impl Offer {
 
     /// Writes the offer into `dst` using the layout documented above.
     pub fn serialize(&self, dst: &mut [u8]) -> Result<(), ProgramError> {
-        let dst = dst
-            .get_mut(..Self::LEN)
-            .ok_or(ProgramError::AccountDataTooSmall)?;
+        let dst = dst.get_mut(..Self::LEN).ok_or(ProgramError::AccountDataTooSmall)?;
         dst[0..8].copy_from_slice(&self.id.to_le_bytes());
         dst[8..40].copy_from_slice(&self.maker);
         dst[40..72].copy_from_slice(&self.token_mint_a);
@@ -49,10 +47,8 @@ impl Offer {
 
     /// Reads an offer from `src`, which must be at least [`Offer::LEN`] bytes.
     pub fn deserialize(src: &[u8]) -> Result<Self, ProgramError> {
-        let src: &[u8; Self::LEN] = src
-            .get(..Self::LEN)
-            .and_then(|s| s.try_into().ok())
-            .ok_or(ProgramError::InvalidAccountData)?;
+        let src: &[u8; Self::LEN] =
+            src.get(..Self::LEN).and_then(|s| s.try_into().ok()).ok_or(ProgramError::InvalidAccountData)?;
         Ok(Self {
             id: u64::from_le_bytes(src[0..8].try_into().unwrap()),
             maker: src[8..40].try_into().unwrap(),

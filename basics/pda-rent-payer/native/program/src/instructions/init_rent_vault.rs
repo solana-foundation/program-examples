@@ -15,11 +15,7 @@ pub struct InitRentVaultArgs {
     pub fund_lamports: u64,
 }
 
-pub fn init_rent_vault(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    args: InitRentVaultArgs,
-) -> ProgramResult {
+pub fn init_rent_vault(program_id: &Pubkey, accounts: &[AccountInfo], args: InitRentVaultArgs) -> ProgramResult {
     let accounts_iter = &mut accounts.iter();
     let rent_vault = next_account_info(accounts_iter)?;
     let payer = next_account_info(accounts_iter)?;

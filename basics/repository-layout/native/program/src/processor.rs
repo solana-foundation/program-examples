@@ -1,7 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
-    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg,
-    program_error::ProgramError, pubkey::Pubkey,
+    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, program_error::ProgramError, pubkey::Pubkey,
 };
 
 use crate::instructions::{eat_food, get_on_ride, play_game};
@@ -19,11 +18,7 @@ pub struct CarnivalInstructionData {
     pub attraction_name: String,
 }
 
-pub fn process_instruction(
-    _program_id: &Pubkey,
-    _accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(_program_id: &Pubkey, _accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let ix_data_object = CarnivalInstructionData::try_from_slice(instruction_data)?;
 
     msg!("Welcome to the carnival, {}!", ix_data_object.name);

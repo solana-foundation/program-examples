@@ -19,22 +19,12 @@ pub fn get_on_ride(ix: GetOnRideInstructionData) -> Result<()> {
             msg!("You're about to ride the {}!", ride.name);
 
             if ix.rider_ticket_count < ride.tickets {
-                msg!(
-                    "  Sorry {}, you need {} tickets to ride the {}!",
-                    ix.rider_name,
-                    ride.tickets,
-                    ride.name
-                );
+                msg!("  Sorry {}, you need {} tickets to ride the {}!", ix.rider_name, ride.tickets, ride.name);
                 return Ok(());
             };
 
             if ix.rider_height < ride.min_height {
-                msg!(
-                    "  Sorry {}, you need to be {}\" tall to ride the {}!",
-                    ix.rider_name,
-                    ride.min_height,
-                    ride.name
-                );
+                msg!("  Sorry {}, you need to be {}\" tall to ride the {}!", ix.rider_name, ride.min_height, ride.name);
                 return Ok(());
             };
 

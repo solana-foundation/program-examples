@@ -17,11 +17,7 @@ pub fn create_pda(program_id: &Address, accounts: &[AccountView], data: &[u8]) -
 
     // deriving the favorite pda
     let bump = data[0];
-    let favorite_pda = derive_address(
-        &[b"favorite", user.address().as_ref()],
-        Some(bump),
-        program_id.as_array(),
-    );
+    let favorite_pda = derive_address(&[b"favorite", user.address().as_ref()], Some(bump), program_id.as_array());
 
     // Checking if the favorite account is same as the derived favorite pda
     if favorite_account.address().as_array() != &favorite_pda {
@@ -38,22 +34,12 @@ pub fn create_pda(program_id: &Address, accounts: &[AccountView], data: &[u8]) -
 
         let bump_bytes = bump.to_le_bytes();
 
-        let seeds = [
-            Seed::from(b"favorite"),
-            Seed::from(user.address().as_ref()),
-            Seed::from(&bump_bytes),
-        ];
+        let seeds = [Seed::from(b"favorite"), Seed::from(user.address().as_ref()), Seed::from(&bump_bytes)];
 
         let signers = [Signer::from(&seeds)];
 
-        CreateAccount {
-            from: user,
-            to: favorite_account,
-            lamports,
-            space: space as u64,
-            owner: program_id,
-        }
-        .invoke_signed(&signers)?;
+        CreateAccount { from: user, to: favorite_account, lamports, space: space as u64, owner: program_id }
+            .invoke_signed(&signers)?;
 
         // Serialize and store the data
         let mut favrite_account_data = favorite_account.try_borrow_mut()?;

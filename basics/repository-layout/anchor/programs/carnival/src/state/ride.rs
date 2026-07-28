@@ -9,12 +9,7 @@ pub struct Ride {
 
 impl Ride {
     pub fn new(name: String, upside_down: bool, tickets: u32, min_height: u32) -> Ride {
-        Ride {
-            name,
-            upside_down,
-            tickets,
-            min_height,
-        }
+        Ride { name, upside_down, tickets, min_height }
     }
 }
 

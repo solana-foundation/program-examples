@@ -18,12 +18,7 @@ pub fn eat_food(ix: EatFoodInstructionData) -> ProgramResult {
             msg!("Welcome to {}! What can I get you?", food_stand.name);
 
             if ix.eater_ticket_count < food_stand.tickets {
-                msg!(
-                    "  Sorry {}, our {} is {} tickets!",
-                    ix.eater_name,
-                    food_stand.food_type,
-                    food_stand.tickets
-                );
+                msg!("  Sorry {}, our {} is {} tickets!", ix.eater_name, food_stand.food_type, food_stand.tickets);
             } else {
                 msg!("  Enjoy your {}!", food_stand.food_type);
             };

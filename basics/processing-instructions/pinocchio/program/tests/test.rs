@@ -10,8 +10,7 @@ fn test_processing_ixs() {
     let mut svm = LiteSVM::new();
 
     let program_id = Pubkey::new_unique();
-    let program_bytes =
-        include_bytes!("../../tests/fixtures/processing_instructions_pinocchio_program.so");
+    let program_bytes = include_bytes!("../../tests/fixtures/processing_instructions_pinocchio_program.so");
 
     svm.add_program(program_id, program_bytes).unwrap();
 
@@ -34,24 +33,11 @@ fn test_processing_ixs() {
     mary_data.extend_from_slice(&name2);
     mary_data.extend_from_slice(&u32::to_le_bytes(3));
 
-    let ix1 = Instruction {
-        program_id,
-        accounts: vec![AccountMeta::new(payer.pubkey(), true)],
-        data: jimmy_data,
-    };
+    let ix1 = Instruction { program_id, accounts: vec![AccountMeta::new(payer.pubkey(), true)], data: jimmy_data };
 
-    let ix2 = Instruction {
-        program_id,
-        accounts: vec![AccountMeta::new(payer.pubkey(), true)],
-        data: mary_data,
-    };
+    let ix2 = Instruction { program_id, accounts: vec![AccountMeta::new(payer.pubkey(), true)], data: mary_data };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix1, ix2],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix1, ix2], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     dbg!(&res);

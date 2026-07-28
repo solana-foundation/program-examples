@@ -9,11 +9,7 @@ use pinocchio_system::instructions::CreateAccount;
 
 use crate::state::PageVisits;
 
-pub fn create_page_visits(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn create_page_visits(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [page_visits_account, user, payer, _] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -23,11 +19,8 @@ pub fn create_page_visits(
 
     let bump_bytes = &instruction_data[4..5];
 
-    let seeds = [
-        Seed::from(PageVisits::SEED_PREFIX.as_bytes()),
-        Seed::from(user.address().as_ref()),
-        Seed::from(bump_bytes),
-    ];
+    let seeds =
+        [Seed::from(PageVisits::SEED_PREFIX.as_bytes()), Seed::from(user.address().as_ref()), Seed::from(bump_bytes)];
 
     let signers = Signer::from(&seeds);
 

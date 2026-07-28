@@ -17,19 +17,10 @@ pub fn play_game(ix: PlayGameInstructionData) -> ProgramResult {
             log!("You're about to play {}!", game.name);
 
             if ix.gamer_ticket_count < game.tickets {
-                log!(
-                    "  Sorry {}, you need {} tickets to play {}!",
-                    ix.gamer_name,
-                    game.tickets,
-                    game.name
-                );
+                log!("  Sorry {}, you need {} tickets to play {}!", ix.gamer_name, game.tickets, game.name);
             } else {
                 log!("  Let's see what you got!");
-                log!(
-                    "  You get {} attempts and the prize is a {}!",
-                    game.tries,
-                    game.prize
-                );
+                log!("  You get {} attempts and the prize is a {}!", game.tries, game.prize);
             };
 
             return Ok(());
