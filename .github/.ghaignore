@@ -13,7 +13,6 @@ tokens/pda-mint-authority/native
 tokens/transfer-tokens/native
 tokens/create-token/native
 
-tokens/token-swap/anchor
 
 # not building
 oracles/pyth/anchor
@@ -23,10 +22,6 @@ compression/cutils/anchor
 compression/cnft-vault/anchor
 # builds but need to test on localhost
 compression/cnft-burn/anchor
-
-# test failing
-# https://github.com/solana-developers/helpers/issues/40
-tokens/escrow/anchor
 
 # not live
 tokens/token-2022/group/anchor
