@@ -30,15 +30,15 @@ One of the challenges when teaching is avoiding ambiguity — names have to be c
 - Contexts are separate data structures from functions that use the contexts. There is no need for OO-like `impl` patterns here - there's no mutable state stored in the Context, and the 'methods' do not mutate that state. Besides, it's easier to type!
 - The name 'deposit' was being used in multiple contexts, and `deposit` can be tough because it's a verb and a noun:
 
-  - Renamed deposit #1 -> 'token_a_offered_amount'
-  - Renamed deposit #2 (in make() ) -> 'send_offered_tokens_to_vault'
-  - Renamed deposit #3 (in take() ) -> 'send_wanted_tokens_to_maker'
+    - Renamed deposit #1 -> 'token_a_offered_amount'
+    - Renamed deposit #2 (in make() ) -> 'send_offered_tokens_to_vault'
+    - Renamed deposit #3 (in take() ) -> 'send_wanted_tokens_to_maker'
 
 - 'seed' was renamed to 'id' because 'seed' as it conflicted with the 'seeds' used for PDA address generation.
 - 'Escrow' was used for the program's name and the account that records details of the offer. This wasn't great because people would confuse 'Escrow' with the 'Vault'.
 
-  - Escrow (the program) -> remains Escrow
-  - Escrow (the offer) -> Offer.
+    - Escrow (the program) -> remains Escrow
+    - Escrow (the offer) -> Offer.
 
 - 'receive' was renamed to 'token_b_wanted_amount' as 'receive' is a verb and not a suitable name for an integer.
 - mint_a -> token_mint_a (ie, what the maker has offered and what the taker wants)

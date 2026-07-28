@@ -1,4 +1,4 @@
-# Block List 
+# Block List
 
 This is a Block List program that implements the Token2022 Transfer-hook execute instruction.
 It allows a centralized authority to defined a block list - a collection of wallets that are blocked.
@@ -7,7 +7,8 @@ Token issuers (transfer-hook extension authorities), can then setup this program
 ## Operation Mode
 
 The Block list has different operation modes depending whether the block list is empty or not and the issuer choice. These modes are achieved by building a different `extra-account-metas` account for the token mint (see `setup_extra_metas` bellow). When the list gets the first blocked wallet, the issuer needs to re-set the `extra-account-metas`.
-The modes are the following: 
+The modes are the following:
+
 - Empty extra metas - default behaviour when config account counter is 0
 - Check Source - default behaviour when config account counter is above 0
 - Check both source and destination - optional behaviour when config account counter is above 0
@@ -15,10 +16,12 @@ The modes are the following:
 ## Accounts
 
 ### Config
-- Defines the block list authority. 
+
+- Defines the block list authority.
 - Tracks the number of blocked wallets.
 
 ### WalletBlock
+
 - Defines a wallet as blocked
 
 ## Instructions
@@ -52,7 +55,7 @@ A pinocchio based Block List smart contract under the [program](program/) folder
 
 ### SDKs
 
-Codama generated rust and ts [SDKs](sdk/). 
+Codama generated rust and ts [SDKs](sdk/).
 
 ### CLI
 
@@ -61,27 +64,32 @@ A rust CLI to interact with the contract.
 ## Building
 
 First install dependencies:
+
 ```
 pnpm install
 ```
 
 To build the smart contract:
+
 ```
 cd program
 cargo build-sbf
 ```
 
 To deploy the smart contract:
+
 ```
 solana program deploy --program-id <your_program_keypair.json> target/deploy/block_list.so
 ```
 
 To generate the SDKs:
+
 ```
 pnpm run generate-sdks
 ```
 
 To build the CLI:
+
 ```
 cd cli
 cargo build
@@ -92,34 +100,39 @@ cargo build
 ### Block List
 
 Initialize the block list and defined the authority:
+
 ```
 target/debug/block-list-cli init
 ```
 
 Add a wallet to the block list:
+
 ```
 target/debug/block-list-cli block-wallet <wallet_address>
 ```
 
 Remove a wallet from the block list:
+
 ```
 target/debug/block-list-cli unblock-wallet <wallet_address>
 ```
 
-
 ### Token Mint
 
 Initialize a new token mint:
+
 ```
 spl-token create-token --program-2022 --transfer-hook BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf
 ```
 
 Initialize the extra account metas:
+
 ```
 target/debug/block-list-cli setup-extra-metas <wallet_address>
 ```
 
 Change the extra account metas to filter both source and destination token account wallets:
+
 ```
 target/debug/block-list-cli setup-extra-metas --check-both-wallets <wallet_address>
 ```

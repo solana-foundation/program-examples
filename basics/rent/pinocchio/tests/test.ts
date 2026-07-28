@@ -1,5 +1,5 @@
-import { describe } from "node:test";
+import { describe } from 'node:test';
 
-describe("Create a system account", async () => {
-  console.log("Create a system account");
+describe('Create a system account', async () => {
+    console.log('Create a system account');
 });

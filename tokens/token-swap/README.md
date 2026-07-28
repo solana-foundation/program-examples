@@ -13,7 +13,7 @@ Selecting the right algorithm for the AMM becomes the essential task. One fascin
 
 Meet the Constant Product AMM (CPAMM): Among the simplest CFAMMs and made popular by Uniswap V2, the CPAMM ensures the product of both reserves (xy) remains constant (K) for a given liquidity quantity. Simply put, if x denotes the reserve of token A and y denotes the reserve of token B, then xy = K, with K depending on the liquidity.
 
-*Discover Diverse Bonding Curves:*
+_Discover Diverse Bonding Curves:_
 
 - Constant Sum AMM (CSAMM): The pool's invariant, x + y = K, maintains a constant price, but reserves for each asset can be emptied.
 
@@ -23,7 +23,7 @@ Meet the Constant Product AMM (CPAMM): Among the simplest CFAMMs and made popula
 
 - Trader Joe CLAMM: Similar to UniV3 CLAMM, it divides the price range into buckets, where each bucket operates as a CSAMM instead of a CPAMM.
 
-*The Undeniable Perks of CPAMMs:*
+_The Undeniable Perks of CPAMMs:_
 
 - Easier to Understand and Use: Unlike complex liquidity buckets, CPAMMs offer a single, user-friendly pool for straightforward trading.
 
@@ -82,7 +82,6 @@ programs/token-swap/src/
 └── state.rs
 ```
 
-
 1. **Entrypoint**
 
 This code is entrypoint for a swap example using the **`anchor_lang`** library. The **`anchor_lang`** library provides tools for creating Solana programs using the Anchor framework. The code defines several functions:
@@ -117,9 +116,7 @@ The **`Amm`** struct has three fields:
 
 https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/state.rs#L1-L14
 
-
 The above code declares an account structure called Amm. The #[account] attribute indicates that this structure will be used as an account on the Solana blockchain. The #[derive(Default)] attribute automatically generates a default implementation of the struct with all fields set to their default values.
-
 
 https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/state.rs#L16-L18
 
@@ -140,16 +137,16 @@ https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711
 This code implements a constant LEN for the Pool struct, which represents the size of the Pool account in bytes. Similar to the Amm struct, the size is calculated by adding the sizes of the individual fields (amm, mint_a, and mint_b). Each Pubkey has a size of 32 bytes, and the total size is 8 bytes (for padding) + 32 bytes (amm) + 32 bytes (mint_a) + 32 bytes (mint_b) = 104 bytes.
 
 3. **Instructions**
-   
-   3.1 **create amm**
 
-   https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/create_amm.rs#L1-L12
+    3.1 **create amm**
 
-   The above code defines a function named **`create_amm`** that is used to create an AMM account. It takes three parameters:
+    https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/create_amm.rs#L1-L12
+
+    The above code defines a function named **`create_amm`** that is used to create an AMM account. It takes three parameters:
 
 1. **`ctx`**: The **`Context<CreateAmm>`** parameter contains the context data required to execute the function.
-2. **`id`**: The **`Pubkey`** parameter represents the ID for the new AMM account.
-3. **`fee`**: The **`u16`** parameter represents the LP fee (in basis points) to be set for the new AMM account.
+1. **`id`**: The **`Pubkey`** parameter represents the ID for the new AMM account.
+1. **`fee`**: The **`u16`** parameter represents the LP fee (in basis points) to be set for the new AMM account.
 
 The function does the following:
 
@@ -170,11 +167,11 @@ The **`CreateAmm`** struct has four fields:
 
 TLDR-, this code sets up the instruction structure for the **`create_amm`** function, defining how the accounts should be initialized, accessed, and used when calling the function.
 
-  3.2 **create pool**
+3.2 **create pool**
 
-  https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/create_pool.rs#L1-L20
+https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/create_pool.rs#L1-L20
 
-  The above code defines a function named **`create_pool`** that creates a liquidity pool. It takes a single parameter, **`ctx`**, which represents the **`Context<CreatePool>`** used to execute the function.
+The above code defines a function named **`create_pool`** that creates a liquidity pool. It takes a single parameter, **`ctx`**, which represents the **`Context<CreatePool>`** used to execute the function.
 
 The function does the following:
 
@@ -201,9 +198,9 @@ Here's an explanation of each field:
 
 TLDR, this code defines the accounts instruction structure for the **`create_pool`** function, specifying how the accounts should be initialized, accessed, and used when calling the function.
 
-  3.3 **deposite liquidity**
+3.3 **deposite liquidity**
 
-  https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L1-L30
+https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L1-L30
 
 The above code defines a function named **`deposit_liquidity`** that allows depositing liquidity into the pool. It takes three parameters:
 
@@ -237,11 +234,11 @@ The function calculates the correct authority bump, as required by the SPL token
 
 TRDR, this code implements the logic to deposit liquidity into the pool, ensuring correct proportions, handling the initial pool creation, and minting the corresponding liquidity tokens to the depositor.
 
- 3.4 **swap exact tokens**
+3.4 **swap exact tokens**
 
- https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/swap_exact_tokens_for_tokens.rs#L1-L27
+https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/swap_exact_tokens_for_tokens.rs#L1-L27
 
- This code defines a function named **`swap_exact_tokens_for_tokens`** that allows swapping tokens A for tokens B (and vice versa) in the AMM pool. It takes five parameters:
+This code defines a function named **`swap_exact_tokens_for_tokens`** that allows swapping tokens A for tokens B (and vice versa) in the AMM pool. It takes five parameters:
 
 1. **`ctx`**: The **`Context<SwapExactTokensForTokens>`** parameter contains the context data required to execute the function.
 2. **`swap_a`**: The **`bool`** parameter indicates whether tokens A should be swapped for tokens B (**`true`**) or tokens B should be swapped for tokens A (**`false`**).
@@ -283,7 +280,7 @@ https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711
 This code reloads the pool token accounts (pool_account_a and pool_account_b) to get the updated balances after the swap. It then checks if the invariant still holds, ensuring that the product of the balances remains constant. If the invariant is violated, it returns an error.
 Finally, this code returns Ok(()) if all operations in the function executed successfully.
 
- 3.5 **withdraw liquidity**
+3.5 **withdraw liquidity**
 
 https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/withdraw_liquidity.rs#L1-L11
 
@@ -316,17 +313,3 @@ https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711
 
 This code burns the specified amount of liquidity tokens (amount) by calling the token::burn function. The liquidity tokens are destroyed, reducing the total supply.
 Finally, this code returns Ok(()) if all operations in the function executed successfully. This indicates that the liquidity withdrawal was completed without any errors.
-
-
-
-
-  
-
-
-
-
-
-
-
-
-

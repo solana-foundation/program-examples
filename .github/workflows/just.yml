@@ -7,7 +7,7 @@ name: Just
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  CARGO_NET_RETRY: "10"
+  CARGO_NET_RETRY: '10'
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
   # See https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

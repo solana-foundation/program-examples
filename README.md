@@ -26,11 +26,12 @@ Each folder includes examples for one or more of the following:
   Build and test commands are defined via pnpm scripts and use `litesvm` for testing.
   Run `pnpm test` to execute tests.
 
-
 **If a given example is missing, please send us a PR to add it!** Our aim is to have every example available in every option. We'd also love to see more programs involving staking, wrapped tokens, oracles, compression and VRF. Follow the [contributing guidelines](./CONTRIBUTING.md) to keep things consistent.
 
 ## The example programs
+
 ## Basics
+
 ### Hello world
 
 [Hello World on Solana! A minimal program that logs a greeting.](./basics/hello-solana/README.md)
@@ -120,7 +121,9 @@ How to store state that changes size in Solana.
 [Send SOL between two accounts.](./basics/transfer-sol/README.md)
 
 [anchor](./basics/transfer-sol/anchor) [pinocchio](./basics/transfer-sol/pinocchio) [native](./basics/transfer-sol/native)
+
 ## Tokens
+
 ### Creating tokens
 
 [Create a token on Solana with a token symbol and icon.](./tokens/create-token/README.md)
@@ -180,7 +183,9 @@ Create a fundraiser account specifying a target mint and amount, allowing contri
 Control token transfers using an external secp256k1 delegate signature.
 
 [anchor](./tokens/external-delegate-token-master/anchor)
+
 ## Token Extensions
+
 ### Basics - create token mints, mint tokens, and transfer tokens with Token Extensions
 
 Create token mints, mint tokens, and transfer tokens using Token Extensions.
@@ -306,7 +311,9 @@ Enable or disable token transfers with an on-chain switch using a transfer hook.
 Restrict token transfers so only whitelisted accounts can receive tokens.
 
 [anchor](./tokens/token-2022/transfer-hook/whitelist/anchor)
+
 ## Compression
+
 ### Cnft-burn
 
 Burn compressed NFTs.
@@ -324,19 +331,25 @@ Store Metaplex compressed NFTs inside a PDA.
 Work with Metaplex compressed NFTs.
 
 [anchor](./compression/cutils/anchor)
+
 ## Oracles
+
 ### pyth
 
 Use a data source for offchain data (called an Oracle) to perform activities onchain.
 
 [anchor](./oracles/pyth/anchor)
+
 ## Tools
+
 ### Shank and Solita
 
 Use Shank and Solita to generate IDLs and TypeScript clients for native Solana programs, the same way Anchor does for Anchor programs.
 
 [native](./tools/shank-and-solita/native)
+
 ## Games
+
 ### World Cup bracket prediction
 
 A bracket-prediction game: entrants pay a fee to submit a 32-game bracket, an oracle posts results, scores are tallied on-chain, and the unique winner sweeps the pot. A full Pinocchio + Codama project with a TypeScript client and a webapp.

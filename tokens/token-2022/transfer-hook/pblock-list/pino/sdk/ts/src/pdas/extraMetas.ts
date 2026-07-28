@@ -7,26 +7,26 @@
  */
 
 import {
-  type Address,
-  getAddressEncoder,
-  getProgramDerivedAddress,
-  getUtf8Encoder,
-  type ProgramDerivedAddress,
-} from "@solana/kit";
+    type Address,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    getUtf8Encoder,
+    type ProgramDerivedAddress,
+} from '@solana/kit';
 
 export type ExtraMetasSeeds = {
-  mint: Address;
+    mint: Address;
 };
 
 export async function findExtraMetasPda(
-  seeds: ExtraMetasSeeds,
-  config: { programAddress?: Address | undefined } = {},
+    seeds: ExtraMetasSeeds,
+    config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
-  const {
-    programAddress = "BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf" as Address<"BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf">,
-  } = config;
-  return await getProgramDerivedAddress({
-    programAddress,
-    seeds: [getUtf8Encoder().encode("extra-account-metas"), getAddressEncoder().encode(seeds.mint)],
-  });
+    const {
+        programAddress = 'BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf' as Address<'BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf'>,
+    } = config;
+    return await getProgramDerivedAddress({
+        programAddress,
+        seeds: [getUtf8Encoder().encode('extra-account-metas'), getAddressEncoder().encode(seeds.mint)],
+    });
 }

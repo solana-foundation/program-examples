@@ -21,8 +21,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  biome:
-    name: Biome check
+  prettier:
+    name: Prettier check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -1,5 +1,5 @@
-import { describe } from "mocha";
+import { describe } from 'mocha';
 
-describe("Favorites Solana Pinocchio", () => {
-  console.log("Favorites Solana Pinocchio");
+describe('Favorites Solana Pinocchio', () => {
+    console.log('Favorites Solana Pinocchio');
 });

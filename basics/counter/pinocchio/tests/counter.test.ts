@@ -1,5 +1,5 @@
-import { describe } from "node:test";
+import { describe } from 'node:test';
 
-describe("Counter Solana Pinocchio", async () => {
-  console.log("Counter Solana Pinocchio");
+describe('Counter Solana Pinocchio', async () => {
+    console.log('Counter Solana Pinocchio');
 });

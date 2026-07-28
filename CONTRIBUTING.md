@@ -23,7 +23,8 @@ Specifically for code in this repo:
 1. Use pnpm as the default package manager for the project. You can [install pnpm by following the instructions](https://pnpm.io/installation). Commit `pnpm-lock.yaml` to the repository.
 
 2. Solana Programs written for the Anchor framework should be in directory [`anchor`](https://www.anchor-lang.com), Solana Native in [`native`](https://solana.com/developers/guides/getstarted/intro-to-native-rust), respectively.
-  - Project path structure: `/program-examples/category/example-name/<framework_name>`
+
+- Project path structure: `/program-examples/category/example-name/<framework_name>`
     - Project path structure example for anchor: `/program-examples/category/example-name/anchor`
 
 3. Tests for Anchor and Solana native programs should be written with [solana-bankrun](https://kevinheavey.github.io/solana-bankrun).
@@ -46,16 +47,16 @@ Specifically for code in this repo:
 test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 ```
 
-6. TypeScript, JavaScript and JSON files are formatted and linted using
-   [Biome](https://biomejs.dev/). Execute the following command to format and lint your code at the root of this project before submitting a pull request:
+6. TypeScript, JavaScript and JSON files are formatted using
+   [Prettier](https://prettier.io/). Execute the following command to format your code at the root of this project before submitting a pull request:
 
 ```bash
-pnpm fix
+pnpm format
 ```
 
 7. Some projects can be ignored from the building and testing process by adding the project name to the `.ghaignore` file.
-When removing or updating an example, please ensure that the example is removed from the `.ghaignore` file
-and there's a change in that example's directory.
+   When removing or updating an example, please ensure that the example is removed from the `.ghaignore` file
+   and there's a change in that example's directory.
 
 ## Code of Conduct
 

@@ -1,5 +1,5 @@
-import { describe } from "node:test";
+import { describe } from 'node:test';
 
-describe("custom-instruction-data", async () => {
-  console.log("custom-instruction-data");
+describe('custom-instruction-data', async () => {
+    console.log('custom-instruction-data');
 });

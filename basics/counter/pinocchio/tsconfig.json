@@ -1,10 +1,10 @@
 {
-  "compilerOptions": {
-    "types": ["mocha", "chai", "node"],
-    "lib": ["es2020"],
-    "module": "commonjs",
-    "target": "es2020",
-    "esModuleInterop": true,
-    "skipLibCheck": true
-  }
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "lib": ["es2020"],
+        "module": "commonjs",
+        "target": "es2020",
+        "esModuleInterop": true,
+        "skipLibCheck": true
+    }
 }

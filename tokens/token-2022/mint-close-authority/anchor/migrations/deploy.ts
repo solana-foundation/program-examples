@@ -2,11 +2,11 @@
 // single deploy script that's invoked from the CLI, injecting a provider
 // configured from the workspace's Anchor.toml.
 
-const anchor = require("@anchor-lang/core");
+const anchor = require('@anchor-lang/core');
 
-module.exports = async (provider) => {
-  // Configure client to use the provider.
-  anchor.setProvider(provider);
+module.exports = async provider => {
+    // Configure client to use the provider.
+    anchor.setProvider(provider);
 
-  // Add your deploy script here.
+    // Add your deploy script here.
 };

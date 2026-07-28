@@ -1,68 +1,68 @@
 {
-  "address": "A6GUsa5Ej8iWzMMP3B6otFVB5aaUckVm8a31Y5TMLYRV",
-  "metadata": {
-    "name": "lever",
-    "version": "0.1.0",
-    "spec": "0.1.0",
-    "description": "Created with Anchor"
-  },
-  "instructions": [
-    {
-      "name": "initialize",
-      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
-      "accounts": [
-        {
-          "name": "power",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "user",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
+    "address": "A6GUsa5Ej8iWzMMP3B6otFVB5aaUckVm8a31Y5TMLYRV",
+    "metadata": {
+        "name": "lever",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Created with Anchor"
     },
-    {
-      "name": "switch_power",
-      "discriminator": [226, 238, 56, 172, 191, 45, 122, 87],
-      "accounts": [
+    "instructions": [
         {
-          "name": "power",
-          "writable": true
-        }
-      ],
-      "args": [
+            "name": "initialize",
+            "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+            "accounts": [
+                {
+                    "name": "power",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "user",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": []
+        },
         {
-          "name": "name",
-          "type": "string"
+            "name": "switch_power",
+            "discriminator": [226, 238, 56, 172, 191, 45, 122, 87],
+            "accounts": [
+                {
+                    "name": "power",
+                    "writable": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "name",
+                    "type": "string"
+                }
+            ]
         }
-      ]
-    }
-  ],
-  "accounts": [
-    {
-      "name": "PowerStatus",
-      "discriminator": [145, 147, 198, 35, 253, 101, 231, 26]
-    }
-  ],
-  "types": [
-    {
-      "name": "PowerStatus",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "is_on",
-            "type": "bool"
-          }
-        ]
-      }
-    }
-  ]
+    ],
+    "accounts": [
+        {
+            "name": "PowerStatus",
+            "discriminator": [145, 147, 198, 35, 253, 101, 231, 26]
+        }
+    ],
+    "types": [
+        {
+            "name": "PowerStatus",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "is_on",
+                        "type": "bool"
+                    }
+                ]
+            }
+        }
+    ]
 }

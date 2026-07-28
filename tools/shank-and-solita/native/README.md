@@ -4,15 +4,18 @@ The devs at Metaplex created Shank & Solita for native Solana programs to be abl
 
 ### Shank
 
-[Shank](https://docs.metaplex.com/developer-tools/shank) is the Rust crate responsible for generating an IDL for your program.   
-   
-It's super easy to use in your Rust code:   
-   
+[Shank](https://docs.metaplex.com/developer-tools/shank) is the Rust crate responsible for generating an IDL for your program.
+
+It's super easy to use in your Rust code:
+
 Add this annotation to any struct to mark it as an account:
+
 ```rust
 #[derive(ShankAccount)]
 ```
+
 ex:
+
 ```rust
 #[derive(BorshDeserialize, BorshSerialize, Clone, ShankAccount)]
 pub struct Car {
@@ -23,10 +26,13 @@ pub struct Car {
 ```
 
 Add this annotation to any enum to mark it as an instruction enum:
+
 ```rust
 #[derive(ShankInstruction)]
 ```
+
 ex:
+
 ```rust
 #[derive(BorshDeserialize, BorshSerialize, Clone, ShankInstruction)]
 pub enum CarRentalServiceInstruction {
@@ -38,9 +44,11 @@ pub enum CarRentalServiceInstruction {
 ```
 
 Then you just need to add the Shank CLI:
+
 ```shell
 cargo install shank-cli
 ```
+
 ```shell
 USAGE:
     shank <SUBCOMMAND>
@@ -54,6 +62,7 @@ SUBCOMMANDS:
 ```
 
 > Note: You do have to make use of `declare_id` in order for Shank to work properly:
+
 ```rust
 declare_id!("8avNGHVXDwsELJaWMSoUZ44CirQd4zyU9Ez4ZmP4jNjZ");
 ```
@@ -65,10 +74,13 @@ declare_id!("8avNGHVXDwsELJaWMSoUZ44CirQd4zyU9Ez4ZmP4jNjZ");
 > Note: Solita will work with an IDL from Shank or from Anchor!
 
 First add Solita to your project:
+
 ```shell
 yarn add -D @metaplex-foundation/solita
 ```
+
 Then add a Solita config `.solitarc.js`:
+
 ```javascript
 const path = require('path');
 const programDir = path.join(__dirname, 'program');
@@ -77,16 +89,17 @@ const sdkDir = path.join(__dirname, 'tests', 'generated');
 const binaryInstallDir = path.join(__dirname, '.crates');
 
 module.exports = {
-  idlGenerator: 'shank',
-  programName: 'car_rental_service',
-  idlDir,
-  sdkDir,
-  binaryInstallDir,
-  programDir,
+    idlGenerator: 'shank',
+    programName: 'car_rental_service',
+    idlDir,
+    sdkDir,
+    binaryInstallDir,
+    programDir,
 };
 ```
 
 Once you've got that file configured to match your repository layout, go ahead and run:
+
 ```shell
 yarn solita
 ```

@@ -1,5 +1,5 @@
-import { describe } from "node:test";
+import { describe } from 'node:test';
 
-describe("Realloc!", async () => {
-  console.log("Realloc!");
+describe('Realloc!', async () => {
+    console.log('Realloc!');
 });

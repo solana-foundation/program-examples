@@ -4,41 +4,41 @@ multi-ecosystem-groups:
   all-deps:
     schedule:
       interval: cron
-      cronjob: "0 9 1,15 * *"
+      cronjob: '0 9 1,15 * *'
       timezone: UTC
     open-pull-requests-limit: 10
 
 updates:
   - package-ecosystem: cargo
-    directory: "/"
+    directory: '/'
     multi-ecosystem-group: all-deps
-    patterns: ["*"]
+    patterns: ['*']
     cooldown:
       default-days: 7
     allow:
-      - dependency-name: "*"
+      - dependency-name: '*'
         update-types:
           - version-update:semver-patch
 
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     multi-ecosystem-group: all-deps
-    patterns: ["*"]
+    patterns: ['*']
     cooldown:
       default-days: 7
     allow:
-      - dependency-name: "*"
+      - dependency-name: '*'
         update-types:
           - version-update:semver-patch
 
   - package-ecosystem: npm
     directories:
-      - "**/*"
+      - '**/*'
     multi-ecosystem-group: all-deps
-    patterns: ["*"]
+    patterns: ['*']
     cooldown:
       default-days: 7
     allow:
-      - dependency-name: "*"
+      - dependency-name: '*'
         update-types:
           - version-update:semver-patch

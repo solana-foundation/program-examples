@@ -1,5 +1,5 @@
-import { describe } from "node:test";
+import { describe } from 'node:test';
 
-describe("Close Account!", async () => {
-  console.log("Close Account");
+describe('Close Account!', async () => {
+    console.log('Close Account');
 });

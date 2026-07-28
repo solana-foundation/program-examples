@@ -2,7 +2,7 @@ name: Anchor
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
@@ -26,7 +26,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   # Harden cargo against transient crates.io index fetch failures that flake
   # cargo build-sbf ("failed to get <crate> as a dependency").
-  CARGO_NET_RETRY: "10"
+  CARGO_NET_RETRY: '10'
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:

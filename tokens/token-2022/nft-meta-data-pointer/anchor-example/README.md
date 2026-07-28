@@ -210,9 +210,6 @@ let space = ExtensionType::try_calculate_account_len::<Mint>(
     )?;
 ```
 
-
-
-
 The example is based on the Solana Games Preset
 
 ```shell
@@ -234,10 +231,12 @@ Note that neither the program nor session keys are audited. Use at your own risk
 The unity client and the js client are both connected to the same program and should work out of the box connecting to the already deployed program.
 
 ### Unity
+
 Open the Unity project with Unity Version 2021.3.32.f1 (or similar), open the GameScene or LoginScene and hit play.
 Use the editor login button in the bottom left. If you cant get devnet sol you can copy your address from the console and use the faucet here: https://faucet.solana.com/ to request some sol.
 
 ### Js Client
+
 To start the js client open the project in visual studio code and run:
 
 ```bash
@@ -255,6 +254,7 @@ Install the latest 1.16 solana version (1.17 is not supported yet)
 sh -c "$(curl -sSfL https://release.solana.com/v1.16.18/install)"
 
 Anchor program
+
 1. Install the [Anchor CLI](https://project-serum.github.io/anchor/getting-started/installation.html)
 2. `cd anchor` to end the program directory
 3. Run `anchor build` to build the program
@@ -263,19 +263,21 @@ Anchor program
 6. Build and deploy again
 
 Next js client
+
 1. Install [Node.js](https://nodejs.org/en/download/)
 2. Copy the program id into app/utils/anchor.ts
-2. `cd app` to end the app directory
-3. Run `yarn install` to install node modules
-4. Run `yarn dev` to start the client
-5. After doing changes to the anchor program make sure to copy over the types from the program into the client so you can use them. You can find the js types in the target/idl folder.
+3. `cd app` to end the app directory
+4. Run `yarn install` to install node modules
+5. Run `yarn dev` to start the client
+6. After doing changes to the anchor program make sure to copy over the types from the program into the client so you can use them. You can find the js types in the target/idl folder.
 
 Unity client
+
 1. Install [Unity](https://unity.com/)
 2. Open the MainScene
 3. Hit play
 4. After doing changes to the anchor program make sure to regenerate the C# client: https://solanacookbook.com/gaming/porting-anchor-to-unity.html#generating-the-client
-Its done like this (after you have build the program):
+   Its done like this (after you have build the program):
 
 ```bash
 cd program
@@ -288,11 +290,13 @@ dotnet anchorgen -i target/idl/extension_nft.json -o target/idl/ExtensionNft.cs
 then copy the c# code into the unity project.
 
 ## Connect to local host (optional)
+
 To connect to local host from Unity add these links on the wallet holder game object:
 http://localhost:8899
 ws://localhost:8900
 
 ## Video walkthroughs
+
 Here are two videos explaining the energy logic and session keys:
 Session keys:
 https://www.youtube.com/watch?v=oKvWZoybv7Y&t=17s&ab_channel=Solana
@@ -300,6 +304,7 @@ Energy system:
 https://www.youtube.com/watch?v=YYQtRCXJBgs&t=4s&ab_channel=Solana
 
 # Project structure
+
 The anchor project is structured like this:
 
 The entry point is in the lib.rs file. Here we define the program id and the instructions.
@@ -331,7 +336,7 @@ The project uses session keys (maintained by Magic Block) for auto approving tra
 
 Many casual games in traditional gaming use energy systems. This is how you can build it on chain.
 
-If you have no prior knowledge in solana and rust programming it is recommended to start with the Solana cookbook [Hello world example]([https://unity.com/](https://solanacookbook.com/gaming/hello-world.html#getting-started-with-your-first-solana-game)).
+If you have no prior knowledge in solana and rust programming it is recommended to start with the Solana cookbook [Hello world example](<[https://unity.com/](https://solanacookbook.com/gaming/hello-world.html#getting-started-with-your-first-solana-game)>).
 
 ## Anchor program
 
@@ -450,25 +455,25 @@ It is possible to subscribe to account updates via a websocket. This get updates
 
 ```js
 useEffect(() => {
-    if (!publicKey) {return;}
+    if (!publicKey) {
+        return;
+    }
     const [pda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("player", "utf8"),
-        publicKey.toBuffer()],
-        new PublicKey(ExtensionNft_PROGRAM_ID)
-      );
+        [Buffer.from('player', 'utf8'), publicKey.toBuffer()],
+        new PublicKey(ExtensionNft_PROGRAM_ID),
+    );
     try {
-      program.account.playerData.fetch(pda).then((data) => {
-        setGameState(data);
-      });
+        program.account.playerData.fetch(pda).then(data => {
+            setGameState(data);
+        });
     } catch (e) {
-      window.alert("No player data found, please init!");
+        window.alert('No player data found, please init!');
     }
 
-    connection.onAccountChange(pda, (account) => {
-        setGameState(program.coder.accounts.decode("playerData", account.data));
+    connection.onAccountChange(pda, account => {
+        setGameState(program.coder.accounts.decode('playerData', account.data));
     });
-
-  }, [publicKey]);
+}, [publicKey]);
 ```
 
 ### Calculate energy and show countdown
@@ -506,7 +511,7 @@ const interval = setInterval(async () => {
     {("Wood: " + gameState.wood + " Energy: " + gameState.energy + " Next energy in: " + nextEnergyIn )}
 </div>)}
 
-  ```
+```
 
 ## Unity client
 

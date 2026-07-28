@@ -7,26 +7,26 @@
  */
 
 import {
-  type Address,
-  getAddressEncoder,
-  getProgramDerivedAddress,
-  getUtf8Encoder,
-  type ProgramDerivedAddress,
-} from "@solana/kit";
+    type Address,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    getUtf8Encoder,
+    type ProgramDerivedAddress,
+} from '@solana/kit';
 
 export type WalletBlockSeeds = {
-  wallet: Address;
+    wallet: Address;
 };
 
 export async function findWalletBlockPda(
-  seeds: WalletBlockSeeds,
-  config: { programAddress?: Address | undefined } = {},
+    seeds: WalletBlockSeeds,
+    config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
-  const {
-    programAddress = "BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf" as Address<"BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf">,
-  } = config;
-  return await getProgramDerivedAddress({
-    programAddress,
-    seeds: [getUtf8Encoder().encode("wallet_block"), getAddressEncoder().encode(seeds.wallet)],
-  });
+    const {
+        programAddress = 'BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf' as Address<'BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf'>,
+    } = config;
+    return await getProgramDerivedAddress({
+        programAddress,
+        seeds: [getUtf8Encoder().encode('wallet_block'), getAddressEncoder().encode(seeds.wallet)],
+    });
 }

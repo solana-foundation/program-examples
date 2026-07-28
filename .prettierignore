@@ -1,0 +1,5 @@
+package.json
+pnpm-lock.yaml
+Cargo.lock
+**/Assets/
+games/world-cup/

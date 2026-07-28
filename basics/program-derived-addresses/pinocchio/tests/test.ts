@@ -1,5 +1,5 @@
-import { describe } from "node:test";
+import { describe } from 'node:test';
 
-describe("PDAs", async () => {
-  console.log("PDAS");
+describe('PDAs', async () => {
+    console.log('PDAS');
 });

@@ -6,7 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./blockWallet";
-export * from "./init";
-export * from "./setupExtraMetas";
-export * from "./unblockWallet";
+export * from './blockWallet';
+export * from './init';
+export * from './setupExtraMetas';
+export * from './unblockWallet';

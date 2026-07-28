@@ -1,11 +1,11 @@
 {
-  "compilerOptions": {
-    "types": ["mocha", "chai", "node"],
-    "typeRoots": ["./node_modules/@types"],
-    "lib": ["es2022", "dom"],
-    "module": "preserve",
-    "moduleResolution": "bundler",
-    "target": "es2022",
-    "esModuleInterop": true
-  }
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "typeRoots": ["./node_modules/@types"],
+        "lib": ["es2022", "dom"],
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "target": "es2022",
+        "esModuleInterop": true
+    }
 }

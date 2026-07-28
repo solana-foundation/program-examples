@@ -5,12 +5,12 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
-import * as beet from "@metaplex-foundation/beet";
+import * as beet from '@metaplex-foundation/beet';
 export type BookRentalArgs = {
-  name: string;
-  pickUpDate: string;
-  returnDate: string;
-  price: beet.bignum;
+    name: string;
+    pickUpDate: string;
+    returnDate: string;
+    price: beet.bignum;
 };
 
 /**
@@ -18,11 +18,11 @@ export type BookRentalArgs = {
  * @category generated
  */
 export const bookRentalArgsBeet = new beet.FixableBeetArgsStruct<BookRentalArgs>(
-  [
-    ["name", beet.utf8String],
-    ["pickUpDate", beet.utf8String],
-    ["returnDate", beet.utf8String],
-    ["price", beet.u64],
-  ],
-  "BookRentalArgs",
+    [
+        ['name', beet.utf8String],
+        ['pickUpDate', beet.utf8String],
+        ['returnDate', beet.utf8String],
+        ['price', beet.u64],
+    ],
+    'BookRentalArgs',
 );
