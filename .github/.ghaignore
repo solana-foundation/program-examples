@@ -17,10 +17,9 @@ tokens/create-token/native
 # not building
 oracles/pyth/anchor
 
-# not building
+# programs build; tests need the DAS API, unavailable on localnet
 compression/cutils/anchor
 compression/cnft-vault/anchor
-# builds but need to test on localhost
 compression/cnft-burn/anchor
 
 # not live

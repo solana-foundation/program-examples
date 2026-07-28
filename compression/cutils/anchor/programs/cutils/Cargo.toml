@@ -29,6 +29,7 @@ borsh = "1"
 sha2 = "0.10"
 sha3 = "0.10"
 ahash = "=0.8.7"
+getrandom = { version = "0.2", features = ["custom"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
