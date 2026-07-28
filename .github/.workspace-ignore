@@ -21,8 +21,6 @@ tokens/nft-minter/native/program
 tokens/nft-operations/anchor/programs/mint-nft
 tokens/pda-mint-authority/anchor/programs/token-minter
 tokens/pda-mint-authority/native/program
-tokens/spl-token-minter/anchor/programs/spl-token-minter
-tokens/spl-token-minter/native/program
 tokens/token-2022/basics/anchor/programs/basics
 tokens/token-2022/cpi-guard/anchor/programs/cpi-guard
 tokens/token-2022/default-account-state/anchor/programs/default-account-state
