@@ -1019,15 +1019,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
-name = "counter-mpl-stack"
-version = "0.1.0"
-dependencies = [
- "borsh",
- "shank",
- "solana-program",
-]
-
-[[package]]
 name = "counter-solana-native"
 version = "0.1.0"
 dependencies = [
@@ -2915,52 +2906,6 @@ checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
 dependencies = [
  "digest 0.10.7",
  "keccak",
-]
-
-[[package]]
-name = "shank"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a1dc1d3af4ba5f02190110598b2abac0d13ce9dc58408aba4549e1c0f91a24c"
-dependencies = [
- "shank_macro",
-]
-
-[[package]]
-name = "shank_macro"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63dbf105335507ad339dccacf3b1ea20e4c0b70d992b4de7cc11d5c0b91b0747"
-dependencies = [
- "proc-macro2",
- "quote",
- "shank_macro_impl",
- "shank_render",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "shank_macro_impl"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "346563412da6d1a53bc53c81f9d8b102f177952b95fd8de00e5d2203a4685635"
-dependencies = [
- "anyhow",
- "proc-macro2",
- "quote",
- "serde",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "shank_render"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8358067ec1787814d2577e76d9ddcc980559ad821e6bd04584f4847f4d1d955c"
-dependencies = [
- "proc-macro2",
- "quote",
- "shank_macro_impl",
 ]
 
 [[package]]

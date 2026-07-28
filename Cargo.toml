@@ -14,7 +14,6 @@ members = [
     "basics/counter/native/program",
     "basics/counter/pinocchio/program",
     "basics/counter/anchor/programs/counter_anchor",
-    "basics/counter/mpl-stack",
     "basics/create-account/native/program",
     "basics/create-account/pinocchio/program",
     "basics/create-account/anchor/programs/create-system-account",

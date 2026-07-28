@@ -45,4 +45,3 @@ tokens/token-fundraiser/anchor/programs/fundraiser
 tokens/token-swap/anchor/programs/token-swap
 tokens/transfer-tokens/anchor/programs/transfer-tokens
 tokens/transfer-tokens/native/program
-tools/shank-and-solita/native/program

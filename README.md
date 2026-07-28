@@ -46,7 +46,7 @@ Store and retrieve data using Solana accounts.
 
 ### Storing global state - Counter
 
-[Use a PDA to store global state, making a counter that increments when called.](./basics/counter/README.md)
+[Store global state in an account, making a counter that increments when called.](./basics/counter/README.md)
 
 [anchor](./basics/counter/anchor) [pinocchio](./basics/counter/pinocchio) [native](./basics/counter/native)
 
@@ -321,14 +321,6 @@ Work with Metaplex compressed NFTs.
 Use a data source for offchain data (called an Oracle) to perform activities onchain.
 
 [anchor](./oracles/pyth/anchor)
-
-## Tools
-
-### Shank and Solita
-
-Use Shank and Solita to generate IDLs and TypeScript clients for native Solana programs, the same way Anchor does for Anchor programs.
-
-[native](./tools/shank-and-solita/native)
 
 ## Games
 
