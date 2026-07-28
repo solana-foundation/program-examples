@@ -101,6 +101,7 @@ describe("PDAs", () => {
   });
 
   test("Visit the page! (2)", () => {
+    svm.expireBlockhash();
     const [pageVisitsPda] = derivePageVisitsPda(testUser.publicKey);
     const ix = new TransactionInstruction({
       keys: [

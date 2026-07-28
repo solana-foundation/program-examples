@@ -11,13 +11,13 @@ importers:
       '@solana/web3.js':
         specifier: ^1.98.4
         version: 1.98.4(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6)
+      litesvm:
+        specifier: 0.8.0
+        version: 0.8.0(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6)
     devDependencies:
       '@types/node':
         specifier: ^22.19.1
         version: 22.20.1
-      solana-bankrun:
-        specifier: ^0.3.1
-        version: 0.3.1(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6)
       tsx:
         specifier: ^4.22.0
         version: 4.23.1
@@ -304,6 +304,9 @@ packages:
   fast-stable-stringify@1.0.0:
     resolution: {integrity: sha512-wpYMUmFu5f00Sm0cj2pfivpmawLZ0NKdviQ4w9zJeR8JVtOpOxHmLaJuj0vxvGqMJQWyP/COUkF75/57OKyRag==}
 
+  fastestsmallesttextencoderdecoder@1.0.22:
+    resolution: {integrity: sha512-Pb8d48e+oIuY4MaM64Cd7OW1gt4nxCHs7/ddPPZ/Ic3sg8yVGM7O9wDvZ7us6ScaUupzM+pfBolwtYhN1IxBIw==}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -328,6 +331,50 @@ packages:
   json-stringify-safe@5.0.1:
     resolution: {integrity: sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==}
 
+  litesvm-darwin-arm64@0.8.0:
+    resolution: {integrity: sha512-XYa0oOA7FVbMYKvIDbBznWUjkHQD8J/fn5kPMBSX4QWf4yfFda/+L4JHeSngx+dBCM0LyEyLeakVrnmdR1KYPQ==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [darwin]
+
+  litesvm-darwin-x64@0.8.0:
+    resolution: {integrity: sha512-lrxU6VXEqY7MHHIskdjB88xM9OiGR2ZcXf+fMESnetCk6rVUM6Llfb386wsMiqvi1+DowJwShxluBsCutWo2Sw==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [darwin]
+
+  litesvm-linux-arm64-gnu@0.8.0:
+    resolution: {integrity: sha512-D0pdYTQkoibPCfza2x1urSjIpHdwHVagHs0fBMHpzxSEvXND2qqDR3jXYf6xcE0sAq0knXjQmGz7WzP/HhFeFw==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  litesvm-linux-arm64-musl@0.8.0:
+    resolution: {integrity: sha512-g7vgYPJZC6cT1gaWA1M2SbZu+Sngs9FuxsybDSE1Mmelmaejlguf7X/ymUuhehaSjEY+QSi+ydWtwzgE95JL0w==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  litesvm-linux-x64-gnu@0.8.0:
+    resolution: {integrity: sha512-nn599p+XuOJoQN2XTSaY4Yz1ZqYxLNUbvt30kImuRUs2ZlIv5FANzM+VUsZgSzWV0phW8m6stX3mpdVv0iIuFQ==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  litesvm-linux-x64-musl@0.8.0:
+    resolution: {integrity: sha512-UH4v1GM4hNOjEIzx/dBZQ5mxWGFOd85qs7IBou070dLjH0vdZMh4avQCQyc127+A7aRfdc8+wK7t4SEIn4EEgw==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  litesvm@0.8.0:
+    resolution: {integrity: sha512-P0Ly11FSr1f77bKwaRf0VQQZYdsw6Oi3OLKBxgBN5iJcB7W7lTjFB1tnVcJqdn1NMz6upqU/04rZFCC/JfYBWg==}
+    engines: {node: '>= 20'}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -349,39 +396,6 @@ packages:
 
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
-
-  solana-bankrun-darwin-arm64@0.3.1:
-    resolution: {integrity: sha512-9LWtH/3/WR9fs8Ve/srdo41mpSqVHmRqDoo69Dv1Cupi+o1zMU6HiEPUHEvH2Tn/6TDbPEDf18MYNfReLUqE6A==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  solana-bankrun-darwin-universal@0.3.1:
-    resolution: {integrity: sha512-muGHpVYWT7xCd8ZxEjs/bmsbMp8XBqroYGbE4lQPMDUuLvsJEIrjGqs3MbxEFr71sa58VpyvgywWd5ifI7sGIg==}
-    engines: {node: '>= 10'}
-    os: [darwin]
-
-  solana-bankrun-darwin-x64@0.3.1:
-    resolution: {integrity: sha512-oCaxfHyt7RC3ZMldrh5AbKfy4EH3YRMl8h6fSlMZpxvjQx7nK7PxlRwMeflMnVdkKKp7U8WIDak1lilIPd3/lg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  solana-bankrun-linux-x64-gnu@0.3.1:
-    resolution: {integrity: sha512-PfRFhr7igGFNt2Ecfdzh3li9eFPB3Xhmk0Eib17EFIB62YgNUg3ItRnQQFaf0spazFjjJLnglY1TRKTuYlgSVA==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  solana-bankrun-linux-x64-musl@0.3.1:
-    resolution: {integrity: sha512-6r8i0NuXg3CGURql8ISMIUqhE7Hx/O7MlIworK4oN08jYrP0CXdLeB/hywNn7Z8d1NXrox/NpYUgvRm2yIzAsQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  solana-bankrun@0.3.1:
-    resolution: {integrity: sha512-inRwON7fBU5lPC36HdEqPeDg15FXJYcf77+o0iz9amvkUMJepcwnRwEfTNyMVpVYdgjTOBW5vg+596/3fi1kGA==}
-    engines: {node: '>= 10'}
 
   stream-chain@2.2.5:
     resolution: {integrity: sha512-1TJmBx6aSWqZ4tx7aTpBDXK0/e2hhcNSTV8+CbFJtDjbb+I1mZ8lHit0Grw9GRT+6JbIrrDd8esncgBi8aBXGA==}
@@ -695,6 +709,8 @@ snapshots:
 
   fast-stable-stringify@1.0.0: {}
 
+  fastestsmallesttextencoderdecoder@1.0.22: {}
+
   fsevents@2.3.3:
     optional: true
 
@@ -728,6 +744,41 @@ snapshots:
 
   json-stringify-safe@5.0.1: {}
 
+  litesvm-darwin-arm64@0.8.0:
+    optional: true
+
+  litesvm-darwin-x64@0.8.0:
+    optional: true
+
+  litesvm-linux-arm64-gnu@0.8.0:
+    optional: true
+
+  litesvm-linux-arm64-musl@0.8.0:
+    optional: true
+
+  litesvm-linux-x64-gnu@0.8.0:
+    optional: true
+
+  litesvm-linux-x64-musl@0.8.0:
+    optional: true
+
+  litesvm@0.8.0(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6):
+    dependencies:
+      '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6)
+      fastestsmallesttextencoderdecoder: 1.0.22
+    optionalDependencies:
+      litesvm-darwin-arm64: 0.8.0
+      litesvm-darwin-x64: 0.8.0
+      litesvm-linux-arm64-gnu: 0.8.0
+      litesvm-linux-arm64-musl: 0.8.0
+      litesvm-linux-x64-gnu: 0.8.0
+      litesvm-linux-x64-musl: 0.8.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - typescript
+      - utf-8-validate
+
   ms@2.1.3: {}
 
   node-fetch@2.7.0:
@@ -751,37 +802,6 @@ snapshots:
       utf-8-validate: 6.0.6
 
   safe-buffer@5.2.1: {}
-
-  solana-bankrun-darwin-arm64@0.3.1:
-    optional: true
-
-  solana-bankrun-darwin-universal@0.3.1:
-    optional: true
-
-  solana-bankrun-darwin-x64@0.3.1:
-    optional: true
-
-  solana-bankrun-linux-x64-gnu@0.3.1:
-    optional: true
-
-  solana-bankrun-linux-x64-musl@0.3.1:
-    optional: true
-
-  solana-bankrun@0.3.1(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6):
-    dependencies:
-      '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@4.9.5)(utf-8-validate@6.0.6)
-      bs58: 4.0.1
-    optionalDependencies:
-      solana-bankrun-darwin-arm64: 0.3.1
-      solana-bankrun-darwin-universal: 0.3.1
-      solana-bankrun-darwin-x64: 0.3.1
-      solana-bankrun-linux-x64-gnu: 0.3.1
-      solana-bankrun-linux-x64-musl: 0.3.1
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
 
   stream-chain@2.2.5: {}
 
