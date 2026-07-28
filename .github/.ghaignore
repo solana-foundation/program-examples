@@ -59,7 +59,6 @@ basics/pda-rent-payer/steel
 basics/processing-instructions/steel
 basics/program-derived-addresses/steel
 basics/realloc/steel
-basics/rent/steel
 basics/transfer-sol/steel
 
 tokens/escrow/steel

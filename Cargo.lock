@@ -2454,23 +2454,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "program"
-version = "0.1.0"
-dependencies = [
- "borsh",
- "borsh-derive",
- "litesvm",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-program",
- "solana-pubkey 3.0.0",
- "solana-rent 4.2.1",
- "solana-system-interface 2.0.0",
- "solana-transaction 3.1.0",
-]
-
-[[package]]
 name = "program-derived-addresses-native-program"
 version = "0.1.0"
 dependencies = [
@@ -2714,30 +2697,6 @@ name = "regex-syntax"
 version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
-
-[[package]]
-name = "rent-example"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
-]
-
-[[package]]
-name = "rent_pinocchio_program"
-version = "0.1.0"
-dependencies = [
- "litesvm",
- "pinocchio 0.10.2",
- "pinocchio-log",
- "pinocchio-system",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-pubkey 3.0.0",
- "solana-rent 4.2.1",
- "solana-system-interface 2.0.0",
- "solana-transaction 3.1.0",
-]
 
 [[package]]
 name = "repository-layout-pinocchio-program"

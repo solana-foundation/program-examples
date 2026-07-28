@@ -70,7 +70,7 @@ Close an account and get the Lamports back.
 
 ### Creating Accounts
 
-[Make new accounts on the blockchain.](./basics/create-account/README.md)
+[Make new accounts on the blockchain, calculating the necessary minimum rent from the account's size.](./basics/create-account/README.md)
 
 [anchor](./basics/create-account/anchor) [pinocchio](./basics/create-account/pinocchio) [native](./basics/create-account/native)
 
@@ -103,12 +103,6 @@ Store and retrieve state in Solana.
 How to store state that changes size in Solana.
 
 [anchor](./basics/realloc/anchor) [pinocchio](./basics/realloc/pinocchio) [native](./basics/realloc/native)
-
-### Calculating account size to determine rent
-
-[Determine the necessary minimum rent by calculating an account's size.](./basics/rent/README.md)
-
-[anchor](./basics/rent/anchor) [pinocchio](./basics/rent/pinocchio) [native](./basics/rent/native)
 
 ### Laying out larger programs
 

@@ -19,12 +19,20 @@ describe('LiteSVM: Create a system account', () => {
          * Generate a new keypair for the new account
          */
         const newKeypair = new Keypair();
+
+        const ixArgs = {
+            address_data: {
+                name: 'Marcus',
+                address: '123 Main St. San Francisco, CA',
+            },
+        };
+
         /**
          * Instruction data
          * Create Transaction
          * Send Transaction
          */
-        const data = coder.instruction.encode('create_system_account', {});
+        const data = coder.instruction.encode('create_system_account', ixArgs);
         const ix = new TransactionInstruction({
             keys: [
                 { pubkey: payer.publicKey, isSigner: true, isWritable: true },
@@ -42,12 +50,15 @@ describe('LiteSVM: Create a system account', () => {
         svm.sendTransaction(tx);
 
         /**
+         * Serialize the data so we can check the account size against it
          * Fetch account
-         * Check its lamports
+         * Check its size and lamports
          * */
-        const lamports = svm.minimumBalanceForRentExemption(0n);
+        const addressDataBuffer = coder.types.encode('AddressData', ixArgs.address_data);
+        const lamports = svm.minimumBalanceForRentExemption(BigInt(addressDataBuffer.length));
         const accountInfo = svm.getAccount(newKeypair.publicKey);
 
+        assert.equal(accountInfo.data.length, addressDataBuffer.length);
         assert(Number(lamports) === accountInfo.lamports);
     });
 });

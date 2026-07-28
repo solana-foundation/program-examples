@@ -12,6 +12,8 @@ Calling the System Program directly means that the client sends the transaction 
 
 In this example, this account will simply hold some SOL.
 
+The program also shows how to determine the rent an account needs: it derives the account's size from the instruction payload and asks the `Rent` sysvar for the minimum lamport balance that makes an account of that size rent-exempt.
+
 ### Links:
 
 - [Solana Cookbook - How to Create a System Account](https://solanacookbook.com/references/accounts.html#how-to-create-a-system-account)

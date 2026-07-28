@@ -26,7 +26,7 @@ describe('Create a system account', async () => {
                 { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
             ],
             programId: PROGRAM_ID,
-            data: Buffer.alloc(0),
+            data: Buffer.alloc(512),
         });
 
         const tx = new Transaction();
@@ -36,8 +36,9 @@ describe('Create a system account', async () => {
 
         await client.processTransaction(tx);
 
-        // Verify the account was created
-        const _accountInfo = await client.getAccount(newKeypair.publicKey);
+        // Verify the account was created with space derived from the instruction data
+        const accountInfo = await client.getAccount(newKeypair.publicKey);
+        if (accountInfo.data.length !== 512) throw new Error('unexpected account size');
         console.log(`Account with public key ${newKeypair.publicKey} successfully created via CPI`);
     });
 

@@ -17,6 +17,8 @@ fn test_create_account() {
     svm.add_program(program_id, program_bytes).unwrap();
     svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
 
+    let account_span = 1000_usize;
+
     let ix = Instruction {
         program_id,
         accounts: vec![
@@ -24,7 +26,7 @@ fn test_create_account() {
             AccountMeta::new(new_keypair.pubkey(), true),
             AccountMeta::new(solana_system_interface::program::ID, false),
         ],
-        data: vec![0],
+        data: vec![0_u8; account_span],
     };
 
     let tx = Transaction::new_signed_with_payer(
@@ -35,4 +37,7 @@ fn test_create_account() {
     );
 
     assert!(svm.send_transaction(tx).is_ok());
+
+    let new_account = svm.get_account(&new_keypair.pubkey()).unwrap();
+    assert_eq!(new_account.data.len(), account_span);
 }
