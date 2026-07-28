@@ -276,6 +276,12 @@ Restrict or allow token transfers using an on-chain allow/block list managed by 
 
 [anchor](./tokens/token-2022/transfer-hook/allow-block-list-token/anchor)
 
+### Transfer hook - block list with Codama clients
+
+A block-list transfer hook as a full project: Pinocchio program, Codama-generated Rust and TypeScript clients, and a CLI.
+
+[pinocchio](./tokens/token-2022/transfer-hook/block-list/pinocchio)
+
 ### Transfer hook - transfer cost
 
 Charge an additional cost or fee on every token transfer using a transfer hook.
@@ -287,12 +293,6 @@ Charge an additional cost or fee on every token transfer using a transfer hook.
 Enable or disable token transfers with an on-chain switch using a transfer hook.
 
 [anchor](./tokens/token-2022/transfer-hook/transfer-switch/anchor)
-
-### Transfer hook - whitelist
-
-Restrict token transfers so only whitelisted accounts can receive tokens.
-
-[anchor](./tokens/token-2022/transfer-hook/whitelist/anchor)
 
 ## Compression
 

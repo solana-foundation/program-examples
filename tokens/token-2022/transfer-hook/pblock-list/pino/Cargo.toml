@@ -1,7 +1,0 @@
-[workspace]
-members = ["program", "cli", "sdk/rust"]
-resolver = "2"
-
-
-[workspace.dependencies]
-block-list-client = { path = "sdk/rust"}

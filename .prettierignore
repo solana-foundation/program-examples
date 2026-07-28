@@ -3,3 +3,4 @@ pnpm-lock.yaml
 Cargo.lock
 **/Assets/
 games/world-cup/
+tokens/token-2022/transfer-hook/block-list/pinocchio/sdk/
