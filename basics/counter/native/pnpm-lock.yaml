@@ -19,8 +19,8 @@ importers:
         specifier: ^5.1.0
         version: 5.1.5
       '@types/node':
-        specifier: ^22.19.1
-        version: 22.20.1
+        specifier: ^20.9.0
+        version: 20.19.43
       solana-bankrun:
         specifier: ^0.3.0
         version: 0.3.0(bufferutil@4.0.8)(typescript@5.9.3)(utf-8-validate@6.0.6)
@@ -28,7 +28,7 @@ importers:
         specifier: ^4.22.0
         version: 4.23.1
       typescript:
-        specifier: ^5.5.0
+        specifier: ^5.3.3
         version: 5.9.3
 
 packages:
@@ -243,8 +243,8 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@22.20.1':
-    resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
+  '@types/node@20.19.43':
+    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
 
   '@types/uuid@10.0.0':
     resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
@@ -613,15 +613,15 @@ snapshots:
 
   '@types/bn.js@5.1.5':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 20.19.43
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 20.19.43
 
   '@types/node@12.20.55': {}
 
-  '@types/node@22.20.1':
+  '@types/node@20.19.43':
     dependencies:
       undici-types: 6.21.0
 
@@ -629,11 +629,11 @@ snapshots:
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 20.19.43
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 20.19.43
 
   agentkeepalive@4.5.0:
     dependencies:

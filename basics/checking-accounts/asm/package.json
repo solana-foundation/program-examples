@@ -11,9 +11,9 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
-    "@types/node": "^22.19.1",
+    "@types/node": "^20.9.0",
     "solana-bankrun": "^0.3.0",
     "tsx": "^4.22.0",
-    "typescript": "^5.5.0"
+    "typescript": "^4.3.5"
   }
 }
