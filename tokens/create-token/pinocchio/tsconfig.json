@@ -2,10 +2,14 @@
     "compilerOptions": {
         "types": ["mocha", "chai", "node"],
         "typeRoots": ["./node_modules/@types"],
-        "lib": ["es2022", "dom"],
-        "module": "preserve",
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "esnext",
         "moduleResolution": "bundler",
-        "target": "es2022",
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "skipLibCheck": true
     }
 }

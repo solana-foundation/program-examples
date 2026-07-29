@@ -20,4 +20,4 @@ wallet = "~/.config/solana/id.json"
 startup_wait = 25000
 
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"

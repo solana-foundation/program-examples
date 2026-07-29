@@ -15,5 +15,5 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts" 
-litesvm-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/litesvm.test.ts" #For litesvm test
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts" 
+litesvm-test = "pnpm mocha --import=tsx -t 1000000 tests/litesvm.test.ts" #For litesvm test

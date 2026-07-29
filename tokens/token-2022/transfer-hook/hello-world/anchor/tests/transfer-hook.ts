@@ -10,11 +10,11 @@ import {
 } from '@solana/spl-token';
 import { Keypair, SendTransactionError, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 import { BN } from 'bn.js';
-import chai, { expect } from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import type { TransferHook } from '../target/types/transfer_hook';
 
-chai.use(chaiAsPromised);
+use(chaiAsPromised);
 
 describe('transfer-hook', () => {
     // Configure the client to use the local cluster.

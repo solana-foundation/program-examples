@@ -35,7 +35,7 @@ Specifically for code in this repo:
 
 ```json
 "scripts": {
-  "test": "pnpm ts-mocha -p ./tests/tsconfig.test.json -t 1000000 ./tests/realloc.test.ts",
+  "test": "mocha --import=tsx -t 1000000 ./tests/realloc.test.ts",
   "build-and-test": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./tests/fixtures && pnpm test",
   "build": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./program/target/so",
   "deploy": "solana program deploy ./program/target/so/program.so"
@@ -46,7 +46,7 @@ Specifically for code in this repo:
 
 ```
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"
 ```
 
 6. TypeScript, JavaScript and JSON files are formatted using

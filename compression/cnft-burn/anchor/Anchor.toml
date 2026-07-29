@@ -15,4 +15,4 @@ cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/cnft-burn.ts"
+test = "pnpm mocha --import=tsx -t 1000000 tests/cnft-burn.ts"
