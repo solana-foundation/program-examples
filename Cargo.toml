@@ -47,8 +47,12 @@ members = [
     "basics/transfer-sol/asm",
 
     # tokens
+    "tokens/create-token/native/program",
     "tokens/create-token/pinocchio/program",
+    "tokens/escrow/native/program",
     "tokens/escrow/pinocchio/program",
+    "tokens/pda-mint-authority/native/program",
+    "tokens/transfer-tokens/native/program",
     "tokens/transfer-tokens/pinocchio/program",
     "tokens/token-2022/mint-close-authority/native/program",
     "tokens/token-2022/mint-close-authority/pinocchio/program",
@@ -68,14 +72,12 @@ overflow-checks = true
 # misc
 borsh = "1.6.1"
 borsh-derive = "1.6.1"
-mpl-token-metadata = { version = "5.1.1", features = [ "no-entrypoint" ] }
+mpl-token-metadata = "5.1.2-alpha.2"
 
 
 # spl
 solana-program = "4.0"
-spl-token = { version = "8.0.0", features = [ "no-entrypoint" ] }
 spl-token-2022 = {version = "9.0.0" , features = [ "no-entrypoint" ] }
-spl-associated-token-account = { version = "7.0.0", features = [ "no-entrypoint" ] }
 
 # interface
 solana-system-interface = {version = "2.0.0", features = ["bincode"]}

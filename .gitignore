@@ -8,12 +8,6 @@ node_modules/
 **/*/node_modules
 **/*/package-lock.json
 **/*/Cargo.lock
-# Exception: escrow native needs Cargo.lock to pin blake3 (see tokens/escrow/native/Cargo.toml)
-!tokens/escrow/native/Cargo.lock
-# Exceptions: these three pin solana-program 1.16.25 / mpl-token-metadata 1.x resolutions
-!tokens/create-token/native/Cargo.lock
-!tokens/transfer-tokens/native/Cargo.lock
-!tokens/pda-mint-authority/native/Cargo.lock
 
 **/*/.anchor
 **/*/.DS_Store

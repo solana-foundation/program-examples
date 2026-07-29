@@ -9,11 +9,11 @@ use {
         program_pack::Pack,
         pubkey::Pubkey,
         rent::Rent,
-        system_instruction,
         sysvar::Sysvar,
     },
-    spl_associated_token_account::instruction as associated_token_account_instruction,
-    spl_token::{instruction as token_instruction, state::Account as TokenAccount},
+    solana_system_interface::instruction as system_instruction,
+    spl_associated_token_account_interface::instruction as associated_token_account_instruction,
+    spl_token_interface::{instruction as token_instruction, state::Account as TokenAccount},
 };
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
@@ -24,11 +24,7 @@ pub struct MakeOffer {
 }
 
 impl MakeOffer {
-    pub fn process(
-        program_id: &Pubkey,
-        accounts: &[AccountInfo<'_>],
-        args: MakeOffer,
-    ) -> ProgramResult {
+    pub fn process(program_id: &Pubkey, accounts: &[AccountInfo<'_>], args: MakeOffer) -> ProgramResult {
         // accounts in order.
         //
         let [
@@ -52,11 +48,7 @@ impl MakeOffer {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
-        let offer_seeds = &[
-            Offer::SEED_PREFIX,
-            maker.key.as_ref(),
-            &args.id.to_le_bytes(),
-        ];
+        let offer_seeds = &[Offer::SEED_PREFIX, maker.key.as_ref(), &args.id.to_le_bytes()];
 
         let (offer_key, bump) = Pubkey::find_program_address(offer_seeds, program_id);
 
@@ -85,20 +77,9 @@ impl MakeOffer {
         // create account
         //
         invoke_signed(
-            &system_instruction::create_account(
-                payer.key,
-                offer_info.key,
-                lamports_required,
-                size as u64,
-                program_id,
-            ),
+            &system_instruction::create_account(payer.key, offer_info.key, lamports_required, size as u64, program_id),
             &[payer.clone(), offer_info.clone(), system_program.clone()],
-            &[&[
-                Offer::SEED_PREFIX,
-                maker.key.as_ref(),
-                args.id.to_le_bytes().as_ref(),
-                &[bump],
-            ]],
+            &[&[Offer::SEED_PREFIX, maker.key.as_ref(), args.id.to_le_bytes().as_ref(), &[bump]]],
         )?;
 
         // create the vault token account
@@ -132,12 +113,7 @@ impl MakeOffer {
                 &[maker.key],
                 args.token_a_offered_amount,
             )?,
-            &[
-                token_program.clone(),
-                maker_token_account_a.clone(),
-                vault.clone(),
-                maker.clone(),
-            ],
+            &[token_program.clone(), maker_token_account_a.clone(), vault.clone(), maker.clone()],
         )?;
 
         let vault_token_amount = TokenAccount::unpack(&vault.data.borrow())?.amount;

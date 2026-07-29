@@ -6,9 +6,9 @@ use solana_program::{
     program::invoke_signed,
     pubkey::Pubkey,
     rent::Rent,
-    system_instruction,
     sysvar::Sysvar,
 };
+use solana_system_interface::instruction as system_instruction;
 
 use crate::state::MintAuthorityPda;
 
@@ -33,11 +33,7 @@ pub fn init(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
             MintAuthorityPda::SIZE as u64,
             program_id,
         ),
-        &[
-            mint_authority.clone(),
-            payer.clone(),
-            system_program.clone(),
-        ],
+        &[mint_authority.clone(), payer.clone(), system_program.clone()],
         &[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]],
     )?;
 

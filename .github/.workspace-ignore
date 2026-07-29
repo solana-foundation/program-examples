@@ -12,13 +12,10 @@ games/world-cup/pinocchio/program
 games/world-cup/pinocchio/tests/integration-tests
 oracles/pyth/anchor/programs/pythexample
 tokens/create-token/anchor/programs/create-token
-tokens/create-token/native/program
 tokens/escrow/anchor/programs/escrow
-tokens/escrow/native/program
 tokens/external-delegate-token-master/anchor/programs/external-delegate-token-master
 tokens/nft-operations/anchor/programs/mint-nft
 tokens/pda-mint-authority/anchor/programs/token-minter
-tokens/pda-mint-authority/native/program
 tokens/token-2022/basics/anchor/programs/basics
 tokens/token-2022/cpi-guard/anchor/programs/cpi-guard
 tokens/token-2022/default-account-state/anchor/programs/default-account-state
@@ -44,4 +41,3 @@ tokens/token-2022/transfer-hook/transfer-switch/anchor/programs/transfer-switch
 tokens/token-fundraiser/anchor/programs/fundraiser
 tokens/token-swap/anchor/programs/token-swap
 tokens/transfer-tokens/anchor/programs/transfer-tokens
-tokens/transfer-tokens/native/program

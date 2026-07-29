@@ -1,6 +1,6 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
-    mpl_token_metadata::instruction as mpl_instruction,
+    mpl_token_metadata::{instructions::CreateMetadataAccountV3CpiBuilder, types::DataV2},
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint,
@@ -10,10 +10,10 @@ use {
         program_pack::Pack,
         pubkey::Pubkey,
         rent::Rent,
-        system_instruction,
         sysvar::Sysvar,
     },
-    spl_token::{instruction as token_instruction, state::Mint},
+    solana_system_interface::instruction as system_instruction,
+    spl_token_interface::{instruction as token_instruction, state::Mint},
 };
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -26,11 +26,7 @@ pub struct CreateTokenArgs {
 
 entrypoint!(process_instruction);
 
-fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let args = CreateTokenArgs::try_from_slice(instruction_data)?;
 
     let accounts_iter = &mut accounts.iter();
@@ -56,12 +52,7 @@ fn process_instruction(
             Mint::LEN as u64,
             token_program.key,
         ),
-        &[
-            mint_account.clone(),
-            payer.clone(),
-            system_program.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), payer.clone(), system_program.clone(), token_program.clone()],
     )?;
 
     // Now initialize that account as a Mint (standard Mint)
@@ -76,46 +67,31 @@ fn process_instruction(
             Some(mint_authority.key),
             args.token_decimals,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            token_program.clone(),
-            rent.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), token_program.clone(), rent.clone()],
     )?;
 
     // Now create the account for that Mint's metadata
     //
     msg!("Creating metadata account...");
     msg!("Metadata account address: {}", metadata_account.key);
-    invoke(
-        &mpl_instruction::create_metadata_accounts_v3(
-            *token_metadata_program.key,
-            *metadata_account.key,
-            *mint_account.key,
-            *mint_authority.key,
-            *payer.key,
-            *mint_authority.key,
-            args.token_title,
-            args.token_symbol,
-            args.token_uri,
-            None,
-            0,
-            true,
-            false,
-            None,
-            None,
-            None,
-        ),
-        &[
-            metadata_account.clone(),
-            mint_account.clone(),
-            mint_authority.clone(),
-            payer.clone(),
-            token_metadata_program.clone(),
-            rent.clone(),
-        ],
-    )?;
+    CreateMetadataAccountV3CpiBuilder::new(token_metadata_program)
+        .metadata(metadata_account)
+        .mint(mint_account)
+        .mint_authority(mint_authority)
+        .payer(payer)
+        .update_authority(mint_authority, true)
+        .system_program(system_program)
+        .data(DataV2 {
+            name: args.token_title,
+            symbol: args.token_symbol,
+            uri: args.token_uri,
+            seller_fee_basis_points: 0,
+            creators: None,
+            collection: None,
+            uses: None,
+        })
+        .is_mutable(false)
+        .invoke()?;
 
     msg!("Token mint created successfully.");
 
