@@ -9,7 +9,7 @@
   "dependencies": {
     "@solana-program/system": "^0.12.2",
     "@solana-program/token": "^0.14.0",
-    "@solana/kit": "^6.10.0"
+    "@solana/kit": "^7.0.0"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",

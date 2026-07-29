@@ -24,7 +24,7 @@
     "tsx": "^4.19.2"
   },
   "dependencies": {
-    "@solana/kit": "^6.10.0",
+    "@solana/kit": "^7.0.0",
     "@solana-program/system": "^0.13.0"
   }
 }
