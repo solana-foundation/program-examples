@@ -168,7 +168,7 @@ jobs:
             fi
 
           # Run Rust unit tests
-            if [ -d "program" ]; then
+            if [ -f "program/Cargo.toml" ]; then
               echo "Running Rust unit tests for $project"
               if ! cargo test --manifest-path=./program/Cargo.toml; then
                 echo "::error::Rust unit tests failed for $project"

@@ -1545,6 +1545,7 @@ dependencies = [
  "pinocchio-log",
  "pinocchio-system",
  "pinocchio-token",
+ "solana-address 2.6.1",
 ]
 
 [[package]]
@@ -1571,6 +1572,7 @@ dependencies = [
  "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
+ "solana-address 2.6.1",
  "solana-instruction",
  "solana-keypair",
  "solana-native-token",
@@ -2333,6 +2335,7 @@ dependencies = [
  "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
+ "solana-address 2.6.1",
  "solana-instruction",
  "solana-keypair",
  "solana-native-token",

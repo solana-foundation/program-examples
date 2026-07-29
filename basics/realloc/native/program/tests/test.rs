@@ -12,7 +12,7 @@ fn test_realloc() {
     let mut svm = LiteSVM::new();
 
     let program_id = Pubkey::new_unique();
-    let program_bytes = include_bytes!("../../../../../target/deploy/realloc_program.so");
+    let program_bytes = include_bytes!("../../tests/fixtures/realloc_program.so");
 
     svm.add_program(program_id, program_bytes).unwrap();
 
