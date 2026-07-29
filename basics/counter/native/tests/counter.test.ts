@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, type TransactionInstruction } from '@solana/web3.js';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -14,7 +13,7 @@ describe('Counter Solana Native', () => {
     // Get the rent object to calculate rent for the accounts
     const rent = svm.getRent();
 
-    test('Test allocate counter + increment tx', () => {
+    it('Test allocate counter + increment tx', () => {
         // Randomly generate the account key
         // to sign for setting up the Counter state
         const counterKeypair = Keypair.generate();
@@ -54,7 +53,7 @@ describe('Counter Solana Native', () => {
         console.log(`[alloc+increment] count is: ${counterAccount.count.toNumber()}`);
     });
 
-    test('Test allocate tx and increment tx', () => {
+    it('Test allocate tx and increment tx', () => {
         const counterKeypair = Keypair.generate();
         const counter = counterKeypair.publicKey;
 

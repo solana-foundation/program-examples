@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -12,7 +11,7 @@ describe('hello-solana', () => {
     const payer = Keypair.generate();
     svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
-    test('Say hello!', () => {
+    it('Say hello!', () => {
         // We set up our instruction first.
         const ix = new TransactionInstruction({
             keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],

@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer';
-import { describe, test } from 'node:test';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
     Keypair,
@@ -28,7 +27,7 @@ describe('Create Token', () => {
     const payer = Keypair.generate();
     svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
-    test('Create a Token-22 SPL-Token !', () => {
+    it('Create a Token-22 SPL-Token !', () => {
         const blockhash = svm.latestBlockhash();
 
         const mintKeypair: Keypair = Keypair.generate();

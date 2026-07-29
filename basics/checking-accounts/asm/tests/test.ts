@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import { describe, test } from 'node:test';
 import {
     Keypair,
     LAMPORTS_PER_SOL,
@@ -38,7 +37,7 @@ describe('Checking accounts', () => {
     // Our program will create this.
     const accountToCreate = Keypair.generate();
 
-    test('Create an account owned by our program', () => {
+    it('Create an account owned by our program', () => {
         const ix = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: accountToChange.publicKey,
@@ -54,7 +53,7 @@ describe('Checking accounts', () => {
         sendExpectSuccess(tx);
     });
 
-    test('Check accounts', () => {
+    it('Check accounts', () => {
         const ix = new TransactionInstruction({
             keys: [
                 { pubkey: payer.publicKey, isSigner: true, isWritable: true },
@@ -73,7 +72,7 @@ describe('Checking accounts', () => {
         sendExpectSuccess(tx);
     });
 
-    test('Invalid number of accounts (error 1)', () => {
+    it('Invalid number of accounts (error 1)', () => {
         const ix = new TransactionInstruction({
             keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
             programId: PROGRAM_ID,
@@ -87,7 +86,7 @@ describe('Checking accounts', () => {
         sendExpectCustomError(tx, 1);
     });
 
-    test('Payer not signer (error 2)', () => {
+    it('Payer not signer (error 2)', () => {
         const feePayer = Keypair.generate();
         const fakePayer = Keypair.generate();
         const acCreate = Keypair.generate();
@@ -121,7 +120,7 @@ describe('Checking accounts', () => {
         sendExpectCustomError(tx, 2);
     });
 
-    test('Account to create already initialized (error 3)', () => {
+    it('Account to create already initialized (error 3)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate();
 
@@ -163,7 +162,7 @@ describe('Checking accounts', () => {
         sendExpectCustomError(tx, 3);
     });
 
-    test('Account to change not initialized (error 4)', () => {
+    it('Account to change not initialized (error 4)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate(); // no lamports
 
@@ -185,7 +184,7 @@ describe('Checking accounts', () => {
         sendExpectCustomError(tx, 4);
     });
 
-    test('Invalid system program (error 5)', () => {
+    it('Invalid system program (error 5)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate();
         const fakeSystemProgram = PublicKey.unique();
@@ -220,7 +219,7 @@ describe('Checking accounts', () => {
         sendExpectCustomError(tx, 5);
     });
 
-    test('Account to change wrong owner (error 6)', () => {
+    it('Account to change wrong owner (error 6)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate();
 

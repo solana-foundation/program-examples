@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer';
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
@@ -24,7 +23,7 @@ describe('custom-instruction-data', () => {
         return Buffer.from(borsh.serialize(schema, data));
     }
 
-    test('Go to the park!', () => {
+    it('Go to the park!', () => {
         const blockhash = svm.latestBlockhash();
 
         const jimmy = borshSerialize(InstructionDataSchema, {

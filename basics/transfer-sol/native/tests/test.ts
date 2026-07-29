@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -22,7 +21,7 @@ describe('transfer-sol', () => {
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    test('Transfer between accounts using the system program', () => {
+    it('Transfer between accounts using the system program', () => {
         getBalances(payer.publicKey, test1Recipient.publicKey, 'Beginning');
 
         const ix = createTransferInstruction(
@@ -42,7 +41,7 @@ describe('transfer-sol', () => {
         getBalances(payer.publicKey, test1Recipient.publicKey, 'Resulting');
     });
 
-    test('Create two accounts for the following test', () => {
+    it('Create two accounts for the following test', () => {
         const ix = (pubkey: PublicKey) => {
             return SystemProgram.createAccount({
                 fromPubkey: payer.publicKey,
@@ -62,7 +61,7 @@ describe('transfer-sol', () => {
         sendTransaction(tx);
     });
 
-    test('Transfer between accounts using our program', () => {
+    it('Transfer between accounts using our program', () => {
         getBalances(test2Recipient1.publicKey, test2Recipient2.publicKey, 'Beginning');
 
         const ix = createTransferInstruction(

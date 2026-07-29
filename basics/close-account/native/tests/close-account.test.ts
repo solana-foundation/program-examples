@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -16,7 +15,7 @@ describe('Close Account!', () => {
         PROGRAM_ID,
     )[0];
 
-    test('Create the account', () => {
+    it('Create the account', () => {
         const ix = createCreateUserInstruction(testAccountPublicKey, payer.publicKey, PROGRAM_ID, 'Jacob');
 
         const tx = new Transaction();
@@ -27,7 +26,7 @@ describe('Close Account!', () => {
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    test('Close the account', () => {
+    it('Close the account', () => {
         const ix = createCloseUserInstruction(testAccountPublicKey, payer.publicKey, PROGRAM_ID);
         const tx = new Transaction();
         tx.recentBlockhash = svm.latestBlockhash();

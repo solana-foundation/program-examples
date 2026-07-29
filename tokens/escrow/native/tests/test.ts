@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import { AccountLayout } from '@solana/spl-token';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import * as borsh from 'borsh';
@@ -20,7 +19,7 @@ describe('Escrow!', () => {
     console.log(`Program Address    : ${values.programId}`);
     console.log(`Payer Address      : ${payer.publicKey}`);
 
-    test('mint tokens to maker and taker', () => {
+    it('mint tokens to maker and taker', () => {
         // mint token a to maker account
         mintingTokens({
             svm,
@@ -38,7 +37,7 @@ describe('Escrow!', () => {
         });
     });
 
-    test('Make Offer', () => {
+    it('Make Offer', () => {
         const ix = buildMakeOffer({
             id: values.id,
             maker: values.maker.publicKey,
@@ -80,7 +79,7 @@ describe('Escrow!', () => {
         assert(vaultTokenAccount.amount.toString() === values.amountA.toString(), 'unexpected amount A');
     });
 
-    test('Take Offer', () => {
+    it('Take Offer', () => {
         const ix = buildTakeOffer({
             maker: values.maker.publicKey,
             offer: values.offer,

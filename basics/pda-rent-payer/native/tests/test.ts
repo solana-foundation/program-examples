@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer';
-import { describe, test } from 'node:test';
 import {
     Keypair,
     LAMPORTS_PER_SOL,
@@ -47,7 +46,7 @@ describe('PDA Rent-Payer', () => {
         return pda;
     }
 
-    test('Initialize the Rent Vault', () => {
+    it('Initialize the Rent Vault', () => {
         const [rentVaultPda, _] = deriveRentVaultPda();
         const ix = new TransactionInstruction({
             keys: [
@@ -70,7 +69,7 @@ describe('PDA Rent-Payer', () => {
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    test('Create a new account using the Rent Vault', () => {
+    it('Create a new account using the Rent Vault', () => {
         const newAccount = Keypair.generate();
         const [rentVaultPda, _] = deriveRentVaultPda();
         const ix = new TransactionInstruction({

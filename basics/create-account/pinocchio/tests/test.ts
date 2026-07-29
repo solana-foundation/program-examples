@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import { describe, test } from 'node:test';
 import {
     Keypair,
     LAMPORTS_PER_SOL,
@@ -17,7 +16,7 @@ describe('Create a system account', () => {
     const payer = Keypair.generate();
     svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
 
-    test('Create the account via a cross program invocation', () => {
+    it('Create the account via a cross program invocation', () => {
         const newKeypair = Keypair.generate();
 
         const ix = new TransactionInstruction({
@@ -42,7 +41,7 @@ describe('Create a system account', () => {
         if (accountInfo?.data.length !== 512) throw new Error('unexpected account size');
     });
 
-    test('Create the account via direct call to system program', () => {
+    it('Create the account via direct call to system program', () => {
         const newKeypair = Keypair.generate();
 
         const ix = SystemProgram.createAccount({

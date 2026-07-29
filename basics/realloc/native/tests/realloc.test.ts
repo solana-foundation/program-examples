@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -26,7 +25,7 @@ describe('Realloc!', () => {
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    test('Create the account with data', () => {
+    it('Create the account with data', () => {
         console.log(`${testAccount.publicKey}`);
         const ix = createCreateInstruction(
             testAccount.publicKey,
@@ -46,7 +45,7 @@ describe('Realloc!', () => {
         printAddressInfo(testAccount.publicKey);
     });
 
-    test('Reallocate WITHOUT zero init', () => {
+    it('Reallocate WITHOUT zero init', () => {
         const ix = createReallocateWithoutZeroInitInstruction(
             testAccount.publicKey,
             payer.publicKey,
@@ -62,7 +61,7 @@ describe('Realloc!', () => {
         printEnhancedAddressInfo(testAccount.publicKey);
     });
 
-    test('Reallocate WITH zero init', () => {
+    it('Reallocate WITH zero init', () => {
         const ix = createReallocateZeroInitInstruction(
             testAccount.publicKey,
             payer.publicKey,

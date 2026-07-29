@@ -1,4 +1,3 @@
-import { describe, test } from 'node:test';
 import {
     Keypair,
     LAMPORTS_PER_SOL,
@@ -24,7 +23,7 @@ describe('Checking accounts', () => {
     // Our program will create this.
     const accountToCreate = Keypair.generate();
 
-    test('Create an account owned by our program', () => {
+    it('Create an account owned by our program', () => {
         const ix = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: accountToChange.publicKey,
@@ -41,7 +40,7 @@ describe('Checking accounts', () => {
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    test('Check accounts', () => {
+    it('Check accounts', () => {
         const ix = new TransactionInstruction({
             keys: [
                 { pubkey: payer.publicKey, isSigner: true, isWritable: true },

@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { LiteSVM } from 'litesvm';
 
@@ -91,7 +90,7 @@ describe('Account Data!', () => {
 
     const addressInfoAccount = Keypair.generate();
 
-    test('Create the address info account', () => {
+    it('Create the address info account', () => {
         console.log(`Program Address    : ${PROGRAM_ID}`);
         console.log(`Payer Address      : ${payer.publicKey}`);
         console.log(`Address Info Acct  : ${addressInfoAccount.publicKey}`);
@@ -125,7 +124,7 @@ describe('Account Data!', () => {
         litesvm.sendTransaction(tx);
     });
 
-    test("Read the new account's data", () => {
+    it("Read the new account's data", () => {
         const accountInfo = litesvm.getAccount(addressInfoAccount.publicKey);
 
         if (!accountInfo) {

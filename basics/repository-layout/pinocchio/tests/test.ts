@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer';
-import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
@@ -51,7 +50,7 @@ describe('Carnival (Pinocchio)', () => {
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    test('Go on some rides!', () => {
+    it('Go on some rides!', () => {
         sendCarnivalInstructions([
             {
                 name: 'Jimmy',
@@ -84,7 +83,7 @@ describe('Carnival (Pinocchio)', () => {
         ]);
     });
 
-    test('Play some games!', () => {
+    it('Play some games!', () => {
         sendCarnivalInstructions([
             {
                 name: 'Jimmy',
@@ -117,7 +116,7 @@ describe('Carnival (Pinocchio)', () => {
         ]);
     });
 
-    test('Eat some food!', () => {
+    it('Eat some food!', () => {
         sendCarnivalInstructions([
             {
                 name: 'Jimmy',

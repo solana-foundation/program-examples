@@ -1,6 +1,5 @@
 import assert from 'node:assert';
 import { Buffer } from 'node:buffer';
-import { describe, test } from 'node:test';
 import {
     Keypair,
     LAMPORTS_PER_SOL,
@@ -41,7 +40,7 @@ describe('PDAs', () => {
 
     const testUser = Keypair.generate();
 
-    test('Create a test user', () => {
+    it('Create a test user', () => {
         const ix = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             lamports: Number(svm.minimumBalanceForRentExemption(BigInt(0))),
@@ -63,7 +62,7 @@ describe('PDAs', () => {
         return PublicKey.findProgramAddressSync([Buffer.from('page_visits'), userPubkey.toBuffer()], PROGRAM_ID);
     }
 
-    test('Create the page visits tracking PDA', () => {
+    it('Create the page visits tracking PDA', () => {
         const [pageVisitsPda, pageVisitsBump] = derivePageVisitsPda(testUser.publicKey);
         const ix = new TransactionInstruction({
             keys: [
@@ -85,7 +84,7 @@ describe('PDAs', () => {
         sendTransaction(tx);
     });
 
-    test('Visit the page!', () => {
+    it('Visit the page!', () => {
         const [pageVisitsPda, _] = derivePageVisitsPda(testUser.publicKey);
         const ix = new TransactionInstruction({
             keys: [
@@ -102,7 +101,7 @@ describe('PDAs', () => {
         sendTransaction(tx);
     });
 
-    test('Visit the page!', () => {
+    it('Visit the page!', () => {
         const [pageVisitsPda, _] = derivePageVisitsPda(testUser.publicKey);
         const ix = new TransactionInstruction({
             keys: [
@@ -120,7 +119,7 @@ describe('PDAs', () => {
         sendTransaction(tx);
     });
 
-    test('Read page visits', () => {
+    it('Read page visits', () => {
         const [pageVisitsPda, _] = derivePageVisitsPda(testUser.publicKey);
         const accountInfo = svm.getAccount(pageVisitsPda);
         assert(accountInfo, 'page visits account not found');
