@@ -1,0 +1,8 @@
+[workspace]
+members = ["program"]
+resolver = "2"
+
+[workspace.dependencies]
+borsh = "1.6.1"
+borsh-derive = "1.6.1"
+solana-program = "4.0"

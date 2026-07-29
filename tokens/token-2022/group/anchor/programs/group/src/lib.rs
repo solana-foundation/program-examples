@@ -8,7 +8,7 @@ use anchor_spl::token_interface::{
     token_group_initialize, Mint, Token2022, TokenGroupInitialize,
 };
 
-declare_id!("4XCDGMD8fsdjUzmYj6d9if8twFt1f23Ym52iDmWK8fFs");
+declare_id!("2q91RT4FSHVdyuBMDiCtnZn2ETSrG4mLFZvEC3UxKfue");
 
 #[program]
 pub mod group {

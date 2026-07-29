@@ -1,21 +1,7 @@
-# build and test error
-basics/cross-program-invocation/native
-
-# can't test on localnet
-tokens/pda-mint-authority/native
-tokens/transfer-tokens/native
-tokens/create-token/native
-
-# not building
-oracles/pyth/anchor
-
 # programs build; tests need the DAS API, unavailable on localnet
 compression/cutils/anchor
 compression/cnft-vault/anchor
 compression/cnft-burn/anchor
-
-# not live
-tokens/token-2022/group/anchor
 
 # justfile-driven example: built and tested by .github/workflows/just.yml,
 # not the legacy pinocchio CI (it has no build-and-test script)

@@ -13,3 +13,5 @@ pythexample = "GUkjQmrLPFXXNK1bFLKt8XQi6g3TjxcHVspbjDoHvMG2"
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
+[scripts]
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"

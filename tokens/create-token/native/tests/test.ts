@@ -1,21 +1,20 @@
 import { Buffer } from 'node:buffer';
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { MintLayout, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import {
-    Connection,
     Keypair,
+    LAMPORTS_PER_SOL,
     PublicKey,
     SYSVAR_RENT_PUBKEY,
     SystemProgram,
-    sendAndConfirmTransaction,
     Transaction,
     TransactionInstruction,
 } from '@solana/web3.js';
 import * as borsh from 'borsh';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-function createKeypairFromFile(path: string): Keypair {
-    return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(require('node:fs').readFileSync(path, 'utf-8'))));
-}
+const PROGRAM_ID = PublicKey.unique();
+const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 
 const CreateTokenArgsSchema = {
     struct: {
@@ -30,28 +29,30 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
     return Buffer.from(borsh.serialize(schema, data));
 }
 
-describe('Create Tokens!', async () => {
-    // const connection = new Connection(`http://localhost:8899`, 'confirmed');
-    const connection = new Connection('https://api.devnet.solana.com/', 'confirmed');
-    const payer = createKeypairFromFile(`${require('node:os').homedir()}/.config/solana/id.json`);
-    const program = createKeypairFromFile('./program/target/deploy/program-keypair.json');
+describe('Create Tokens!', () => {
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/create_token_program.so');
+    svm.addProgramFromFile(TOKEN_METADATA_PROGRAM_ID, 'tests/fixtures/token_metadata.so');
 
-    it('Create an SPL Token!', async () => {
-        const mintKeypair: Keypair = Keypair.generate();
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(10 * LAMPORTS_PER_SOL));
 
-        const metadataAddress = PublicKey.findProgramAddressSync(
-            [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
+    function findMetadataPda(mint: PublicKey): PublicKey {
+        return PublicKey.findProgramAddressSync(
+            [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
             TOKEN_METADATA_PROGRAM_ID,
         )[0];
+    }
 
-        // SPL Token default = 9 decimals
-        //
+    function createToken(tokenDecimals: number, tokenTitle: string, tokenSymbol: string, tokenUri: string): Keypair {
+        const mintKeypair = Keypair.generate();
+        const metadataAddress = findMetadataPda(mintKeypair.publicKey);
+
         const instructionData = borshSerialize(CreateTokenArgsSchema, {
-            token_title: 'Solana Gold',
-            token_symbol: 'GOLDSOL',
-            token_uri:
-                'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/spl-token.json',
-            token_decimals: 9,
+            token_title: tokenTitle,
+            token_symbol: tokenSymbol,
+            token_uri: tokenUri,
+            token_decimals: tokenDecimals,
         });
 
         const ix = new TransactionInstruction({
@@ -63,64 +64,64 @@ describe('Create Tokens!', async () => {
                 { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }, // Rent account
                 { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // System program
                 { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // Token program
-                {
-                    pubkey: TOKEN_METADATA_PROGRAM_ID,
-                    isSigner: false,
-                    isWritable: false,
-                }, // Token metadata program
+                { pubkey: TOKEN_METADATA_PROGRAM_ID, isSigner: false, isWritable: false }, // Token metadata program
             ],
-            programId: program.publicKey,
+            programId: PROGRAM_ID,
             data: instructionData,
         });
 
-        const sx = await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer, mintKeypair]);
+        const tx = new Transaction();
+        tx.recentBlockhash = svm.latestBlockhash();
+        tx.add(ix).sign(payer, mintKeypair);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        console.log('Success!');
-        console.log(`   Mint Address: ${mintKeypair.publicKey}`);
-        console.log(`   Tx Signature: ${sx}`);
+        return mintKeypair;
+    }
+
+    it('Create an SPL Token!', () => {
+        // SPL Token default = 9 decimals
+        const mintKeypair = createToken(
+            9,
+            'Solana Gold',
+            'GOLDSOL',
+            'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/spl-token.json',
+        );
+
+        const mintInfo = svm.getAccount(mintKeypair.publicKey);
+        assert(mintInfo !== null, 'mint account not created');
+        assert(mintInfo.owner.equals(TOKEN_PROGRAM_ID), 'mint account not owned by the token program');
+
+        const mint = MintLayout.decode(Buffer.from(mintInfo.data));
+        assert(mint.isInitialized, 'mint not initialized');
+        assert.equal(mint.decimals, 9, 'unexpected decimals');
+        assert(mint.mintAuthority.equals(payer.publicKey), 'unexpected mint authority');
+
+        const metadataInfo = svm.getAccount(findMetadataPda(mintKeypair.publicKey));
+        assert(metadataInfo !== null, 'metadata account not created');
+        assert(metadataInfo.owner.equals(TOKEN_METADATA_PROGRAM_ID), 'metadata account has wrong owner');
     });
 
-    it('Create an NFT!', async () => {
-        const mintKeypair: Keypair = Keypair.generate();
-
-        const metadataAddress = PublicKey.findProgramAddressSync(
-            [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
-            TOKEN_METADATA_PROGRAM_ID,
-        )[0];
-
+    it('Create an NFT!', () => {
         // NFT default = 0 decimals
-        //
-        const instructionData = borshSerialize(CreateTokenArgsSchema, {
-            token_title: 'Homer NFT',
-            token_symbol: 'HOMR',
-            token_uri:
-                'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
-            token_decimals: 9,
-        });
+        const mintKeypair = createToken(
+            0,
+            'Homer NFT',
+            'HOMR',
+            'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
+        );
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: mintKeypair.publicKey, isSigner: true, isWritable: true }, // Mint account
-                { pubkey: payer.publicKey, isSigner: false, isWritable: true }, // Mint authority account
-                { pubkey: metadataAddress, isSigner: false, isWritable: true }, // Metadata account
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true }, // Payer
-                { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }, // Rent account
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // System program
-                { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // Token program
-                {
-                    pubkey: TOKEN_METADATA_PROGRAM_ID,
-                    isSigner: false,
-                    isWritable: false,
-                }, // Token metadata program
-            ],
-            programId: program.publicKey,
-            data: instructionData,
-        });
+        const mintInfo = svm.getAccount(mintKeypair.publicKey);
+        assert(mintInfo !== null, 'mint account not created');
+        assert(mintInfo.owner.equals(TOKEN_PROGRAM_ID), 'mint account not owned by the token program');
 
-        const sx = await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer, mintKeypair]);
+        const mint = MintLayout.decode(Buffer.from(mintInfo.data));
+        assert(mint.isInitialized, 'mint not initialized');
+        assert.equal(mint.decimals, 0, 'unexpected decimals');
+        assert(mint.mintAuthority.equals(payer.publicKey), 'unexpected mint authority');
 
-        console.log('Success!');
-        console.log(`   Mint Address: ${mintKeypair.publicKey}`);
-        console.log(`   Tx Signature: ${sx}`);
+        const metadataInfo = svm.getAccount(findMetadataPda(mintKeypair.publicKey));
+        assert(metadataInfo !== null, 'metadata account not created');
+        assert(metadataInfo.owner.equals(TOKEN_METADATA_PROGRAM_ID), 'metadata account has wrong owner');
     });
 });
