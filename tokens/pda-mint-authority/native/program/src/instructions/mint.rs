@@ -1,5 +1,4 @@
 use {
-    mpl_token_metadata::instructions::CreateMasterEditionV3CpiBuilder,
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint::ProgramResult,
@@ -76,17 +75,31 @@ pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     //
     msg!("Creating edition account...");
     msg!("Edition account address: {}", edition_account.key);
-    CreateMasterEditionV3CpiBuilder::new(token_metadata_program)
-        .edition(edition_account)
-        .mint(mint_account)
-        .update_authority(mint_authority)
-        .mint_authority(mint_authority)
-        .payer(payer)
-        .metadata(metadata_account)
-        .token_program(token_program)
-        .system_program(system_program)
-        .max_supply(1)
-        .invoke_signed(&[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]])?;
+    invoke_signed(
+        &crate::mpl_util::create_master_edition_v3(
+            edition_account.key,
+            mint_account.key,
+            mint_authority.key,
+            mint_authority.key,
+            payer.key,
+            metadata_account.key,
+            token_program.key,
+            system_program.key,
+            1,
+        ),
+        &[
+            edition_account.clone(),
+            mint_account.clone(),
+            mint_authority.clone(),
+            mint_authority.clone(),
+            payer.clone(),
+            metadata_account.clone(),
+            token_program.clone(),
+            system_program.clone(),
+            token_metadata_program.clone(),
+        ],
+        &[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]],
+    )?;
 
     // If we don't use Metaplex Editions, we must disable minting manually
     //

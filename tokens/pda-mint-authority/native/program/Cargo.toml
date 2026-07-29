@@ -10,7 +10,6 @@ solana-program.workspace = true
 solana-system-interface.workspace = true
 spl-token-interface.workspace = true
 spl-associated-token-account-interface.workspace = true
-mpl-token-metadata.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]

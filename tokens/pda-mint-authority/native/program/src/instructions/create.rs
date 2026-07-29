@@ -1,11 +1,10 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
-    mpl_token_metadata::{instructions::CreateMetadataAccountV3CpiBuilder, types::DataV2},
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint::ProgramResult,
         msg,
-        program::invoke,
+        program::{invoke, invoke_signed},
         program_pack::Pack,
         pubkey::Pubkey,
         rent::Rent,
@@ -74,24 +73,29 @@ pub fn create_token(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateT
     //
     msg!("Creating metadata account...");
     msg!("Metadata account address: {}", metadata_account.key);
-    CreateMetadataAccountV3CpiBuilder::new(token_metadata_program)
-        .metadata(metadata_account)
-        .mint(mint_account)
-        .mint_authority(mint_authority)
-        .payer(payer)
-        .update_authority(mint_authority, true)
-        .system_program(system_program)
-        .data(DataV2 {
-            name: args.nft_title,
-            symbol: args.nft_symbol,
-            uri: args.nft_uri,
-            seller_fee_basis_points: 0,
-            creators: None,
-            collection: None,
-            uses: None,
-        })
-        .is_mutable(false)
-        .invoke_signed(&[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]])?;
+    invoke_signed(
+        &crate::mpl_util::create_metadata_account_v3(
+            metadata_account.key,
+            mint_account.key,
+            mint_authority.key,
+            payer.key,
+            mint_authority.key,
+            system_program.key,
+            args.nft_title,
+            args.nft_symbol,
+            args.nft_uri,
+        ),
+        &[
+            metadata_account.clone(),
+            mint_account.clone(),
+            mint_authority.clone(),
+            payer.clone(),
+            mint_authority.clone(),
+            system_program.clone(),
+            token_metadata_program.clone(),
+        ],
+        &[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]],
+    )?;
 
     msg!("Token mint created successfully.");
 

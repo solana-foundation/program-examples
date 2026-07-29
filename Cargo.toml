@@ -72,7 +72,6 @@ overflow-checks = true
 # misc
 borsh = "1.6.1"
 borsh-derive = "1.6.1"
-mpl-token-metadata = "5.1.2-alpha.2"
 
 
 # spl

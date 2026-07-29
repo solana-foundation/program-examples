@@ -1,6 +1,7 @@
 use solana_program::{account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, pubkey::Pubkey};
 
 pub mod instructions;
+pub mod mpl_util;
 pub mod processor;
 pub mod state;
 
