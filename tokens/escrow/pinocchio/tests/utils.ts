@@ -1,30 +1,45 @@
 import {
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    createAssociatedTokenAccountIdempotentInstruction,
-    createInitializeMint2Instruction,
-    createMintToInstruction,
-    getAssociatedTokenAddressSync,
-    MINT_SIZE,
-    TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import { Keypair, PublicKey, type Signer, SystemProgram, Transaction } from '@solana/web3.js';
-import BN from 'bn.js';
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    getU64Encoder,
+    type Instruction,
+    type KeyPairSigner,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction } from '@solana-program/system';
+import {
+    findAssociatedTokenPda,
+    getCreateAssociatedTokenIdempotentInstruction,
+    getInitializeMint2Instruction,
+    getMintSize,
+    getMintToInstruction,
+    TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token';
 import { FailedTransactionMetadata, type LiteSVM } from 'litesvm';
 
-export async function sleep(seconds: number) {
-    new Promise(resolve => setTimeout(resolve, seconds * 1000));
+const addressEncoder = getAddressEncoder();
+
+export async function sendInstructions(svm: LiteSVM, payer: KeyPairSigner, instructions: readonly Instruction[]) {
+    const transactionMessage = pipe(
+        createTransactionMessage({ version: 0 }),
+        m => setTransactionMessageFeePayerSigner(payer, m),
+        m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+        m => appendTransactionMessageInstructions(instructions, m),
+    );
+    const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+    const result = svm.sendTransaction(signedTx);
+    if (result instanceof FailedTransactionMetadata) {
+        throw new Error(`transaction failed: ${result.toString()}`);
+    }
 }
 
-export const expectRevert = async (promise: Promise<unknown>) => {
-    try {
-        await promise;
-        throw new Error('Expected a revert');
-    } catch {
-        return;
-    }
-};
-
-export const mintingTokens = ({
+export async function mintingTokens({
     svm,
     payer,
     holder,
@@ -33,120 +48,101 @@ export const mintingTokens = ({
     decimals = 6,
 }: {
     svm: LiteSVM;
-    payer: Keypair;
-    holder: Signer;
-    mintKeypair: Keypair;
+    payer: KeyPairSigner;
+    holder: KeyPairSigner;
+    mintKeypair: KeyPairSigner;
     mintedAmount?: number;
     decimals?: number;
-}) => {
-    function processTransaction(transaction: Transaction, signers: Keypair[]) {
-        transaction.recentBlockhash = svm.latestBlockhash();
-        transaction.sign(...signers);
+}) {
+    const [holderAta] = await findAssociatedTokenPda({
+        mint: mintKeypair.address,
+        owner: holder.address,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    });
 
-        const result = svm.sendTransaction(transaction);
-        if (result instanceof FailedTransactionMetadata) {
-            throw new Error(`transaction failed: ${result.toString()}`);
-        }
-    }
+    await sendInstructions(svm, payer, [
+        getCreateAccountInstruction({
+            payer,
+            newAccount: mintKeypair,
+            lamports: svm.minimumBalanceForRentExemption(BigInt(getMintSize())),
+            space: getMintSize(),
+            programAddress: TOKEN_PROGRAM_ADDRESS,
+        }),
+        getInitializeMint2Instruction({
+            mint: mintKeypair.address,
+            decimals,
+            mintAuthority: payer.address,
+            freezeAuthority: payer.address,
+        }),
+    ]);
 
-    function createMint(mint: Keypair, decimals: number) {
-        const lamports = svm.minimumBalanceForRentExemption(BigInt(MINT_SIZE));
+    await sendInstructions(svm, payer, [
+        getCreateAssociatedTokenIdempotentInstruction({
+            payer,
+            ata: holderAta,
+            owner: holder.address,
+            mint: mintKeypair.address,
+        }),
+    ]);
 
-        const transaction = new Transaction().add(
-            SystemProgram.createAccount({
-                fromPubkey: payer.publicKey,
-                newAccountPubkey: mint.publicKey,
-                space: MINT_SIZE,
-                lamports: new BN(lamports.toString()).toNumber(),
-                programId: TOKEN_PROGRAM_ID,
-            }),
-            createInitializeMint2Instruction(
-                mint.publicKey,
-                decimals,
-                payer.publicKey,
-                payer.publicKey,
-                TOKEN_PROGRAM_ID,
-            ),
-        );
-        processTransaction(transaction, [payer, mint]);
-    }
-
-    function createAssociatedTokenAccountIfNeeded(mint: PublicKey, owner: PublicKey) {
-        const associatedToken = getAssociatedTokenAddressSync(mint, owner, true);
-
-        const transaction = new Transaction().add(
-            createAssociatedTokenAccountIdempotentInstruction(
-                payer.publicKey,
-                associatedToken,
-                owner,
-                mint,
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID,
-            ),
-        );
-        processTransaction(transaction, [payer]);
-    }
-
-    function mintTo(mint: PublicKey, destination: PublicKey, amount: number | bigint) {
-        const transaction = new Transaction().add(
-            createMintToInstruction(mint, destination, payer.publicKey, amount, [], TOKEN_PROGRAM_ID),
-        );
-        processTransaction(transaction, [payer]);
-    }
-
-    // creator creates the mint
-    createMint(mintKeypair, decimals);
-
-    // create holder token account
-    createAssociatedTokenAccountIfNeeded(mintKeypair.publicKey, holder.publicKey);
-
-    // mint to holders token account
-    mintTo(
-        mintKeypair.publicKey,
-        getAssociatedTokenAddressSync(mintKeypair.publicKey, holder.publicKey, true),
-        mintedAmount * 10 ** decimals,
-    );
-};
-
-export interface TestValues {
-    id: BN;
-    amountA: BN;
-    amountB: BN;
-    maker: Keypair;
-    taker: Keypair;
-    mintAKeypair: Keypair;
-    mintBKeypair: Keypair;
-    offer: PublicKey;
-    offerBump: number;
-    vault: PublicKey;
-    makerAccountA: PublicKey;
-    makerAccountB: PublicKey;
-    takerAccountA: PublicKey;
-    takerAccountB: PublicKey;
-    programId: PublicKey;
+    await sendInstructions(svm, payer, [
+        getMintToInstruction({
+            mint: mintKeypair.address,
+            token: holderAta,
+            mintAuthority: payer,
+            amount: BigInt(mintedAmount) * 10n ** BigInt(decimals),
+        }),
+    ]);
 }
 
-type TestValuesDefaults = {
-    [K in keyof TestValues]+?: TestValues[K];
-};
+export interface TestValues {
+    id: bigint;
+    amountA: bigint;
+    amountB: bigint;
+    maker: KeyPairSigner;
+    taker: KeyPairSigner;
+    mintAKeypair: KeyPairSigner;
+    mintBKeypair: KeyPairSigner;
+    offer: Address;
+    offerBump: number;
+    vault: Address;
+    makerAccountA: Address;
+    makerAccountB: Address;
+    takerAccountA: Address;
+    takerAccountB: Address;
+    programId: Address;
+}
 
-export function createValues(defaults?: TestValuesDefaults): TestValues {
-    const programId = PublicKey.unique();
-    const id = defaults?.id || new BN(0);
-    const maker = Keypair.generate();
-    const taker = Keypair.generate();
+function addressValue(address: Address): bigint {
+    return addressEncoder.encode(address).reduce((total, byte) => (total << 8n) | BigInt(byte), 0n);
+}
+
+export async function createValues(defaults?: { id?: bigint }): Promise<TestValues> {
+    const programId = (await generateKeyPairSigner()).address;
+    const id = defaults?.id ?? 0n;
+    const maker = await generateKeyPairSigner();
+    const taker = await generateKeyPairSigner();
 
     // Making sure tokens are in the right order
-    const mintAKeypair = Keypair.generate();
-    let mintBKeypair = Keypair.generate();
-    while (new BN(mintBKeypair.publicKey.toBytes()).lt(new BN(mintAKeypair.publicKey.toBytes()))) {
-        mintBKeypair = Keypair.generate();
+    const mintAKeypair = await generateKeyPairSigner();
+    let mintBKeypair = await generateKeyPairSigner();
+    while (addressValue(mintBKeypair.address) < addressValue(mintAKeypair.address)) {
+        mintBKeypair = await generateKeyPairSigner();
     }
 
-    const [offer, offerBump] = PublicKey.findProgramAddressSync(
-        [Buffer.from('offer'), maker.publicKey.toBuffer(), Buffer.from(id.toArray('le', 8))],
-        programId,
-    );
+    const [offer, offerBump] = await getProgramDerivedAddress({
+        programAddress: programId,
+        seeds: ['offer', addressEncoder.encode(maker.address), getU64Encoder().encode(id)],
+    });
+
+    const findAta = (mint: Address, owner: Address) =>
+        findAssociatedTokenPda({ mint, owner, tokenProgram: TOKEN_PROGRAM_ADDRESS });
+
+    const [vault] = await findAta(mintAKeypair.address, offer);
+    const [makerAccountA] = await findAta(mintAKeypair.address, maker.address);
+    const [makerAccountB] = await findAta(mintBKeypair.address, maker.address);
+    const [takerAccountA] = await findAta(mintAKeypair.address, taker.address);
+    const [takerAccountB] = await findAta(mintBKeypair.address, taker.address);
 
     return {
         id,
@@ -156,13 +152,13 @@ export function createValues(defaults?: TestValuesDefaults): TestValues {
         mintBKeypair,
         offer,
         offerBump,
-        vault: getAssociatedTokenAddressSync(mintAKeypair.publicKey, offer, true),
-        makerAccountA: getAssociatedTokenAddressSync(mintAKeypair.publicKey, maker.publicKey, true),
-        makerAccountB: getAssociatedTokenAddressSync(mintBKeypair.publicKey, maker.publicKey, true),
-        takerAccountA: getAssociatedTokenAddressSync(mintAKeypair.publicKey, taker.publicKey, true),
-        takerAccountB: getAssociatedTokenAddressSync(mintBKeypair.publicKey, taker.publicKey, true),
-        amountA: new BN(4 * 10 ** 6),
-        amountB: new BN(1 * 10 ** 6),
+        vault,
+        makerAccountA,
+        makerAccountB,
+        takerAccountA,
+        takerAccountB,
+        amountA: 4_000_000n,
+        amountB: 1_000_000n,
         programId,
     };
 }

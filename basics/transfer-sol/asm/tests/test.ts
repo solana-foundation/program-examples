@@ -1,46 +1,68 @@
 import assert from 'node:assert';
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
+import {
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { createTransferInstruction } from './instruction';
 
+const LAMPORTS_PER_SOL = 1_000_000_000n;
+
 describe('transfer-sol (asm)', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/transfer-sol-cpi.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let recipient: KeyPairSigner;
 
-    const transferAmount = 1 * LAMPORTS_PER_SOL;
-    const recipient = Keypair.generate();
+    const transferAmount = 1n * LAMPORTS_PER_SOL;
 
-    it('Transfer SOL via CPI to the system program', () => {
-        const [payerBefore, recipientBefore] = getBalances(payer.publicKey, recipient.publicKey, 'Beginning');
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/transfer-sol-cpi.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(2n * LAMPORTS_PER_SOL));
+        recipient = await generateKeyPairSigner();
+    });
 
-        const ix = createTransferInstruction(payer.publicKey, recipient.publicKey, PROGRAM_ID, transferAmount);
+    it('Transfer SOL via CPI to the system program', async () => {
+        const [payerBefore, recipientBefore] = getBalances(payer.address, recipient.address, 'Beginning');
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
+        const ix = createTransferInstruction(payer, recipient.address, programId, transferAmount);
 
-        const result = svm.sendTransaction(tx);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+
+        const result = svm.sendTransaction(signedTx);
         assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const [payerAfter, recipientAfter] = getBalances(payer.publicKey, recipient.publicKey, 'Resulting');
+        const [payerAfter, recipientAfter] = getBalances(payer.address, recipient.address, 'Resulting');
 
         assert(
-            payerAfter < payerBefore - BigInt(transferAmount),
+            payerAfter < payerBefore - transferAmount,
             'Payer balance should decrease by at least the transfer amount',
         );
         assert.strictEqual(
             recipientAfter,
-            recipientBefore + BigInt(transferAmount),
+            recipientBefore + transferAmount,
             'Recipient balance should increase by exactly the transfer amount',
         );
     });
 
-    function getBalances(payerPubkey: PublicKey, recipientPubkey: PublicKey, timeframe: string): [bigint, bigint] {
-        const payerBalance = svm.getBalance(payerPubkey) ?? BigInt(0);
-        const recipientBalance = svm.getBalance(recipientPubkey) ?? BigInt(0);
+    function getBalances(payerAddress: Address, recipientAddress: Address, timeframe: string): [bigint, bigint] {
+        const payerBalance = svm.getBalance(payerAddress) ?? BigInt(0);
+        const recipientBalance = svm.getBalance(recipientAddress) ?? BigInt(0);
 
         console.log(`${timeframe} balances:`);
         console.log(`   Payer: ${payerBalance}`);

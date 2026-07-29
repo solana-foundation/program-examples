@@ -29,7 +29,7 @@ Specifically for code in this repo:
 - Project path structure: `/program-examples/category/example-name/<framework_name>`
     - Project path structure example for anchor: `/program-examples/category/example-name/anchor`
 
-3. Tests for Anchor and Solana native programs should be written with [LiteSVM](https://github.com/LiteSVM/litesvm) (for Anchor programs, use [anchor-litesvm](https://www.npmjs.com/package/anchor-litesvm)).
+3. Tests for Anchor and Solana native programs should be written with [LiteSVM](https://github.com/LiteSVM/litesvm). Non-Anchor tests use [@solana/kit](https://github.com/anza-xyz/kit) with litesvm 1.x; Anchor tests use [anchor-litesvm](https://www.npmjs.com/package/anchor-litesvm) with @solana/web3.js (until the Anchor JS client moves to kit).
 
 4. For Solana native programs ensure adding these mandatory pnpm run scripts to your `package.json` file for successful CI/CD builds:
 

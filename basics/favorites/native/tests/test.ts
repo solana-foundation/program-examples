@@ -1,11 +1,20 @@
+import { Buffer } from 'node:buffer';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { assert, expect } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -49,28 +58,43 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
     return Buffer.from(borsh.serialize(schema, data));
 }
 
+const addressEncoder = getAddressEncoder();
+
 describe('Favorites Solana Native', () => {
-    // Randomly generate the program keypair and load the program to litesvm
-    const programId = PublicKey.unique();
+    // Randomly generate the program address and load the program to litesvm
+    let programId: Address;
 
     let svm: LiteSVM;
-    let payer: Keypair;
-    let blockhash: string;
+    let payer: KeyPairSigner;
 
-    beforeEach(() => {
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+    });
+
+    beforeEach(async () => {
         svm = new LiteSVM();
         svm.addProgramFromFile(programId, 'tests/fixtures/favorites_native.so');
         // Generate a payer keypair and fund it with enough lamports to sign transactions
-        payer = Keypair.generate();
-        svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
-        blockhash = svm.latestBlockhash();
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    test('Set the favorite pda and cross-check the updated data', () => {
-        const favoritesPda = PublicKey.findProgramAddressSync(
-            [Buffer.from('favorite'), payer.publicKey.toBuffer()],
-            programId,
-        )[0];
+    async function sendInstruction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        return svm.sendTransaction(signedTx);
+    }
+
+    test('Set the favorite pda and cross-check the updated data', async () => {
+        const [favoritesPda] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['favorite', addressEncoder.encode(payer.address)],
+        });
         const favData = {
             instruction: MyInstruction.CreateFav,
             number: 42,
@@ -78,25 +102,21 @@ describe('Favorites Solana Native', () => {
             hobbies: ['coding', 'reading', 'traveling'],
         };
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: favoritesPda, isSigner: false, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: favoritesPda, role: AccountRole.WRITABLE },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId,
-            data: borshSerialize(CreateFavSchema, favData),
-        });
+            data: new Uint8Array(borshSerialize(CreateFavSchema, favData)),
+        };
 
-        const tx = new Transaction().add(ix);
-        tx.feePayer = payer.publicKey;
-        tx.recentBlockhash = blockhash;
-        tx.sign(payer);
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         const account = svm.getAccount(favoritesPda);
-        assert(account, 'favorites account not found');
+        assert(account.exists, 'favorites account not found');
         const data = Buffer.from(account.data);
 
         const favoritesData = borsh.deserialize(FavoritesDataSchema, data) as FavoritesData;
@@ -108,12 +128,12 @@ describe('Favorites Solana Native', () => {
         expect(favoritesData.hobbies).to.deep.equal(favData.hobbies);
     });
 
-    test("Check if the test fails if the pda seeds aren't same", () => {
+    test("Check if the test fails if the pda seeds aren't same", async () => {
         // Derive a PDA using WRONG seeds so the program's on-chain seed check rejects it
-        const wrongPda = PublicKey.findProgramAddressSync(
-            [Buffer.from('wrong_seed'), payer.publicKey.toBuffer()],
-            programId,
-        )[0];
+        const [wrongPda] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['wrong_seed', addressEncoder.encode(payer.address)],
+        });
         const favData = {
             instruction: MyInstruction.CreateFav,
             number: 42,
@@ -121,30 +141,26 @@ describe('Favorites Solana Native', () => {
             hobbies: ['coding', 'reading', 'traveling'],
         };
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: wrongPda, isSigner: false, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: wrongPda, role: AccountRole.WRITABLE },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId,
-            data: borshSerialize(CreateFavSchema, favData),
-        });
+            data: new Uint8Array(borshSerialize(CreateFavSchema, favData)),
+        };
 
-        const tx = new Transaction().add(ix);
-        tx.feePayer = payer.publicKey;
-        tx.recentBlockhash = blockhash;
-        tx.sign(payer);
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert(result instanceof FailedTransactionMetadata, 'Expected transaction to fail with wrong PDA seeds');
     });
 
-    test('Get the favorite pda and cross-check the data', () => {
+    test('Get the favorite pda and cross-check the data', async () => {
         // Creating a new account with payer's pubkey
-        const favoritesPda = PublicKey.findProgramAddressSync(
-            [Buffer.from('favorite'), payer.publicKey.toBuffer()],
-            programId,
-        )[0];
+        const [favoritesPda] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['favorite', addressEncoder.encode(payer.address)],
+        });
         const favData = {
             instruction: MyInstruction.CreateFav,
             number: 42,
@@ -152,38 +168,30 @@ describe('Favorites Solana Native', () => {
             hobbies: ['singing', 'dancing', 'skydiving'],
         };
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: favoritesPda, isSigner: false, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: favoritesPda, role: AccountRole.WRITABLE },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId,
-            data: borshSerialize(CreateFavSchema, favData),
-        });
+            data: new Uint8Array(borshSerialize(CreateFavSchema, favData)),
+        };
 
-        const tx1 = new Transaction().add(ix);
-        tx1.feePayer = payer.publicKey;
-        tx1.recentBlockhash = blockhash;
-        tx1.sign(payer);
-        const result1 = svm.sendTransaction(tx1);
+        const result1 = await sendInstruction(ix);
         assert(!(result1 instanceof FailedTransactionMetadata), `transaction failed: ${result1.toString()}`);
 
         // Getting the user's data through the get_pda instruction
-        const ix2 = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: favoritesPda, isSigner: false, isWritable: false },
+        const ix2 = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: favoritesPda, role: AccountRole.READONLY },
             ],
-            programId,
-            data: borshSerialize(GetFavSchema, { instruction: MyInstruction.GetFav }),
-        });
+            data: new Uint8Array(borshSerialize(GetFavSchema, { instruction: MyInstruction.GetFav })),
+        };
 
-        const tx = new Transaction().add(ix2);
-        tx.feePayer = payer.publicKey;
-        tx.recentBlockhash = blockhash;
-        tx.sign(payer);
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix2);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 });

@@ -1,11 +1,19 @@
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    type AccountMeta,
+    AccountRole,
+    type AccountSignerMeta,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
@@ -13,79 +21,79 @@ const CPI_TRANSFER_DISCRIMINATOR = 0;
 const PROGRAM_TRANSFER_DISCRIMINATOR = 1;
 
 describe('transfer-sol', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/transfer_sol_pinocchio_program.so');
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(10 * LAMPORTS_PER_SOL));
+    const transferAmount = 1_000_000_000n;
 
-    const transferAmount = BigInt(LAMPORTS_PER_SOL);
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/transfer_sol_pinocchio_program.so');
 
-    function createTransferInstruction(from: PublicKey, to: PublicKey, discriminator: number): TransactionInstruction {
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(10_000_000_000n));
+    });
+
+    function createTransferInstruction(from: KeyPairSigner, to: Address, discriminator: number): Instruction {
         const data = Buffer.alloc(9);
         data.writeUInt8(discriminator, 0);
         data.writeBigUInt64LE(transferAmount, 1);
 
-        const keys = [
-            { pubkey: from, isSigner: true, isWritable: true },
-            { pubkey: to, isSigner: false, isWritable: true },
+        const accounts: (AccountMeta | AccountSignerMeta)[] = [
+            { address: from.address, role: AccountRole.WRITABLE_SIGNER, signer: from },
+            { address: to, role: AccountRole.WRITABLE },
         ];
         if (discriminator === CPI_TRANSFER_DISCRIMINATOR) {
-            keys.push({ pubkey: SystemProgram.programId, isSigner: false, isWritable: false });
+            accounts.push({ address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY });
         }
 
-        return new TransactionInstruction({ keys, programId: PROGRAM_ID, data });
+        return { programAddress: programId, accounts, data: new Uint8Array(data) };
     }
 
-    function sendTransaction(tx: Transaction) {
-        const result = svm.sendTransaction(tx);
+    async function sendInstruction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    it('Transfer between accounts using a system program CPI', () => {
-        const recipient = Keypair.generate().publicKey;
-        const payerBalanceBefore = svm.getBalance(payer.publicKey);
+    it('Transfer between accounts using a system program CPI', async () => {
+        const recipient = (await generateKeyPairSigner()).address;
+        const payerBalanceBefore = svm.getBalance(payer.address);
 
-        const ix = createTransferInstruction(payer.publicKey, recipient, CPI_TRANSFER_DISCRIMINATOR);
+        const ix = createTransferInstruction(payer, recipient, CPI_TRANSFER_DISCRIMINATOR);
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
-
-        sendTransaction(tx);
+        await sendInstruction(ix);
 
         assert.equal(svm.getBalance(recipient), transferAmount);
-        assert(payerBalanceBefore !== null && svm.getBalance(payer.publicKey)! < payerBalanceBefore);
+        assert(payerBalanceBefore !== null && svm.getBalance(payer.address)! < payerBalanceBefore);
     });
 
-    it('Transfer between accounts using our program', () => {
-        const programOwnedAccount = Keypair.generate();
-        const recipient = Keypair.generate().publicKey;
+    it('Transfer between accounts using our program', async () => {
+        const programOwnedAccount = await generateKeyPairSigner();
+        const recipient = (await generateKeyPairSigner()).address;
 
-        const createIx = SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: programOwnedAccount.publicKey,
-            lamports: 2 * LAMPORTS_PER_SOL,
+        const createIx = getCreateAccountInstruction({
+            payer,
+            newAccount: programOwnedAccount,
+            lamports: 2_000_000_000n,
             space: 0,
-            programId: PROGRAM_ID,
+            programAddress: programId,
         });
 
-        const createTx = new Transaction();
-        createTx.recentBlockhash = svm.latestBlockhash();
-        createTx.add(createIx).sign(payer, programOwnedAccount);
+        await sendInstruction(createIx);
 
-        sendTransaction(createTx);
+        const ix = createTransferInstruction(programOwnedAccount, recipient, PROGRAM_TRANSFER_DISCRIMINATOR);
 
-        const ix = createTransferInstruction(programOwnedAccount.publicKey, recipient, PROGRAM_TRANSFER_DISCRIMINATOR);
-
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, programOwnedAccount);
-
-        sendTransaction(tx);
+        await sendInstruction(ix);
 
         assert.equal(svm.getBalance(recipient), transferAmount);
-        assert.equal(svm.getBalance(programOwnedAccount.publicKey), BigInt(2 * LAMPORTS_PER_SOL) - transferAmount);
+        assert.equal(svm.getBalance(programOwnedAccount.address), 2_000_000_000n - transferAmount);
     });
 });

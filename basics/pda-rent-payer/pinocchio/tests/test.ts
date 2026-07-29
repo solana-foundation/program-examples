@@ -1,11 +1,18 @@
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getProgramDerivedAddress,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
@@ -14,70 +21,84 @@ const CREATE_NEW_ACCOUNT_DISCRIMINATOR = 1;
 const FUND_LAMPORTS = 1_000_000_000n;
 
 describe('PDA Rent-Payer', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/pda_rent_payer_pinocchio_program.so');
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let rentVaultPda: Address;
+    let bump: number;
+    let rentExemptBalance: bigint;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(10 * LAMPORTS_PER_SOL));
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/pda_rent_payer_pinocchio_program.so');
 
-    const [rentVaultPda, bump] = PublicKey.findProgramAddressSync([Buffer.from('rent_vault')], PROGRAM_ID);
-    const rentExemptBalance = svm.getRent().minimumBalance(0n);
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(10_000_000_000n));
 
-    function balance(pubkey: PublicKey): bigint {
-        const lamports = svm.getBalance(pubkey);
-        assert(lamports !== null, `expected ${pubkey.toBase58()} to exist`);
-        return lamports;
+        [rentVaultPda, bump] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['rent_vault'],
+        });
+        rentExemptBalance = svm.getRent().minimumBalance(0n);
+    });
+
+    function balance(address: Address): bigint {
+        const value = svm.getBalance(address);
+        assert(value !== null, `expected ${address} to exist`);
+        return value;
     }
 
-    it('Initialize the Rent Vault', () => {
+    async function sendInstruction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        return svm.sendTransaction(signedTx);
+    }
+
+    it('Initialize the Rent Vault', async () => {
         const data = Buffer.alloc(10);
         data.writeUInt8(INIT_RENT_VAULT_DISCRIMINATOR, 0);
         data.writeUInt8(bump, 1);
         data.writeBigUInt64LE(FUND_LAMPORTS, 2);
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: rentVaultPda, isSigner: false, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: rentVaultPda, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data,
-        });
+            data: new Uint8Array(data),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
-
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         assert.equal(balance(rentVaultPda), rentExemptBalance + FUND_LAMPORTS);
     });
 
-    it('Create a new account using the Rent Vault', () => {
-        const newAccount = Keypair.generate();
+    it('Create a new account using the Rent Vault', async () => {
+        const newAccount = await generateKeyPairSigner();
         const vaultBalanceBefore = balance(rentVaultPda);
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: newAccount.publicKey, isSigner: true, isWritable: true },
-                { pubkey: rentVaultPda, isSigner: false, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: newAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: newAccount },
+                { address: rentVaultPda, role: AccountRole.WRITABLE },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: Buffer.from([CREATE_NEW_ACCOUNT_DISCRIMINATOR, bump]),
-        });
+            data: new Uint8Array([CREATE_NEW_ACCOUNT_DISCRIMINATOR, bump]),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, newAccount);
-
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        assert.equal(balance(newAccount.publicKey), rentExemptBalance);
+        assert.equal(balance(newAccount.address), rentExemptBalance);
         assert.equal(balance(rentVaultPda), vaultBalanceBefore - rentExemptBalance);
     });
 });

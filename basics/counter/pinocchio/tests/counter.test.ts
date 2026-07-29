@@ -1,11 +1,17 @@
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
@@ -13,55 +19,65 @@ const COUNTER_ACCOUNT_SIZE = 8;
 const INCREMENT_DISCRIMINATOR = 0;
 
 describe('Counter Solana Pinocchio', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/counter_solana_pinocchio.so');
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let counterKeypair: KeyPairSigner;
+    let counter: Address;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(10 * LAMPORTS_PER_SOL));
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/counter_solana_pinocchio.so');
 
-    const counterKeypair = Keypair.generate();
-    const counter = counterKeypair.publicKey;
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(10_000_000_000n));
+
+        counterKeypair = await generateKeyPairSigner();
+        counter = counterKeypair.address;
+    });
+
+    async function sendInstruction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        return svm.sendTransaction(signedTx);
+    }
 
     function readCount(): bigint {
         const account = svm.getAccount(counter);
-        assert(account, 'expected counter account to exist');
+        assert(account.exists, 'expected counter account to exist');
         assert.equal(account.data.length, COUNTER_ACCOUNT_SIZE);
         return Buffer.from(account.data).readBigUInt64LE(0);
     }
 
-    it('Create the counter account', () => {
+    it('Create the counter account', async () => {
         const rent = svm.getRent();
-        const ix = SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: counter,
-            lamports: Number(rent.minimumBalance(BigInt(COUNTER_ACCOUNT_SIZE))),
+        const ix = getCreateAccountInstruction({
+            payer,
+            newAccount: counterKeypair,
+            lamports: rent.minimumBalance(BigInt(COUNTER_ACCOUNT_SIZE)),
             space: COUNTER_ACCOUNT_SIZE,
-            programId: PROGRAM_ID,
+            programAddress: programId,
         });
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, counterKeypair);
-
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         assert.equal(readCount(), 0n);
     });
 
-    it('Increment the counter', () => {
-        const ix = new TransactionInstruction({
-            keys: [{ pubkey: counter, isSigner: false, isWritable: true }],
-            programId: PROGRAM_ID,
-            data: Buffer.from([INCREMENT_DISCRIMINATOR]),
-        });
+    it('Increment the counter', async () => {
+        const ix = {
+            programAddress: programId,
+            accounts: [{ address: counter, role: AccountRole.WRITABLE }],
+            data: new Uint8Array([INCREMENT_DISCRIMINATOR]),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
-
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         assert.equal(readCount(), 1n);

@@ -1,7 +1,20 @@
 import { Buffer } from 'node:buffer';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { Keypair, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createKeyPairSignerFromBytes,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { LiteSVM, TransactionMetadata } from 'litesvm';
 
@@ -12,105 +25,108 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
     return Buffer.from(borsh.serialize(schema, data));
 }
 
+async function programAddressFromKeypairFile(keypairPath: string): Promise<Address> {
+    const bytes = Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, 'utf-8')));
+    return (await createKeyPairSignerFromBytes(bytes)).address;
+}
+
 describe('Native CPI Example', () => {
     let svm: LiteSVM;
-    let payer: Keypair;
-    let handProgramId: Keypair;
-    let leverProgramId: Keypair;
-    let powerAccount: Keypair;
+    let payer: KeyPairSigner;
+    let handProgramId: Address;
+    let leverProgramId: Address;
+    let powerAccount: KeyPairSigner;
 
-    before(() => {
+    before(async () => {
         svm = new LiteSVM();
-        payer = Keypair.generate();
+        payer = await generateKeyPairSigner();
 
-        handProgramId = Keypair.fromSecretKey(
-            Uint8Array.from(
-                JSON.parse(
-                    fs.readFileSync('./tests/fixtures/cross_program_invocatio_native_hand-keypair.json', 'utf-8'),
-                ),
-            ),
+        handProgramId = await programAddressFromKeypairFile(
+            './tests/fixtures/cross_program_invocatio_native_hand-keypair.json',
         );
-        leverProgramId = Keypair.fromSecretKey(
-            Uint8Array.from(
-                JSON.parse(
-                    fs.readFileSync('./tests/fixtures/cross_program_invocatio_native_lever-keypair.json', 'utf-8'),
-                ),
-            ),
+        leverProgramId = await programAddressFromKeypairFile(
+            './tests/fixtures/cross_program_invocatio_native_lever-keypair.json',
         );
 
-        svm.airdrop(payer.publicKey, BigInt(10 * 1_000_000_000));
+        svm.airdrop(payer.address, lamports(10_000_000_000n));
 
         const native_hand = path.join('./tests/fixtures', 'cross_program_invocatio_native_hand.so');
         const native_lever = path.join('./tests/fixtures', 'cross_program_invocatio_native_lever.so');
 
-        svm.addProgramFromFile(handProgramId.publicKey, native_hand);
-        svm.addProgramFromFile(leverProgramId.publicKey, native_lever);
+        svm.addProgramFromFile(handProgramId, native_hand);
+        svm.addProgramFromFile(leverProgramId, native_lever);
 
-        powerAccount = Keypair.generate();
+        powerAccount = await generateKeyPairSigner();
     });
 
-    it('Initialize the lever!', () => {
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: powerAccount.publicKey, isSigner: true, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Initialize the lever!', async () => {
+        const ix = {
+            programAddress: leverProgramId,
+            accounts: [
+                { address: powerAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: powerAccount },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: leverProgramId.publicKey,
-            data: borshSerialize(PowerStatusSchema, { is_on: 1 }),
-        });
+            data: new Uint8Array(borshSerialize(PowerStatusSchema, { is_on: 1 })),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.feePayer = payer.publicKey;
-        tx.add(ix);
-        tx.sign(payer, powerAccount);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const res = svm.sendTransaction(tx);
+        const res = svm.sendTransaction(signedTx);
         if (!(res instanceof TransactionMetadata)) {
             throw new Error(`Transaction failed: ${JSON.stringify(res)}`);
         }
     });
 
-    it('Pull the lever!', () => {
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: powerAccount.publicKey, isSigner: false, isWritable: true },
-                { pubkey: leverProgramId.publicKey, isSigner: false, isWritable: false },
+    it('Pull the lever!', async () => {
+        const ix = {
+            programAddress: handProgramId,
+            accounts: [
+                { address: powerAccount.address, role: AccountRole.WRITABLE },
+                { address: leverProgramId, role: AccountRole.READONLY },
             ],
-            programId: handProgramId.publicKey,
-            data: borshSerialize(SetPowerStatusSchema, { name: 'Chris' }),
-        });
+            data: new Uint8Array(borshSerialize(SetPowerStatusSchema, { name: 'Chris' })),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.feePayer = payer.publicKey;
-        tx.add(ix);
-        tx.sign(payer);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const res = svm.sendTransaction(tx);
+        const res = svm.sendTransaction(signedTx);
         if (!(res instanceof TransactionMetadata)) {
             throw new Error(`Transaction failed: ${JSON.stringify(res)}`);
         }
     });
 
-    it('Pull it again!', () => {
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: powerAccount.publicKey, isSigner: false, isWritable: true },
-                { pubkey: leverProgramId.publicKey, isSigner: false, isWritable: false },
+    it('Pull it again!', async () => {
+        const ix = {
+            programAddress: handProgramId,
+            accounts: [
+                { address: powerAccount.address, role: AccountRole.WRITABLE },
+                { address: leverProgramId, role: AccountRole.READONLY },
             ],
-            programId: handProgramId.publicKey,
-            data: borshSerialize(SetPowerStatusSchema, { name: 'Ashley' }),
-        });
+            data: new Uint8Array(borshSerialize(SetPowerStatusSchema, { name: 'Ashley' })),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.feePayer = payer.publicKey;
-        tx.add(ix);
-        tx.sign(payer);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const res = svm.sendTransaction(tx);
+        const res = svm.sendTransaction(signedTx);
         if (!(res instanceof TransactionMetadata)) {
             throw new Error(`Transaction failed: ${JSON.stringify(res)}`);
         }

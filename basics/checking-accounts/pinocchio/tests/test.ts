@@ -1,62 +1,80 @@
 import assert from 'node:assert';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('Checking accounts', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/checking_accounts_pinocchio_program.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
-    const rentExemptBalance = svm.minimumBalanceForRentExemption(BigInt(0));
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let rentExemptBalance: bigint;
 
     // We'll create this ahead of time.
     // Our program will try to modify it.
-    const accountToChange = Keypair.generate();
+    let accountToChange: KeyPairSigner;
     // Our program will create this.
-    const accountToCreate = Keypair.generate();
+    let accountToCreate: KeyPairSigner;
 
-    it('Create an account owned by our program', () => {
-        const ix = SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: accountToChange.publicKey,
-            lamports: Number(rentExemptBalance),
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/checking_accounts_pinocchio_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+        rentExemptBalance = svm.minimumBalanceForRentExemption(0n);
+
+        accountToChange = await generateKeyPairSigner();
+        accountToCreate = await generateKeyPairSigner();
+    });
+
+    async function sendInstruction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        return svm.sendTransaction(signedTx);
+    }
+
+    it('Create an account owned by our program', async () => {
+        const ix = getCreateAccountInstruction({
+            payer,
+            newAccount: accountToChange,
+            lamports: rentExemptBalance,
             space: 0,
-            programId: PROGRAM_ID, // Our program
+            programAddress: programId, // Our program
         });
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, accountToChange);
-
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    it('Check accounts', () => {
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: accountToCreate.publicKey, isSigner: true, isWritable: true },
-                { pubkey: accountToChange.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Check accounts', async () => {
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: accountToCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: accountToCreate },
+                { address: accountToChange.address, role: AccountRole.WRITABLE_SIGNER, signer: accountToChange },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: Buffer.alloc(0),
-        });
+            data: new Uint8Array(0),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, accountToChange, accountToCreate);
-
-        const result = svm.sendTransaction(tx);
+        const result = await sendInstruction(ix);
         assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 });

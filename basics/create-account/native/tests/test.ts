@@ -1,71 +1,87 @@
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('Create a system account', () => {
-    const PROGRAM_ID = PublicKey.unique();
-
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/create_account_program.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-    it('Create the account via a cross program invocation', () => {
-        const newKeypair = Keypair.generate();
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/create_account_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(2_000_000_000n));
+    });
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: newKeypair.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Create the account via a cross program invocation', async () => {
+        const newKeypair = await generateKeyPairSigner();
+
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: newKeypair.address, role: AccountRole.WRITABLE_SIGNER, signer: newKeypair },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: Buffer.alloc(512),
-        });
+            data: new Uint8Array(512),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix);
-        tx.sign(payer, newKeypair);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const result = svm.sendTransaction(tx);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         // Verify the account was created with space derived from the instruction data
-        const accountInfo = svm.getAccount(newKeypair.publicKey);
+        const accountInfo = svm.getAccount(newKeypair.address);
+        assert(accountInfo.exists, 'Expected account to have been created');
         if (accountInfo.data.length !== 512) throw new Error('unexpected account size');
-        console.log(`Account with public key ${newKeypair.publicKey} successfully created via CPI`);
+        console.log(`Account with public key ${newKeypair.address} successfully created via CPI`);
     });
 
-    it('Create the account via direct call to system program', () => {
-        const newKeypair = Keypair.generate();
+    it('Create the account via direct call to system program', async () => {
+        const newKeypair = await generateKeyPairSigner();
 
-        const ix = SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: newKeypair.publicKey,
-            lamports: LAMPORTS_PER_SOL,
+        const ix = getCreateAccountInstruction({
+            payer,
+            newAccount: newKeypair,
+            lamports: 1_000_000_000n,
             space: 0,
-            programId: SystemProgram.programId,
+            programAddress: SYSTEM_PROGRAM_ADDRESS,
         });
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix);
-        tx.sign(payer, newKeypair);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const result = svm.sendTransaction(tx);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         // Verify the account was created
-        const accountInfo = svm.getAccount(newKeypair.publicKey);
-        assert(accountInfo, 'Expected account to have been created');
-        console.log(`Account with public key ${newKeypair.publicKey} successfully created`);
+        const accountInfo = svm.getAccount(newKeypair.address);
+        assert(accountInfo.exists, 'Expected account to have been created');
+        console.log(`Account with public key ${newKeypair.address} successfully created`);
     });
 });

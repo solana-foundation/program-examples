@@ -1,6 +1,17 @@
-import { readFileSync } from 'node:fs';
-import { Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { LiteSVM, Rent } from 'litesvm';
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 interface AddressInfo {
     name: string;
@@ -65,36 +76,26 @@ function fromBytes(buffer: Buffer): AddressInfo {
 }
 
 describe('Account Data!', () => {
-    // Load the program keypair
-    const programKeypairPath = new URL(
-        './fixtures/account_data_pinocchio_program-keypair.json',
-        // @ts-expect-error
-        import.meta.url,
-    ).pathname;
-    const programKeypairData = JSON.parse(readFileSync(programKeypairPath, 'utf-8'));
-    const programKeypair = Keypair.fromSecretKey(new Uint8Array(programKeypairData));
-    const PROGRAM_ID = programKeypair.publicKey;
-
-    // Load the program
-    const programPath = new URL(
-        './fixtures/account_data_pinocchio_program.so',
-        // @ts-expect-error
-        import.meta.url,
-    ).pathname;
-
     const litesvm = new LiteSVM();
-    // pinocchio 0.11 Rent reads a single lamports-per-byte rate from the first 8 bytes of the sysvar
-    litesvm.addProgramFromFile(PROGRAM_ID, programPath);
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let addressInfoAccount: KeyPairSigner;
 
-    const payer = Keypair.generate();
-    litesvm.airdrop(payer.publicKey, BigInt(100 * LAMPORTS_PER_SOL));
+    before(async () => {
+        // Load the program
+        programId = (await generateKeyPairSigner()).address;
+        litesvm.addProgramFromFile(programId, 'tests/fixtures/account_data_pinocchio_program.so');
 
-    const addressInfoAccount = Keypair.generate();
+        payer = await generateKeyPairSigner();
+        litesvm.airdrop(payer.address, lamports(100_000_000_000n));
 
-    it('Create the address info account', () => {
-        console.log(`Program Address    : ${PROGRAM_ID}`);
-        console.log(`Payer Address      : ${payer.publicKey}`);
-        console.log(`Address Info Acct  : ${addressInfoAccount.publicKey}`);
+        addressInfoAccount = await generateKeyPairSigner();
+    });
+
+    it('Create the address info account', async () => {
+        console.log(`Program Address    : ${programId}`);
+        console.log(`Payer Address      : ${payer.address}`);
+        console.log(`Address Info Acct  : ${addressInfoAccount.address}`);
 
         const addressInfo: AddressInfo = {
             name: 'Joe C',
@@ -103,32 +104,38 @@ describe('Account Data!', () => {
             city: 'Solana Beach',
         };
 
-        const ix = new TransactionInstruction({
-            keys: [
+        const ix = {
+            programAddress: programId,
+            accounts: [
                 {
-                    pubkey: addressInfoAccount.publicKey,
-                    isSigner: true,
-                    isWritable: true,
+                    address: addressInfoAccount.address,
+                    role: AccountRole.WRITABLE_SIGNER,
+                    signer: addressInfoAccount,
                 },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: toBytes(addressInfo),
-        });
+            data: new Uint8Array(toBytes(addressInfo)),
+        };
 
-        const tx = new Transaction().add(ix);
-        tx.feePayer = payer.publicKey;
-        tx.recentBlockhash = litesvm.latestBlockhash();
-        tx.sign(payer, addressInfoAccount);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => litesvm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        litesvm.sendTransaction(tx);
+        const result = litesvm.sendTransaction(signedTx);
+        if (result instanceof FailedTransactionMetadata) {
+            throw new Error(`transaction failed: ${result.toString()}`);
+        }
     });
 
     it("Read the new account's data", () => {
-        const accountInfo = litesvm.getAccount(addressInfoAccount.publicKey);
+        const accountInfo = litesvm.getAccount(addressInfoAccount.address);
 
-        if (!accountInfo) {
+        if (!accountInfo.exists) {
             throw new Error('Account not found');
         }
 

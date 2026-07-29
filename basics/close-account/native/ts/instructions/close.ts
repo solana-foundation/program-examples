@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
-import { type PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
+import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { MyInstruction } from '.';
 
@@ -29,24 +30,18 @@ export const CloseSchema = new Map([
     ],
 ]);
 
-export function createCloseUserInstruction(
-    target: PublicKey,
-    payer: PublicKey,
-    programId: PublicKey,
-): TransactionInstruction {
+export function createCloseUserInstruction(target: Address, payer: TransactionSigner, programId: Address) {
     const instructionObject = new Close({
         instruction: MyInstruction.CloseUser,
     });
 
-    const ix = new TransactionInstruction({
-        keys: [
-            { pubkey: target, isSigner: false, isWritable: true },
-            { pubkey: payer, isSigner: true, isWritable: true },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    return {
+        programAddress: programId,
+        accounts: [
+            { address: target, role: AccountRole.WRITABLE },
+            { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
         ],
-        programId: programId,
-        data: instructionObject.toBuffer(),
-    });
-
-    return ix;
+        data: new Uint8Array(instructionObject.toBuffer()),
+    };
 }

@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
-import { type PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
+import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { ReallocInstruction } from './instruction';
 
@@ -12,12 +13,12 @@ const ReallocateWithoutZeroInitSchema = {
 } as const;
 
 export function createReallocateWithoutZeroInitInstruction(
-    target: PublicKey,
-    payer: PublicKey,
-    programId: PublicKey,
+    target: Address,
+    payer: TransactionSigner,
+    programId: Address,
     state: string,
     zip: number,
-): TransactionInstruction {
+) {
     const data = Buffer.from(
         borsh.serialize(ReallocateWithoutZeroInitSchema, {
             instruction: ReallocInstruction.ReallocateWithoutZeroInit,
@@ -26,15 +27,15 @@ export function createReallocateWithoutZeroInitInstruction(
         }),
     );
 
-    return new TransactionInstruction({
-        keys: [
-            { pubkey: target, isSigner: false, isWritable: true },
-            { pubkey: payer, isSigner: true, isWritable: true },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    return {
+        programAddress: programId,
+        accounts: [
+            { address: target, role: AccountRole.WRITABLE },
+            { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
         ],
-        programId,
-        data,
-    });
+        data: new Uint8Array(data),
+    };
 }
 
 const ReallocateZeroInitSchema = {
@@ -48,14 +49,14 @@ const ReallocateZeroInitSchema = {
 } as const;
 
 export function createReallocateZeroInitInstruction(
-    target: PublicKey,
-    _payer: PublicKey,
-    programId: PublicKey,
+    target: Address,
+    _payer: Address,
+    programId: Address,
     name: string,
     position: string,
     company: string,
     years_employed: number,
-): TransactionInstruction {
+) {
     const data = Buffer.from(
         borsh.serialize(ReallocateZeroInitSchema, {
             instruction: ReallocInstruction.ReallocateZeroInit,
@@ -66,9 +67,9 @@ export function createReallocateZeroInitInstruction(
         }),
     );
 
-    return new TransactionInstruction({
-        keys: [{ pubkey: target, isSigner: false, isWritable: true }],
-        programId,
-        data,
-    });
+    return {
+        programAddress: programId,
+        accounts: [{ address: target, role: AccountRole.WRITABLE }],
+        data: new Uint8Array(data),
+    };
 }

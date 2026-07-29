@@ -1,24 +1,36 @@
 import { Buffer } from 'node:buffer';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('Realloc!', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/realloc_pinocchio_program.so');
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let testAccount: KeyPairSigner;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/realloc_pinocchio_program.so');
 
-    const testAccount = Keypair.generate();
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+
+        testAccount = await generateKeyPairSigner();
+    });
 
     function fixedString(value: string): Buffer {
         const bytes = Buffer.alloc(8);
@@ -32,38 +44,44 @@ describe('Realloc!', () => {
             .replace(/\0+$/, '');
     }
 
-    function sendTransaction(tx: Transaction) {
-        const result = svm.sendTransaction(tx);
+    async function sendInstruction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
     function getTestAccountData(): Uint8Array {
-        const account = svm.getAccount(testAccount.publicKey);
-        assert(account, 'test account not found');
-        return account.data;
+        const account = svm.getAccount(testAccount.address);
+        assert(account.exists, 'test account not found');
+        return new Uint8Array(account.data);
     }
 
-    it('Create the account with data', () => {
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: testAccount.publicKey, isSigner: true, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Create the account with data', async () => {
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: testAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: testAccount },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: Buffer.concat([
-                Buffer.from([0]),
-                fixedString('Jacob'),
-                Buffer.from([123]),
-                fixedString('Main St.'),
-                fixedString('Chicago'),
-            ]),
-        });
+            data: new Uint8Array(
+                Buffer.concat([
+                    Buffer.from([0]),
+                    fixedString('Jacob'),
+                    Buffer.from([123]),
+                    fixedString('Main St.'),
+                    fixedString('Chicago'),
+                ]),
+            ),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, testAccount);
-        sendTransaction(tx);
+        await sendInstruction(ix);
 
         const data = getTestAccountData();
         assert.strictEqual(data.length, 25);
@@ -73,24 +91,21 @@ describe('Realloc!', () => {
         assert.strictEqual(readFixedString(data, 17), 'Chicago');
     });
 
-    it('Reallocate WITHOUT zero init', () => {
+    it('Reallocate WITHOUT zero init', async () => {
         const zip = Buffer.alloc(4);
         zip.writeUInt32LE(12345, 0);
 
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: testAccount.publicKey, isSigner: false, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: testAccount.address, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: Buffer.concat([Buffer.from([1]), fixedString('Illinois'), zip]),
-        });
+            data: new Uint8Array(Buffer.concat([Buffer.from([1]), fixedString('Illinois'), zip])),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
-        sendTransaction(tx);
+        await sendInstruction(ix);
 
         const data = getTestAccountData();
         assert.strictEqual(data.length, 37);
@@ -99,23 +114,22 @@ describe('Realloc!', () => {
         assert.strictEqual(Buffer.from(data).readUInt32LE(33), 12345);
     });
 
-    it('Reallocate WITH zero init', () => {
-        const ix = new TransactionInstruction({
-            keys: [{ pubkey: testAccount.publicKey, isSigner: false, isWritable: true }],
-            programId: PROGRAM_ID,
-            data: Buffer.concat([
-                Buffer.from([2]),
-                fixedString('Perelyn'),
-                fixedString('Eng'),
-                fixedString('Anza'),
-                Buffer.from([2]),
-            ]),
-        });
+    it('Reallocate WITH zero init', async () => {
+        const ix = {
+            programAddress: programId,
+            accounts: [{ address: testAccount.address, role: AccountRole.WRITABLE }],
+            data: new Uint8Array(
+                Buffer.concat([
+                    Buffer.from([2]),
+                    fixedString('Perelyn'),
+                    fixedString('Eng'),
+                    fixedString('Anza'),
+                    Buffer.from([2]),
+                ]),
+            ),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
-        sendTransaction(tx);
+        await sendInstruction(ix);
 
         const data = getTestAccountData();
         assert.strictEqual(data.length, 25);

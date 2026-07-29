@@ -1,89 +1,103 @@
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import {
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { createTransferInstruction, InstructionType } from './instruction';
 
-describe('transfer-sol', () => {
-    const PROGRAM_ID = PublicKey.unique();
-    const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/transfer_sol_program.so');
+const LAMPORTS_PER_SOL = 1_000_000_000;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(10 * LAMPORTS_PER_SOL));
+describe('transfer-sol', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let test1Recipient: KeyPairSigner;
+    let test2Recipient1: KeyPairSigner;
+    let test2Recipient2: KeyPairSigner;
 
     const transferAmount = 1 * LAMPORTS_PER_SOL;
-    const test1Recipient = Keypair.generate();
-    const test2Recipient1 = Keypair.generate();
-    const test2Recipient2 = Keypair.generate();
 
-    function sendTransaction(tx: Transaction) {
-        const result = svm.sendTransaction(tx);
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/transfer_sol_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(BigInt(10 * LAMPORTS_PER_SOL)));
+        test1Recipient = await generateKeyPairSigner();
+        test2Recipient1 = await generateKeyPairSigner();
+        test2Recipient2 = await generateKeyPairSigner();
+    });
+
+    async function sendTransaction(instructions: Instruction[]) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions(instructions, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    it('Transfer between accounts using the system program', () => {
-        getBalances(payer.publicKey, test1Recipient.publicKey, 'Beginning');
+    it('Transfer between accounts using the system program', async () => {
+        getBalances(payer.address, test1Recipient.address, 'Beginning');
 
         const ix = createTransferInstruction(
-            payer.publicKey,
-            test1Recipient.publicKey,
-            PROGRAM_ID,
+            payer,
+            test1Recipient.address,
+            programId,
             InstructionType.CpiTransfer,
             transferAmount,
         );
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
+        await sendTransaction([ix]);
 
-        sendTransaction(tx);
-
-        getBalances(payer.publicKey, test1Recipient.publicKey, 'Resulting');
+        getBalances(payer.address, test1Recipient.address, 'Resulting');
     });
 
-    it('Create two accounts for the following test', () => {
-        const ix = (pubkey: PublicKey) => {
-            return SystemProgram.createAccount({
-                fromPubkey: payer.publicKey,
-                newAccountPubkey: pubkey,
+    it('Create two accounts for the following test', async () => {
+        const ix = (newAccount: KeyPairSigner) => {
+            return getCreateAccountInstruction({
+                payer,
+                newAccount,
                 space: 0,
                 lamports: 2 * LAMPORTS_PER_SOL,
-                programId: PROGRAM_ID,
+                programAddress: programId,
             });
         };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix(test2Recipient1.publicKey))
-            .add(ix(test2Recipient2.publicKey))
-            .sign(payer, test2Recipient1, test2Recipient2);
-
-        sendTransaction(tx);
+        await sendTransaction([ix(test2Recipient1), ix(test2Recipient2)]);
     });
 
-    it('Transfer between accounts using our program', () => {
-        getBalances(test2Recipient1.publicKey, test2Recipient2.publicKey, 'Beginning');
+    it('Transfer between accounts using our program', async () => {
+        getBalances(test2Recipient1.address, test2Recipient2.address, 'Beginning');
 
         const ix = createTransferInstruction(
-            test2Recipient1.publicKey,
-            test2Recipient2.publicKey,
-            PROGRAM_ID,
+            test2Recipient1,
+            test2Recipient2.address,
+            programId,
             InstructionType.ProgramTransfer,
             transferAmount,
         );
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, test2Recipient1);
+        await sendTransaction([ix]);
 
-        sendTransaction(tx);
-
-        getBalances(test2Recipient1.publicKey, test2Recipient2.publicKey, 'Resulting');
+        getBalances(test2Recipient1.address, test2Recipient2.address, 'Resulting');
     });
 
-    function getBalances(payerPubkey: PublicKey, recipientPubkey: PublicKey, timeframe: string) {
-        const payerBalance = svm.getBalance(payerPubkey);
-        const recipientBalance = svm.getBalance(recipientPubkey);
+    function getBalances(payerAddress: Address, recipientAddress: Address, timeframe: string) {
+        const payerBalance = svm.getBalance(payerAddress);
+        const recipientBalance = svm.getBalance(recipientAddress);
 
         console.log(`${timeframe} balances:`);
         console.log(`   Payer: ${payerBalance}`);

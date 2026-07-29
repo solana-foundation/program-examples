@@ -1,16 +1,32 @@
 import { Buffer } from 'node:buffer';
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('Carnival (Pinocchio)', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/repository_layout_pinocchio_program.so');
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/repository_layout_pinocchio_program.so');
+
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+    });
 
     const CarnivalInstructionSchema = {
         struct: {
@@ -34,24 +50,27 @@ describe('Carnival (Pinocchio)', () => {
         return Buffer.from(borsh.serialize(schema, data));
     }
 
-    function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
-        const tx = new Transaction();
-        for (const ix of instructionsList) {
-            tx.recentBlockhash = svm.latestBlockhash();
-            tx.add(
-                new TransactionInstruction({
-                    keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
-                    programId: PROGRAM_ID,
-                    data: borshSerialize(CarnivalInstructionSchema, ix),
-                }),
-            ).sign(payer);
-        }
-        const result = svm.sendTransaction(tx);
+    async function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
+        const instructions = instructionsList.map(ix => ({
+            programAddress: programId,
+            accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
+            data: new Uint8Array(borshSerialize(CarnivalInstructionSchema, ix)),
+        }));
+
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions(instructions, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    it('Go on some rides!', () => {
-        sendCarnivalInstructions([
+    it('Go on some rides!', async () => {
+        await sendCarnivalInstructions([
             {
                 name: 'Jimmy',
                 height: 36,
@@ -83,8 +102,8 @@ describe('Carnival (Pinocchio)', () => {
         ]);
     });
 
-    it('Play some games!', () => {
-        sendCarnivalInstructions([
+    it('Play some games!', async () => {
+        await sendCarnivalInstructions([
             {
                 name: 'Jimmy',
                 height: 36,
@@ -116,8 +135,8 @@ describe('Carnival (Pinocchio)', () => {
         ]);
     });
 
-    it('Eat some food!', () => {
-        sendCarnivalInstructions([
+    it('Eat some food!', async () => {
+        await sendCarnivalInstructions([
             {
                 name: 'Jimmy',
                 height: 36,

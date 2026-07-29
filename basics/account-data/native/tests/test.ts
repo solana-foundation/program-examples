@@ -1,12 +1,17 @@
 import { Buffer } from 'node:buffer';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
@@ -32,47 +37,60 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
 }
 
 describe('Account Data!', () => {
-    const addressInfoAccount = Keypair.generate();
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/account_data_native_program.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let addressInfoAccount: KeyPairSigner;
 
-    it('Create the address info account', () => {
-        console.log(`Program Address      : ${PROGRAM_ID}`);
-        console.log(`Payer Address      : ${payer.publicKey}`);
-        console.log(`Address Info Acct  : ${addressInfoAccount.publicKey}`);
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/account_data_native_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+        addressInfoAccount = await generateKeyPairSigner();
+    });
 
-        const ix = new TransactionInstruction({
-            keys: [
+    it('Create the address info account', async () => {
+        console.log(`Program Address      : ${programId}`);
+        console.log(`Payer Address      : ${payer.address}`);
+        console.log(`Address Info Acct  : ${addressInfoAccount.address}`);
+
+        const ix = {
+            programAddress: programId,
+            accounts: [
                 {
-                    pubkey: addressInfoAccount.publicKey,
-                    isSigner: true,
-                    isWritable: true,
+                    address: addressInfoAccount.address,
+                    role: AccountRole.WRITABLE_SIGNER,
+                    signer: addressInfoAccount,
                 },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: borshSerialize(AddressInfoSchema, {
-                name: 'Joe C',
-                house_number: 136,
-                street: 'Mile High Dr.',
-                city: 'Solana Beach',
-            }),
-        });
+            data: new Uint8Array(
+                borshSerialize(AddressInfoSchema, {
+                    name: 'Joe C',
+                    house_number: 136,
+                    street: 'Mile High Dr.',
+                    city: 'Solana Beach',
+                }),
+            ),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, addressInfoAccount);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const result = svm.sendTransaction(tx);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
     it("Read the new account's data", () => {
-        const accountInfo = svm.getAccount(addressInfoAccount.publicKey);
+        const accountInfo = svm.getAccount(addressInfoAccount.address);
+        assert(accountInfo.exists, 'address info account not found');
 
         const readAddressInfo = borsh.deserialize(AddressInfoSchema, Buffer.from(accountInfo.data)) as AddressInfo;
         console.log(`Name     : ${readAddressInfo.name}`);

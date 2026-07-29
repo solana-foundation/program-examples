@@ -1,101 +1,118 @@
 import { Buffer } from 'node:buffer';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('Pinocchio: CPI', () => {
-    const HAND_PROGRAM_ID = PublicKey.unique();
-    const LEVER_PROGRAM_ID = PublicKey.unique();
-
     const svm = new LiteSVM();
-    svm.addProgramFromFile(HAND_PROGRAM_ID, 'tests/fixtures/cross_program_invocation_pinocchio_hand.so');
-    svm.addProgramFromFile(LEVER_PROGRAM_ID, 'tests/fixtures/cross_program_invocation_pinocchio_lever.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    let handProgramId: Address;
+    let leverProgramId: Address;
+    let payer: KeyPairSigner;
+    let powerAccount: KeyPairSigner;
 
     // Lever instruction discriminator
     const IX_INITIALIZE = 0;
 
-    const powerAccount = Keypair.generate();
+    before(async () => {
+        handProgramId = (await generateKeyPairSigner()).address;
+        leverProgramId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(handProgramId, 'tests/fixtures/cross_program_invocation_pinocchio_hand.so');
+        svm.addProgramFromFile(leverProgramId, 'tests/fixtures/cross_program_invocation_pinocchio_lever.so');
 
-    function sendTx(ix: TransactionInstruction, signers: Keypair[]) {
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, ...signers);
-        return svm.sendTransaction(tx);
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+
+        powerAccount = await generateKeyPairSigner();
+    });
+
+    async function sendTx(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        return svm.sendTransaction(signedTx);
     }
 
-    it('Initialize the lever!', () => {
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: powerAccount.publicKey, isSigner: true, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Initialize the lever!', async () => {
+        const ix = {
+            programAddress: leverProgramId,
+            accounts: [
+                { address: powerAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: powerAccount },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: LEVER_PROGRAM_ID,
-            data: Buffer.from([IX_INITIALIZE]),
-        });
-        const result = sendTx(ix, [powerAccount]);
+            data: new Uint8Array([IX_INITIALIZE]),
+        };
+        const result = await sendTx(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const acct = svm.getAccount(powerAccount.publicKey);
-        if (acct === null) throw new Error('power account not found');
+        const acct = svm.getAccount(powerAccount.address);
+        if (!acct.exists) throw new Error('power account not found');
         assert.deepEqual(Buffer.from(acct.data), Buffer.from([0])); // is_on = false
     });
 
-    it('Pull the lever!', () => {
+    it('Pull the lever!', async () => {
         const name = 'Chris';
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: powerAccount.publicKey, isSigner: false, isWritable: true },
-                { pubkey: LEVER_PROGRAM_ID, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: handProgramId,
+            accounts: [
+                { address: powerAccount.address, role: AccountRole.WRITABLE },
+                { address: leverProgramId, role: AccountRole.READONLY },
             ],
-            programId: HAND_PROGRAM_ID,
-            data: Buffer.from(name, 'utf8'),
-        });
-        const result = sendTx(ix, []);
+            data: new Uint8Array(Buffer.from(name, 'utf8')),
+        };
+        const result = await sendTx(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const acct = svm.getAccount(powerAccount.publicKey);
-        if (acct === null) throw new Error('power account not found');
+        const acct = svm.getAccount(powerAccount.address);
+        if (!acct.exists) throw new Error('power account not found');
         assert.deepEqual(Buffer.from(acct.data), Buffer.from([1])); // is_on = true
     });
 
-    it('Pull it again!', () => {
+    it('Pull it again!', async () => {
         const name = 'Ashley';
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: powerAccount.publicKey, isSigner: false, isWritable: true },
-                { pubkey: LEVER_PROGRAM_ID, isSigner: false, isWritable: false },
+        const ix = {
+            programAddress: handProgramId,
+            accounts: [
+                { address: powerAccount.address, role: AccountRole.WRITABLE },
+                { address: leverProgramId, role: AccountRole.READONLY },
             ],
-            programId: HAND_PROGRAM_ID,
-            data: Buffer.from(name, 'utf8'),
-        });
-        const result = sendTx(ix, []);
+            data: new Uint8Array(Buffer.from(name, 'utf8')),
+        };
+        const result = await sendTx(ix);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const acct = svm.getAccount(powerAccount.publicKey);
-        if (acct === null) throw new Error('power account not found');
+        const acct = svm.getAccount(powerAccount.address);
+        if (!acct.exists) throw new Error('power account not found');
         assert.deepEqual(Buffer.from(acct.data), Buffer.from([0])); // is_on = false (flipped back)
     });
 
-    it('Lever rejects switch_power directly with no name', () => {
+    it('Lever rejects switch_power directly with no name', async () => {
         // Sending only the discriminator (no name bytes) is fine because UTF-8 of empty is empty,
         // but invoking the lever directly with an unknown discriminator should fail.
-        const ix = new TransactionInstruction({
-            keys: [{ pubkey: powerAccount.publicKey, isSigner: false, isWritable: true }],
-            programId: LEVER_PROGRAM_ID,
-            data: Buffer.from([42]),
-        });
+        const ix = {
+            programAddress: leverProgramId,
+            accounts: [{ address: powerAccount.address, role: AccountRole.WRITABLE }],
+            data: new Uint8Array([42]),
+        };
 
-        const result = sendTx(ix, []);
+        const result = await sendTx(ix);
         assert.instanceOf(result, FailedTransactionMetadata, 'expected lever to reject unknown discriminator');
     });
 });

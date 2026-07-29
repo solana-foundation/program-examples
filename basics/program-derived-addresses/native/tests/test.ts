@@ -1,23 +1,37 @@
 import assert from 'node:assert';
 import { Buffer } from 'node:buffer';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('PDAs', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/program_derived_addresses_native_program.so');
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let testUser: KeyPairSigner;
 
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/program_derived_addresses_native_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+        testUser = await generateKeyPairSigner();
+    });
 
     const PageVisitsSchema = {
         struct: {
@@ -33,96 +47,93 @@ describe('PDAs', () => {
         return Buffer.from(borsh.serialize(schema, data));
     }
 
-    function sendTransaction(tx: Transaction) {
-        const result = svm.sendTransaction(tx);
+    async function sendTransaction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    const testUser = Keypair.generate();
-
-    it('Create a test user', () => {
-        const ix = SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            lamports: Number(svm.minimumBalanceForRentExemption(BigInt(0))),
-            newAccountPubkey: testUser.publicKey,
-            programId: SystemProgram.programId,
+    it('Create a test user', async () => {
+        const ix = getCreateAccountInstruction({
+            payer,
+            newAccount: testUser,
+            lamports: svm.minimumBalanceForRentExemption(0n),
             space: 0,
+            programAddress: SYSTEM_PROGRAM_ADDRESS,
         });
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, testUser); // Add instruction and Sign the transaction
-
-        sendTransaction(tx);
-        console.log(`Local Wallet: ${payer.publicKey}`);
-        console.log(`Created User: ${testUser.publicKey}`);
+        await sendTransaction(ix);
+        console.log(`Local Wallet: ${payer.address}`);
+        console.log(`Created User: ${testUser.address}`);
     });
 
-    function derivePageVisitsPda(userPubkey: PublicKey) {
-        return PublicKey.findProgramAddressSync([Buffer.from('page_visits'), userPubkey.toBuffer()], PROGRAM_ID);
+    function derivePageVisitsPda(userAddress: Address) {
+        return getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['page_visits', getAddressEncoder().encode(userAddress)],
+        });
     }
 
-    it('Create the page visits tracking PDA', () => {
-        const [pageVisitsPda, pageVisitsBump] = derivePageVisitsPda(testUser.publicKey);
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: pageVisitsPda, isSigner: false, isWritable: true },
-                { pubkey: testUser.publicKey, isSigner: false, isWritable: false },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Create the page visits tracking PDA', async () => {
+        const [pageVisitsPda, pageVisitsBump] = await derivePageVisitsPda(testUser.address);
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: pageVisitsPda, role: AccountRole.WRITABLE },
+                { address: testUser.address, role: AccountRole.READONLY },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: borshSerialize(PageVisitsSchema, {
-                page_visits: 0,
-                bump: pageVisitsBump,
-            }),
-        });
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
+            data: new Uint8Array(
+                borshSerialize(PageVisitsSchema, {
+                    page_visits: 0,
+                    bump: pageVisitsBump,
+                }),
+            ),
+        };
 
-        sendTransaction(tx);
+        await sendTransaction(ix);
     });
 
-    it('Visit the page!', () => {
-        const [pageVisitsPda, _] = derivePageVisitsPda(testUser.publicKey);
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: pageVisitsPda, isSigner: false, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
+    it('Visit the page!', async () => {
+        const [pageVisitsPda, _] = await derivePageVisitsPda(testUser.address);
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: pageVisitsPda, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
             ],
-            programId: PROGRAM_ID,
-            data: borshSerialize(IncrementPageVisitsSchema, {}),
-        });
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
+            data: new Uint8Array(borshSerialize(IncrementPageVisitsSchema, {})),
+        };
 
-        sendTransaction(tx);
+        await sendTransaction(ix);
     });
 
-    it('Visit the page!', () => {
-        const [pageVisitsPda, _] = derivePageVisitsPda(testUser.publicKey);
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: pageVisitsPda, isSigner: false, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
+    it('Visit the page!', async () => {
+        const [pageVisitsPda, _] = await derivePageVisitsPda(testUser.address);
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: pageVisitsPda, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
             ],
-            programId: PROGRAM_ID,
-            data: borshSerialize(IncrementPageVisitsSchema, {}),
-        });
-        const tx = new Transaction();
+            data: new Uint8Array(borshSerialize(IncrementPageVisitsSchema, {})),
+        };
+
         svm.expireBlockhash();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
-
-        sendTransaction(tx);
+        await sendTransaction(ix);
     });
 
-    it('Read page visits', () => {
-        const [pageVisitsPda, _] = derivePageVisitsPda(testUser.publicKey);
+    it('Read page visits', async () => {
+        const [pageVisitsPda, _] = await derivePageVisitsPda(testUser.address);
         const accountInfo = svm.getAccount(pageVisitsPda);
-        assert(accountInfo, 'page visits account not found');
+        assert(accountInfo.exists, 'page visits account not found');
         const readPageVisits = borsh.deserialize(PageVisitsSchema, Buffer.from(accountInfo.data)) as {
             page_visits: number;
             bump: number;

@@ -6,14 +6,15 @@
     "build-and-test": "pnpm build && pnpm test"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.98.4"
+    "@solana/kit": "^6.10.0",
+    "@solana-program/system": "^0.13.0"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "chai": "^6.2.2",
     "mocha": "^11.7.5",
-    "litesvm": "^0.8.0",
+    "litesvm": "^1.3.0",
     "typescript": "^5.9.3",
     "@types/node": "^26.1.0",
     "tsx": "^4.19.2"

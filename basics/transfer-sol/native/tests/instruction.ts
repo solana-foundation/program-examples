@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
-import { type PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
+import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 
 export enum InstructionType {
@@ -15,12 +16,12 @@ const TransferInstructionSchema = {
 };
 
 export function createTransferInstruction(
-    payerPubkey: PublicKey,
-    recipientPubkey: PublicKey,
-    programId: PublicKey,
+    payer: TransactionSigner,
+    recipientAddress: Address,
+    programId: Address,
     instruction: InstructionType,
     amount: number,
-): TransactionInstruction {
+) {
     const data = Buffer.from(
         borsh.serialize(TransferInstructionSchema, {
             instruction,
@@ -28,13 +29,13 @@ export function createTransferInstruction(
         }),
     );
 
-    return new TransactionInstruction({
-        keys: [
-            { pubkey: payerPubkey, isSigner: true, isWritable: true },
-            { pubkey: recipientPubkey, isSigner: false, isWritable: true },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    return {
+        programAddress: programId,
+        accounts: [
+            { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+            { address: recipientAddress, role: AccountRole.WRITABLE },
+            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
         ],
-        programId,
-        data,
-    });
+        data: new Uint8Array(data),
+    };
 }

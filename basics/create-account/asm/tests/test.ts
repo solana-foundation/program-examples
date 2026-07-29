@@ -1,68 +1,85 @@
 import assert from 'node:assert';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressDecoder,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
+const LAMPORTS_PER_SOL = 1_000_000_000n;
+
+// The program hardcodes input-buffer offsets that assume a program id with a
+// zero prefix, exactly what web3.js `PublicKey.unique()` used to provide.
+const PROGRAM_ID = getAddressDecoder().decode(new Uint8Array([...new Array(31).fill(0), 1]));
+
 describe('Create a system account', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/create-account-asm-program.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
+    let payer: KeyPairSigner;
 
-    it('Create the account via a cross program invocation', () => {
-        const newKeypair = Keypair.generate();
-
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: newKeypair.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-            ],
-            programId: PROGRAM_ID,
-            data: Buffer.alloc(0),
-        });
-
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, newKeypair);
-
-        const result = svm.sendTransaction(tx);
-        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
-
-        const accountInfo = svm.getAccount(newKeypair.publicKey);
-        assert.ok(accountInfo, 'new account should exist');
-        assert.ok(accountInfo.lamports > 0, 'new account should have lamports');
-        assert.equal(accountInfo.owner.toString(), SystemProgram.programId.toString());
+    before(async () => {
+        svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/create-account-asm-program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(2n * LAMPORTS_PER_SOL));
     });
 
-    it('Create the account via direct call to system program', () => {
-        const newKeypair = Keypair.generate();
+    async function sendExpectSuccess(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    }
 
-        const ix = SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: newKeypair.publicKey,
+    it('Create the account via a cross program invocation', async () => {
+        const newAccount = await generateKeyPairSigner();
+
+        const ix = {
+            programAddress: PROGRAM_ID,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: newAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: newAccount },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
+
+        await sendExpectSuccess(ix);
+
+        const accountInfo = svm.getAccount(newAccount.address);
+        assert.ok(accountInfo.exists, 'new account should exist');
+        assert.ok(accountInfo.lamports > 0n, 'new account should have lamports');
+        assert.equal(accountInfo.programAddress, SYSTEM_PROGRAM_ADDRESS);
+    });
+
+    it('Create the account via direct call to system program', async () => {
+        const newAccount = await generateKeyPairSigner();
+
+        const ix = getCreateAccountInstruction({
+            payer,
+            newAccount,
             lamports: LAMPORTS_PER_SOL,
             space: 0,
-            programId: SystemProgram.programId,
+            programAddress: SYSTEM_PROGRAM_ADDRESS,
         });
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, newKeypair);
+        await sendExpectSuccess(ix);
 
-        const result = svm.sendTransaction(tx);
-        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
-
-        const accountInfo = svm.getAccount(newKeypair.publicKey);
-        assert.ok(accountInfo, 'new account should exist');
+        const accountInfo = svm.getAccount(newAccount.address);
+        assert.ok(accountInfo.exists, 'new account should exist');
         assert.equal(accountInfo.lamports, LAMPORTS_PER_SOL);
-        assert.equal(accountInfo.owner.toString(), SystemProgram.programId.toString());
+        assert.equal(accountInfo.programAddress, SYSTEM_PROGRAM_ADDRESS);
     });
 });

@@ -1,14 +1,27 @@
 import {
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    createAssociatedTokenAccountIdempotentInstruction,
-    createInitializeMint2Instruction,
-    createMintToInstruction,
-    getAssociatedTokenAddressSync,
-    MINT_SIZE,
-    TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import { Keypair, PublicKey, type Signer, SystemProgram, Transaction } from '@solana/web3.js';
-import BN from 'bn.js';
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    getU64Encoder,
+    type Instruction,
+    type KeyPairSigner,
+    pipe,
+    type ReadonlyUint8Array,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction } from '@solana-program/system';
+import {
+    findAssociatedTokenPda,
+    getCreateAssociatedTokenIdempotentInstruction,
+    getInitializeMint2Instruction,
+    getMintSize,
+    getMintToInstruction,
+    TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token';
 import { FailedTransactionMetadata, type LiteSVM } from 'litesvm';
 
 export async function sleep(seconds: number) {
@@ -24,7 +37,16 @@ export const expectRevert = async (promise: Promise<unknown>) => {
     }
 };
 
-export const mintingTokens = ({
+async function findAssociatedTokenAddress(mint: Address, owner: Address): Promise<Address> {
+    const [associatedTokenAddress] = await findAssociatedTokenPda({
+        mint,
+        owner,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    });
+    return associatedTokenAddress;
+}
+
+export const mintingTokens = async ({
     svm,
     payer,
     holder,
@@ -33,119 +55,133 @@ export const mintingTokens = ({
     decimals = 6,
 }: {
     svm: LiteSVM;
-    payer: Keypair;
-    holder: Signer;
-    mintKeypair: Keypair;
+    payer: KeyPairSigner;
+    holder: KeyPairSigner;
+    mintKeypair: KeyPairSigner;
     mintedAmount?: number;
     decimals?: number;
 }) => {
-    function processTransaction(transaction: Transaction, signers: Keypair[]) {
-        transaction.recentBlockhash = svm.latestBlockhash();
-        transaction.sign(...signers);
+    async function processInstructions(instructions: Instruction[]) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions(instructions, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const result = svm.sendTransaction(transaction);
+        const result = svm.sendTransaction(signedTx);
         if (result instanceof FailedTransactionMetadata) {
             throw new Error(`transaction failed: ${result.toString()}`);
         }
     }
 
-    function createMint(mint: Keypair, decimals: number) {
-        const lamports = svm.minimumBalanceForRentExemption(BigInt(MINT_SIZE));
+    async function createMint(mint: KeyPairSigner, decimals: number) {
+        const mintSize = BigInt(getMintSize());
+        const lamports = svm.minimumBalanceForRentExemption(mintSize);
 
-        const transaction = new Transaction().add(
-            SystemProgram.createAccount({
-                fromPubkey: payer.publicKey,
-                newAccountPubkey: mint.publicKey,
-                space: MINT_SIZE,
-                lamports: new BN(lamports.toString()).toNumber(),
-                programId: TOKEN_PROGRAM_ID,
+        await processInstructions([
+            getCreateAccountInstruction({
+                payer,
+                newAccount: mint,
+                space: mintSize,
+                lamports,
+                programAddress: TOKEN_PROGRAM_ADDRESS,
             }),
-            createInitializeMint2Instruction(
-                mint.publicKey,
+            getInitializeMint2Instruction({
+                mint: mint.address,
                 decimals,
-                payer.publicKey,
-                payer.publicKey,
-                TOKEN_PROGRAM_ID,
-            ),
-        );
-        processTransaction(transaction, [payer, mint]);
+                mintAuthority: payer.address,
+                freezeAuthority: payer.address,
+            }),
+        ]);
     }
 
-    function createAssociatedTokenAccountIfNeeded(mint: PublicKey, owner: PublicKey) {
-        const associatedToken = getAssociatedTokenAddressSync(mint, owner, true);
+    async function createAssociatedTokenAccountIfNeeded(mint: Address, owner: Address) {
+        const associatedToken = await findAssociatedTokenAddress(mint, owner);
 
-        const transaction = new Transaction().add(
-            createAssociatedTokenAccountIdempotentInstruction(
-                payer.publicKey,
-                associatedToken,
+        await processInstructions([
+            getCreateAssociatedTokenIdempotentInstruction({
+                payer,
+                ata: associatedToken,
                 owner,
                 mint,
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID,
-            ),
-        );
-        processTransaction(transaction, [payer]);
+            }),
+        ]);
     }
 
-    function mintTo(mint: PublicKey, destination: PublicKey, amount: number | bigint) {
-        const transaction = new Transaction().add(
-            createMintToInstruction(mint, destination, payer.publicKey, amount, [], TOKEN_PROGRAM_ID),
-        );
-        processTransaction(transaction, [payer]);
+    async function mintTo(mint: Address, destination: Address, amount: number | bigint) {
+        await processInstructions([
+            getMintToInstruction({
+                mint,
+                token: destination,
+                mintAuthority: payer,
+                amount,
+            }),
+        ]);
     }
 
     // creator creates the mint
-    createMint(mintKeypair, decimals);
+    await createMint(mintKeypair, decimals);
 
     // create holder token account
-    createAssociatedTokenAccountIfNeeded(mintKeypair.publicKey, holder.publicKey);
+    await createAssociatedTokenAccountIfNeeded(mintKeypair.address, holder.address);
 
     // mint to holders token account
-    mintTo(
-        mintKeypair.publicKey,
-        getAssociatedTokenAddressSync(mintKeypair.publicKey, holder.publicKey, true),
+    await mintTo(
+        mintKeypair.address,
+        await findAssociatedTokenAddress(mintKeypair.address, holder.address),
         mintedAmount * 10 ** decimals,
     );
 };
 
 export interface TestValues {
-    id: BN;
-    amountA: BN;
-    amountB: BN;
-    maker: Keypair;
-    taker: Keypair;
-    mintAKeypair: Keypair;
-    mintBKeypair: Keypair;
-    offer: PublicKey;
-    vault: PublicKey;
-    makerAccountA: PublicKey;
-    makerAccountB: PublicKey;
-    takerAccountA: PublicKey;
-    takerAccountB: PublicKey;
-    programId: PublicKey;
+    id: bigint;
+    amountA: bigint;
+    amountB: bigint;
+    maker: KeyPairSigner;
+    taker: KeyPairSigner;
+    mintAKeypair: KeyPairSigner;
+    mintBKeypair: KeyPairSigner;
+    offer: Address;
+    vault: Address;
+    makerAccountA: Address;
+    makerAccountB: Address;
+    takerAccountA: Address;
+    takerAccountB: Address;
+    programId: Address;
 }
 
 type TestValuesDefaults = {
     [K in keyof TestValues]+?: TestValues[K];
 };
 
-export function createValues(defaults?: TestValuesDefaults): TestValues {
-    const programId = PublicKey.unique();
-    const id = defaults?.id || new BN(0);
-    const maker = Keypair.generate();
-    const taker = Keypair.generate();
+function isLessThan(a: ReadonlyUint8Array, b: ReadonlyUint8Array): boolean {
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return a[i] < b[i];
+    }
+    return false;
+}
+
+export async function createValues(defaults?: TestValuesDefaults): Promise<TestValues> {
+    const addressEncoder = getAddressEncoder();
+
+    const programId = defaults?.programId ?? (await generateKeyPairSigner()).address;
+    const id = defaults?.id ?? 0n;
+    const maker = await generateKeyPairSigner();
+    const taker = await generateKeyPairSigner();
 
     // Making sure tokens are in the right order
-    const mintAKeypair = Keypair.generate();
-    let mintBKeypair = Keypair.generate();
-    while (new BN(mintBKeypair.publicKey.toBytes()).lt(new BN(mintAKeypair.publicKey.toBytes()))) {
-        mintBKeypair = Keypair.generate();
+    const mintAKeypair = await generateKeyPairSigner();
+    let mintBKeypair = await generateKeyPairSigner();
+    while (isLessThan(addressEncoder.encode(mintBKeypair.address), addressEncoder.encode(mintAKeypair.address))) {
+        mintBKeypair = await generateKeyPairSigner();
     }
 
-    const offer = PublicKey.findProgramAddressSync(
-        [Buffer.from('offer'), maker.publicKey.toBuffer(), Buffer.from(id.toArray('le', 8))],
-        programId,
-    )[0];
+    const [offer] = await getProgramDerivedAddress({
+        programAddress: programId,
+        seeds: ['offer', addressEncoder.encode(maker.address), getU64Encoder().encode(id)],
+    });
 
     return {
         id,
@@ -154,13 +190,13 @@ export function createValues(defaults?: TestValuesDefaults): TestValues {
         mintAKeypair,
         mintBKeypair,
         offer,
-        vault: getAssociatedTokenAddressSync(mintAKeypair.publicKey, offer, true),
-        makerAccountA: getAssociatedTokenAddressSync(mintAKeypair.publicKey, maker.publicKey, true),
-        makerAccountB: getAssociatedTokenAddressSync(mintBKeypair.publicKey, maker.publicKey, true),
-        takerAccountA: getAssociatedTokenAddressSync(mintAKeypair.publicKey, taker.publicKey, true),
-        takerAccountB: getAssociatedTokenAddressSync(mintBKeypair.publicKey, taker.publicKey, true),
-        amountA: new BN(4 * 10 ** 6),
-        amountB: new BN(1 * 10 ** 6),
+        vault: await findAssociatedTokenAddress(mintAKeypair.address, offer),
+        makerAccountA: await findAssociatedTokenAddress(mintAKeypair.address, maker.address),
+        makerAccountB: await findAssociatedTokenAddress(mintBKeypair.address, maker.address),
+        takerAccountA: await findAssociatedTokenAddress(mintAKeypair.address, taker.address),
+        takerAccountB: await findAssociatedTokenAddress(mintBKeypair.address, taker.address),
+        amountA: BigInt(4 * 10 ** 6),
+        amountB: BigInt(1 * 10 ** 6),
         programId,
     };
 }

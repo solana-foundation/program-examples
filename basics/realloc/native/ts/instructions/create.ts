@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
-import { type PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
+import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { ReallocInstruction } from './instruction';
 
@@ -14,14 +15,14 @@ const CreateSchema = {
 } as const;
 
 export function createCreateInstruction(
-    target: PublicKey,
-    payer: PublicKey,
-    programId: PublicKey,
+    target: TransactionSigner,
+    payer: TransactionSigner,
+    programId: Address,
     name: string,
     house_number: number,
     street: string,
     city: string,
-): TransactionInstruction {
+) {
     const data = Buffer.from(
         borsh.serialize(CreateSchema, {
             instruction: ReallocInstruction.Create,
@@ -32,13 +33,13 @@ export function createCreateInstruction(
         }),
     );
 
-    return new TransactionInstruction({
-        keys: [
-            { pubkey: target, isSigner: true, isWritable: true },
-            { pubkey: payer, isSigner: true, isWritable: true },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    return {
+        programAddress: programId,
+        accounts: [
+            { address: target.address, role: AccountRole.WRITABLE_SIGNER, signer: target },
+            { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
         ],
-        programId,
-        data,
-    });
+        data: new Uint8Array(data),
+    };
 }

@@ -1,22 +1,33 @@
 import { Buffer } from 'node:buffer';
 import {
-    Keypair,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionInstruction,
-} from '@solana/web3.js';
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getProgramDerivedAddress,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 describe('PDA Rent-Payer', () => {
-    const PROGRAM_ID = PublicKey.unique();
     const svm = new LiteSVM();
-    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/pda_rent_payer_program.so');
-    const payer = Keypair.generate();
-    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
+    let programId: Address;
+    let payer: KeyPairSigner;
+
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/pda_rent_payer_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(2_000_000_000n));
+    });
 
     const MyInstruction = {
         InitRentVault: 0,
@@ -40,56 +51,71 @@ describe('PDA Rent-Payer', () => {
         return Buffer.from(borsh.serialize(schema, data));
     }
 
-    function deriveRentVaultPda() {
-        const pda = PublicKey.findProgramAddressSync([Buffer.from('rent_vault')], PROGRAM_ID);
-        console.log(`PDA: ${pda[0].toBase58()}`);
+    async function deriveRentVaultPda() {
+        const pda = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['rent_vault'],
+        });
+        console.log(`PDA: ${pda[0]}`);
         return pda;
     }
 
-    it('Initialize the Rent Vault', () => {
-        const [rentVaultPda, _] = deriveRentVaultPda();
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: rentVaultPda, isSigner: false, isWritable: true },
-                { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Initialize the Rent Vault', async () => {
+        const [rentVaultPda, _] = await deriveRentVaultPda();
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: rentVaultPda, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: borshSerialize(InitRentVaultSchema, {
-                instruction: MyInstruction.InitRentVault,
-                fund_lamports: 1000000000,
-            }),
-        });
+            data: new Uint8Array(
+                borshSerialize(InitRentVaultSchema, {
+                    instruction: MyInstruction.InitRentVault,
+                    fund_lamports: 1000000000,
+                }),
+            ),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        const result = svm.sendTransaction(tx);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    it('Create a new account using the Rent Vault', () => {
-        const newAccount = Keypair.generate();
-        const [rentVaultPda, _] = deriveRentVaultPda();
-        const ix = new TransactionInstruction({
-            keys: [
-                { pubkey: newAccount.publicKey, isSigner: true, isWritable: true },
-                { pubkey: rentVaultPda, isSigner: false, isWritable: true },
-                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    it('Create a new account using the Rent Vault', async () => {
+        const newAccount = await generateKeyPairSigner();
+        const [rentVaultPda, _] = await deriveRentVaultPda();
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: newAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: newAccount },
+                { address: rentVaultPda, role: AccountRole.WRITABLE },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            programId: PROGRAM_ID,
-            data: borshSerialize(CreateNewAccountSchema, {
-                instruction: MyInstruction.CreateNewAccount,
-            }),
-        });
+            data: new Uint8Array(
+                borshSerialize(CreateNewAccountSchema, {
+                    instruction: MyInstruction.CreateNewAccount,
+                }),
+            ),
+        };
 
-        const tx = new Transaction();
-        tx.recentBlockhash = svm.latestBlockhash();
-        tx.add(ix).sign(payer, newAccount); // Add instruction and Sign the transaction
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
         // Now we process the transaction
-        const result = svm.sendTransaction(tx);
+        const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 });
