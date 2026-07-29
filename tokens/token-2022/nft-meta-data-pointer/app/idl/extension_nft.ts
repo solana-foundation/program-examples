@@ -1,9 +1,16 @@
 export type ExtensionNft = {
+    address: 'H31ofLpWqeAzF2Pg54HSPQGYifJad843tTJg8vCYVoh3';
+    metadata: {
+        name: 'extension_nft';
+        version: '0.1.0';
+        spec: '0.1.0';
+    };
     version: '0.1.0';
     name: 'extension_nft';
     instructions: [
         {
             name: 'initPlayer';
+            discriminator: [218, 66, 97, 209, 99, 22, 158, 199];
             accounts: [
                 {
                     name: 'player';
@@ -35,12 +42,13 @@ export type ExtensionNft = {
         },
         {
             name: 'chopTree';
+            discriminator: [239, 143, 6, 72, 108, 119, 167, 156];
             accounts: [
                 {
                     name: 'sessionToken';
                     isMut: false;
                     isSigner: false;
-                    isOptional: true;
+                    optional: true;
                 },
                 {
                     name: 'player';
@@ -91,6 +99,7 @@ export type ExtensionNft = {
         },
         {
             name: 'mintNft';
+            discriminator: [245, 247, 58, 90, 129, 73, 62, 228];
             accounts: [
                 {
                     name: 'signer';
@@ -139,6 +148,20 @@ export type ExtensionNft = {
     accounts: [
         {
             name: 'nftAuthority';
+            discriminator: [3, 176, 246, 106, 104, 231, 175, 162];
+        },
+        {
+            name: 'gameData';
+            discriminator: [193, 17, 100, 157, 52, 32, 121, 71];
+        },
+        {
+            name: 'playerData';
+            discriminator: [13, 233, 221, 44, 139, 185, 62, 42];
+        },
+    ];
+    types: [
+        {
+            name: 'nftAuthority';
             type: {
                 kind: 'struct';
                 fields: [];
@@ -163,7 +186,7 @@ export type ExtensionNft = {
                 fields: [
                     {
                         name: 'authority';
-                        type: 'publicKey';
+                        type: 'pubkey';
                     },
                     {
                         name: 'name';
@@ -212,11 +235,18 @@ export type ExtensionNft = {
 };
 
 export const IDL: ExtensionNft = {
+    address: 'H31ofLpWqeAzF2Pg54HSPQGYifJad843tTJg8vCYVoh3',
+    metadata: {
+        name: 'extension_nft',
+        version: '0.1.0',
+        spec: '0.1.0',
+    },
     version: '0.1.0',
     name: 'extension_nft',
     instructions: [
         {
             name: 'initPlayer',
+            discriminator: [218, 66, 97, 209, 99, 22, 158, 199],
             accounts: [
                 {
                     name: 'player',
@@ -248,12 +278,13 @@ export const IDL: ExtensionNft = {
         },
         {
             name: 'chopTree',
+            discriminator: [239, 143, 6, 72, 108, 119, 167, 156],
             accounts: [
                 {
                     name: 'sessionToken',
                     isMut: false,
                     isSigner: false,
-                    isOptional: true,
+                    optional: true,
                 },
                 {
                     name: 'player',
@@ -304,6 +335,7 @@ export const IDL: ExtensionNft = {
         },
         {
             name: 'mintNft',
+            discriminator: [245, 247, 58, 90, 129, 73, 62, 228],
             accounts: [
                 {
                     name: 'signer',
@@ -352,6 +384,20 @@ export const IDL: ExtensionNft = {
     accounts: [
         {
             name: 'nftAuthority',
+            discriminator: [3, 176, 246, 106, 104, 231, 175, 162],
+        },
+        {
+            name: 'gameData',
+            discriminator: [193, 17, 100, 157, 52, 32, 121, 71],
+        },
+        {
+            name: 'playerData',
+            discriminator: [13, 233, 221, 44, 139, 185, 62, 42],
+        },
+    ],
+    types: [
+        {
+            name: 'nftAuthority',
             type: {
                 kind: 'struct',
                 fields: [],
@@ -376,7 +422,7 @@ export const IDL: ExtensionNft = {
                 fields: [
                     {
                         name: 'authority',
-                        type: 'publicKey',
+                        type: 'pubkey',
                     },
                     {
                         name: 'name',

@@ -18,11 +18,8 @@ export const METAPLEX_READAPI = 'https://devnet.helius-rpc.com/?api-key=78065db3
 // Here you can basically use what ever seed you want. For example one per level or city or whatever.
 export const GAME_DATA_SEED = 'level_2';
 
-// ExtensionNft game program ID
-const programId = new PublicKey('H31ofLpWqeAzF2Pg54HSPQGYifJad843tTJg8vCYVoh3');
-
-// Create the program interface using the idl, program ID, and provider
-export const program = new Program<ExtensionNft>(IDL, programId, {
+// Create the program interface using the idl (program ID comes from idl.address) and provider
+export const program = new Program<ExtensionNft>(IDL, {
     connection: CONNECTION,
 });
 

@@ -2,7 +2,7 @@ import { Button, HStack, VStack } from '@chakra-ui/react';
 import { useSessionWallet } from '@magicblock-labs/gum-react-sdk';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useGameState } from '@/contexts/GameStateProvider';
@@ -21,10 +21,19 @@ const ChopTreeButton = () => {
 
     const onChopClick = useCallback(async () => {
         setIsLoadingSession(true);
-        if (!playerDataPDA || !sessionWallet?.publicKey) return;
+        if (!playerDataPDA || !sessionWallet?.publicKey || !sessionWallet.sessionToken) {
+            setIsLoadingSession(false);
+            return;
+        }
         setTransactionCounter(transactionCounter + 1);
 
         const nftAuthority = await PublicKey.findProgramAddress([Buffer.from('nft_authority')], program.programId);
+
+        if (nftState == null) {
+            window.alert('Load NFT state first');
+            setIsLoadingSession(false);
+            return;
+        }
 
         let nft = null;
 
@@ -43,7 +52,7 @@ const ChopTreeButton = () => {
         console.log('NFT', nft);
         if (nft == null) {
             window.alert('Mint and NFT character first');
-            setIsLoadingMainWallet(false);
+            setIsLoadingSession(false);
             return;
         }
 
@@ -57,6 +66,8 @@ const ChopTreeButton = () => {
                     sessionToken: sessionWallet.sessionToken,
                     nftAuthority: nftAuthority[0],
                     mint: nft.id,
+                    systemProgram: SystemProgram.programId,
+                    tokenProgram: TOKEN_2022_PROGRAM_ID,
                 })
                 .transaction();
 
@@ -91,9 +102,11 @@ const ChopTreeButton = () => {
         for (let i = 0; i < nftState.items.length; i++) {
             try {
                 const nftData = nftState.items[i];
-                console.log(`${nftData.authorities[0].address} == ${nftAuthority[0].toBase58()}`);
+                const authority = nftData.authorities[0];
+                const authorityAddress = typeof authority === 'string' ? authority : authority.address;
+                console.log(`${authorityAddress} == ${nftAuthority[0].toBase58()}`);
 
-                if (nftData.authorities[0].address === nftAuthority[0].toBase58()) {
+                if (authorityAddress === nftAuthority[0].toBase58()) {
                     nft = nftData;
                 }
                 console.log('NFT data', nftData);
@@ -109,7 +122,9 @@ const ChopTreeButton = () => {
             return;
         }
         try {
-            console.log('NFTid', nft.id, 'NFT authority', nft.authorities[0].address);
+            const nftAuthorityAddress =
+                typeof nft.authorities[0] === 'string' ? nft.authorities[0] : nft.authorities[0].address;
+            console.log('NFTid', nft.id, 'NFT authority', nftAuthorityAddress);
             const transaction = await program.methods
                 .chopTree(GAME_DATA_SEED, transactionCounter)
                 .accounts({
@@ -119,6 +134,7 @@ const ChopTreeButton = () => {
                     sessionToken: null,
                     nftAuthority: nftAuthority[0].toBase58(),
                     mint: nft.id,
+                    systemProgram: SystemProgram.programId,
                     tokenProgram: TOKEN_2022_PROGRAM_ID,
                 })
                 .transaction();

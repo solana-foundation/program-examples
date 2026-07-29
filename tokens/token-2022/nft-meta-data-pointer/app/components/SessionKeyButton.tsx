@@ -1,6 +1,7 @@
 import { Button } from '@chakra-ui/react';
 import { useSessionWallet } from '@magicblock-labs/gum-react-sdk';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useState } from 'react';
 import { useGameState } from '@/contexts/GameStateProvider';
 import { program } from '@/utils/anchor';
@@ -13,11 +14,11 @@ const SessionKeyButton = () => {
 
     const handleCreateSession = async () => {
         setIsLoading(true);
-        const topUp = true;
+        const topUpLamports = 0.01 * LAMPORTS_PER_SOL;
         const expiryInMinutes = 600;
 
         try {
-            const session = await sessionWallet.createSession(program.programId, topUp, expiryInMinutes);
+            const session = await sessionWallet.createSession(program.programId, topUpLamports, expiryInMinutes);
             console.log('Session created:', session);
         } catch (error) {
             console.error('Failed to create session:', error);

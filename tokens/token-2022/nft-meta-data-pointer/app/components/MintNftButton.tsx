@@ -1,8 +1,7 @@
 import { Button, HStack, VStack } from '@chakra-ui/react';
-import { web3 } from '@coral-xyz/anchor';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
+import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, SystemProgram } from '@solana/web3.js';
 import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useGameState } from '@/contexts/GameStateProvider';
@@ -39,7 +38,7 @@ const MintNftButton = () => {
                     tokenProgram: TOKEN_2022_PROGRAM_ID,
                     tokenAccount: destinationTokenAccount,
                     mint: mint.publicKey,
-                    rent: web3.SYSVAR_RENT_PUBKEY,
+                    rent: SYSVAR_RENT_PUBKEY,
                     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
                     nftAuthority: nftAuthority[0],
                 })
