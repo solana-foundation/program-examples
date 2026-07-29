@@ -1,18 +1,18 @@
 use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
 use pinocchio_log::log;
-use pinocchio_pubkey::derive_address;
 
-pub fn get_pda(program_id: &Address, accounts: &[AccountView], data: &[u8]) -> ProgramResult {
+pub fn get_pda(program_id: &Address, accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     let [user, favorite_account] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     // deriving the favorite pda
     let bump = data[0];
-    let favorite_pda = derive_address(&[b"favorite", user.address().as_ref()], Some(bump), program_id.as_array());
+    let favorite_pda = Address::create_program_address(&[b"favorite", user.address().as_ref(), &[bump]], program_id)
+        .map_err(|_| ProgramError::InvalidSeeds)?;
 
     // Checking if the favorite account is same as the derived favorite pda
-    if favorite_account.address().as_array() != &favorite_pda {
+    if favorite_account.address() != &favorite_pda {
         return Err(ProgramError::IncorrectProgramId);
     };
 

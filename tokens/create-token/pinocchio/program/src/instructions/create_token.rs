@@ -52,7 +52,7 @@ impl<'a> CreateTokenArgs<'a> {
 /// The mint authority is passed as a non-signer; the metadata CPI requires it to
 /// sign, which is satisfied by passing the payer's address for it (the payer
 /// signs the transaction). This mirrors the `native` example.
-pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
+pub fn create_token(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     // `token_program` and `token_metadata_program` are unused directly, but must
     // be supplied so they are present in the transaction for the CPIs below.
     let [mint_account, mint_authority, metadata_account, payer, system_program, _token_program, _token_metadata_program] =
@@ -95,7 +95,10 @@ pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
     ];
     let instruction =
         InstructionView { program_id: &TOKEN_METADATA_PROGRAM_ID, accounts: &metadata_accounts, data: metadata_data };
-    invoke(&instruction, &[metadata_account, mint_account, mint_authority, payer, mint_authority, system_program])?;
+    invoke(
+        &instruction,
+        &[*metadata_account, *mint_account, *mint_authority, *payer, *mint_authority, *system_program],
+    )?;
 
     log!("Token mint created successfully");
     Ok(())

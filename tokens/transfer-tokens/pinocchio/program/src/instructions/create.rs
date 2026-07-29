@@ -19,7 +19,7 @@ use crate::instructions::MINT_SIZE;
 ///   4. `[]`                 token program
 ///
 /// Instruction data: `[decimals: u8]`
-pub fn create_token(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
+pub fn create_token(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     let [mint_account, mint_authority, payer, _system_program, _token_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

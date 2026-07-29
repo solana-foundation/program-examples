@@ -6,7 +6,7 @@ use pinocchio_log::log;
 entrypoint!(process_instruction);
 nostd_panic_handler!();
 
-fn process_instruction(program_id: &Address, accounts: &[AccountView], _instruction_data: &[u8]) -> ProgramResult {
+fn process_instruction(program_id: &Address, accounts: &mut [AccountView], _instruction_data: &[u8]) -> ProgramResult {
     // You can verify the list has the correct number of accounts.
     // This error will get thrown by default if you
     //      try to reach past the end of the iter.

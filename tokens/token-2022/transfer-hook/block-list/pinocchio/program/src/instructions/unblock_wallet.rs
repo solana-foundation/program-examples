@@ -13,14 +13,17 @@ impl<'a> UnblockWallet<'a> {
     pub fn process(&self) -> ProgramResult {
         let destination_lamports = self.authority.lamports();
 
-        self.authority.set_lamports(
+        let mut authority = *self.authority;
+        let mut wallet_block = *self.wallet_block;
+        authority.set_lamports(
             destination_lamports.checked_add(self.wallet_block.lamports()).ok_or(ProgramError::ArithmeticOverflow)?,
         );
         unsafe {
-            self.wallet_block.close_unchecked();
+            wallet_block.close_unchecked();
         }
 
-        let config = unsafe { load_mut_unchecked::<Config>(self.config.borrow_unchecked_mut())? };
+        let mut config_account = *self.config;
+        let config = unsafe { load_mut_unchecked::<Config>(config_account.borrow_unchecked_mut())? };
         config.blocked_wallets_count =
             config.blocked_wallets_count.checked_sub(1).ok_or(ProgramError::ArithmeticOverflow)?;
 

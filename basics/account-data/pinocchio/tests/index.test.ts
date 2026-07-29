@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { LiteSVM } from 'litesvm';
+import { LiteSVM, Rent } from 'litesvm';
 
 interface AddressInfo {
     name: string;
@@ -83,6 +83,7 @@ describe('Account Data!', () => {
     ).pathname;
 
     const litesvm = new LiteSVM();
+    // pinocchio 0.11 Rent reads a single lamports-per-byte rate from the first 8 bytes of the sysvar
     litesvm.addProgramFromFile(PROGRAM_ID, programPath);
 
     const payer = Keypair.generate();

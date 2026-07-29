@@ -9,9 +9,8 @@ name = "block_list"
 
 [dependencies]
 bytemuck = "1.23.0"
-pinocchio = { version = "0.10.2", features = ["cpi"] }
-pinocchio-pubkey = "0.3.0"
-pinocchio-system = "0.5.0"
+pinocchio = { version = "0.11.1", features = ["cpi", "copy", "account-resize"] }
+pinocchio-system = "0.6.1"
 pinocchio-log = "0.5.1"
 solana-address = { version = "2", features = ["curve25519", "copy"] }
 

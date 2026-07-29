@@ -1,5 +1,6 @@
 #![no_std]
 
+use pinocchio::Resize;
 use pinocchio::{
     cpi::{Seed, Signer},
     entrypoint,
@@ -13,7 +14,7 @@ use pinocchio_system::instructions::CreateAccount;
 entrypoint!(process_instruction);
 nostd_panic_handler!();
 
-fn process_instruction(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn process_instruction(program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     match instruction_data.split_first() {
         Some((&CREATE_DISCRIMINATOR, data)) => process_user(program_id, accounts, data),
         Some((&CLOSE_DISCRIMINATOR, _)) => process_close(accounts),
@@ -33,7 +34,7 @@ impl<'a> User<'a> {
     pub const LEN: usize = 16;
 }
 
-fn process_user(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn process_user(program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [target_account, payer, _system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -64,7 +65,7 @@ fn process_user(program_id: &Address, accounts: &[AccountView], instruction_data
     Ok(())
 }
 
-fn process_close(accounts: &[AccountView]) -> ProgramResult {
+fn process_close(accounts: &mut [AccountView]) -> ProgramResult {
     let [target_account, payer, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

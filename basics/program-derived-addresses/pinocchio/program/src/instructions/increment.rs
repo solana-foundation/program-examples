@@ -1,6 +1,6 @@
 use pinocchio::{error::ProgramError, AccountView, ProgramResult};
 
-pub fn increment_page_visits(accounts: &[AccountView]) -> ProgramResult {
+pub fn increment_page_visits(accounts: &mut [AccountView]) -> ProgramResult {
     let [page_visits_account] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

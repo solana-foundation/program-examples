@@ -34,12 +34,14 @@ impl<'a> BlockWallet<'a> {
         }
         .invoke_signed(&[signer])?;
 
-        let mut data = self.wallet_block.try_borrow_mut()?;
+        let mut wallet_block_account = *self.wallet_block;
+        let mut data = wallet_block_account.try_borrow_mut()?;
         let wallet_block = unsafe { load_mut_unchecked::<WalletBlock>(&mut data)? };
         wallet_block.discriminator = WalletBlock::DISCRIMINATOR;
         wallet_block.address = *self.wallet.address();
 
-        let config = unsafe { load_mut_unchecked::<Config>(self.config.borrow_unchecked_mut())? };
+        let mut config_account = *self.config;
+        let config = unsafe { load_mut_unchecked::<Config>(config_account.borrow_unchecked_mut())? };
         config.blocked_wallets_count =
             config.blocked_wallets_count.checked_add(1).ok_or(ProgramError::ArithmeticOverflow)?;
 

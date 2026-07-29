@@ -84,12 +84,12 @@ spl-associated-token-account-interface = "2.0.0"
 spl-token-2022-interface = "2.1.0"
 
 # pinocchio
-pinocchio = { version = "0.10.2", features = ["cpi"] }
+pinocchio = { version = "0.11.1", features = ["cpi", "copy", "account-resize"] }
 pinocchio-log = "0.5.1"
-pinocchio-system = "0.5.0"
-pinocchio-pubkey = "0.3.0"
-pinocchio-token = "0.5.0"
-pinocchio-associated-token-account = "0.3.0"
+pinocchio-system = "0.6.1"
+pinocchio-token = "0.6.0"
+pinocchio-token-2022 = "0.3.1"
+pinocchio-associated-token-account = "0.4.0"
 
 # testing
 litesvm = "0.11.0"
@@ -98,4 +98,4 @@ solana-keypair = "3.0.1"
 solana-pubkey = "3.0.0"
 solana-transaction = "3.0.1"
 solana-native-token = "3.0.0"
-solana-address = "2.6.0"
+solana-address = { version = "2.6.0", features = ["curve25519", "decode"] }

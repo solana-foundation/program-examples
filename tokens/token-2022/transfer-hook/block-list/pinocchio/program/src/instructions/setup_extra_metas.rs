@@ -1,3 +1,4 @@
+use pinocchio::Resize;
 use pinocchio::{
     cpi::Signer,
     instruction::seeds,
@@ -81,7 +82,8 @@ impl<'a> SetupExtraMetas<'a> {
             let auth_lamports = self.authority.lamports();
 
             // just resize
-            self.extra_metas.resize(data.len())?;
+            let mut extra_metas_account = *self.extra_metas;
+            extra_metas_account.resize(data.len())?;
 
             if current_lamports < min_lamports {
                 // transfer to extra
@@ -91,8 +93,10 @@ impl<'a> SetupExtraMetas<'a> {
             } else if current_lamports > min_lamports {
                 // transfer from extra
                 let diff = current_lamports - min_lamports;
-                self.extra_metas.set_lamports(min_lamports);
-                self.authority.set_lamports(auth_lamports.checked_add(diff).unwrap());
+                let mut extra_metas_account = *self.extra_metas;
+                let mut authority_account = *self.authority;
+                extra_metas_account.set_lamports(min_lamports);
+                authority_account.set_lamports(auth_lamports.checked_add(diff).unwrap());
             }
         } else {
             // create new account
@@ -113,7 +117,8 @@ impl<'a> SetupExtraMetas<'a> {
 
         // overwrite state depending on config
 
-        let extra_metas_data = unsafe { self.extra_metas.borrow_unchecked_mut() };
+        let mut extra_metas_account = *self.extra_metas;
+        let extra_metas_data = unsafe { extra_metas_account.borrow_unchecked_mut() };
         extra_metas_data[..data.len()].copy_from_slice(data);
 
         Ok(())

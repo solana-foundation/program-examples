@@ -1,3 +1,4 @@
+use pinocchio::Resize;
 use pinocchio::{
     error::ProgramError,
     sysvars::{rent::Rent, Sysvar},
@@ -7,7 +8,7 @@ use pinocchio_system::instructions::Transfer;
 
 use crate::state::{EnhancedAddressInfo, WorkInfo};
 
-pub fn reallocate_without_zero_init(accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+pub fn reallocate_without_zero_init(accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [target_account, payer, _] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -27,7 +28,7 @@ pub fn reallocate_without_zero_init(accounts: &[AccountView], instruction_data: 
     Ok(())
 }
 
-pub fn reallocate_zero_init(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
+pub fn reallocate_zero_init(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     let [target_account] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

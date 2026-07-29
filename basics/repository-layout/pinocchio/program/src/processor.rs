@@ -12,7 +12,11 @@ use crate::instructions::{eat_food, get_on_ride, play_game};
 //   - attraction:     u32 LE length + utf-8 bytes ("ride" | "game" | "food")
 //   - attraction_name: u32 LE length + utf-8 bytes
 
-pub fn process_instruction(_program_id: &Address, _accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+pub fn process_instruction(
+    _program_id: &Address,
+    _accounts: &mut [AccountView],
+    instruction_data: &[u8],
+) -> ProgramResult {
     let mut cursor = 0;
     let name = read_str(instruction_data, &mut cursor)?;
     let height = read_u32(instruction_data, &mut cursor)?;

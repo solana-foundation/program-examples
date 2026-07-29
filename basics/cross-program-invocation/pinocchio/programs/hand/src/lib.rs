@@ -19,7 +19,7 @@ const LEVER_IX_SWITCH_POWER: u8 = 1;
 const MAX_NAME_LEN: usize = 128;
 const CPI_DATA_BUF: usize = MAX_NAME_LEN + 1;
 
-fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn process_instruction(_program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [power, lever_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -37,5 +37,5 @@ fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruct
     let ix =
         InstructionView { program_id: lever_program.address(), accounts: &metas, data: &cpi_data[..1 + name.len()] };
 
-    invoke::<1>(&ix, &[power])
+    invoke::<1, _>(&ix, &[*power])
 }

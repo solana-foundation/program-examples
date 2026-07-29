@@ -7,7 +7,11 @@ use pinocchio_system::instructions::CreateAccount;
 
 use crate::state::AddressInfo;
 
-pub fn create_address_info(program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+pub fn create_address_info(
+    program_id: &Address,
+    accounts: &mut [AccountView],
+    instruction_data: &[u8],
+) -> ProgramResult {
     let [target_account, payer, _] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

@@ -7,7 +7,6 @@ edition = "2021"
 pinocchio.workspace = true
 pinocchio-system.workspace = true
 pinocchio-log.workspace = true
-pinocchio-pubkey.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]

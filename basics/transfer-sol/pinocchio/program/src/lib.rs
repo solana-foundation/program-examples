@@ -6,7 +6,7 @@ use pinocchio_system::instructions::Transfer;
 entrypoint!(process_instruction);
 nostd_panic_handler!();
 
-fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn process_instruction(_program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     match instruction_data.split_first() {
         Some((&CPI_TRANSFER_DISCRIMINATOR, data)) => transfer_sol_with_cpi(accounts, data),
         Some((&PROGRAM_TRANSFER_DISCRIMINATOR, data)) => transfer_sol_with_program(accounts, data),
@@ -17,7 +17,7 @@ fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruct
 pub const CPI_TRANSFER_DISCRIMINATOR: u8 = 0;
 pub const PROGRAM_TRANSFER_DISCRIMINATOR: u8 = 1;
 
-fn transfer_sol_with_cpi(accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn transfer_sol_with_cpi(accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [payer, recipient, _system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -30,7 +30,7 @@ fn transfer_sol_with_cpi(accounts: &[AccountView], instruction_data: &[u8]) -> P
     Ok(())
 }
 
-fn transfer_sol_with_program(accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn transfer_sol_with_program(accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [payer, recipient] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

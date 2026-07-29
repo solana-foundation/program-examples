@@ -3,7 +3,7 @@ use pinocchio_log::log;
 
 entrypoint!(process_instruction);
 
-fn process_instruction(_program_id: &Address, _accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn process_instruction(_program_id: &Address, _accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let name = core::str::from_utf8(&instruction_data[0..8]).map_err(|_| ProgramError::InvalidInstructionData)?;
 
     let height =

@@ -15,8 +15,8 @@ custom-panic = []
 
 [dependencies]
 pinocchio.workspace = true
+solana-address.workspace = true
 pinocchio-log.workspace = true
-pinocchio-pubkey.workspace = true
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

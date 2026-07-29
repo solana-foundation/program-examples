@@ -70,7 +70,8 @@ impl<'a> Init<'a> {
         }
         .invoke_signed(&[signer])?;
 
-        let mut data = self.config.try_borrow_mut()?;
+        let mut config_account = *self.config;
+        let mut data = config_account.try_borrow_mut()?;
         let config = unsafe { load_mut_unchecked::<Config>(&mut data)? };
         config.discriminator = Config::DISCRIMINATOR;
         config.authority = *self.authority.address();

@@ -22,17 +22,17 @@ mod token2022_utils;
 declare_id!("BLoCKLSG2qMQ9YxEyrrKKAQzthvW4Lu8Eyv74axF6mf");
 
 #[inline(always)]
-fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+fn process_instruction(_program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [disc, remaining_data @ ..] = instruction_data else {
         return Err(BlockListError::InvalidInstruction.into());
     };
 
     match *disc {
-        TxHook::DISCRIMINATOR => TxHook::try_from(accounts)?.process(),
-        Init::DISCRIMINATOR => Init::try_from(accounts)?.process(),
-        BlockWallet::DISCRIMINATOR => BlockWallet::try_from(accounts)?.process(),
-        UnblockWallet::DISCRIMINATOR => UnblockWallet::try_from(accounts)?.process(),
-        SetupExtraMetas::DISCRIMINATOR => SetupExtraMetas::try_from(accounts)?.process(remaining_data),
+        TxHook::DISCRIMINATOR => TxHook::try_from(&*accounts)?.process(),
+        Init::DISCRIMINATOR => Init::try_from(&*accounts)?.process(),
+        BlockWallet::DISCRIMINATOR => BlockWallet::try_from(&*accounts)?.process(),
+        UnblockWallet::DISCRIMINATOR => UnblockWallet::try_from(&*accounts)?.process(),
+        SetupExtraMetas::DISCRIMINATOR => SetupExtraMetas::try_from(&*accounts)?.process(remaining_data),
         _ => Err(ProgramError::InvalidInstructionData),
     }
 }

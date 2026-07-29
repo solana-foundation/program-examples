@@ -9,7 +9,11 @@ use crate::instructions::{create_token, mint_tokens, transfer_tokens};
 ///   - `0` -> CreateToken    (args: `[decimals: u8]`)
 ///   - `1` -> MintTokens     (args: `[amount: u64 (LE)]`)
 ///   - `2` -> TransferTokens (args: `[amount: u64 (LE)]`)
-pub fn process_instruction(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+pub fn process_instruction(
+    _program_id: &Address,
+    accounts: &mut [AccountView],
+    instruction_data: &[u8],
+) -> ProgramResult {
     let (discriminator, args) = instruction_data.split_first().ok_or(ProgramError::InvalidInstructionData)?;
 
     match *discriminator {

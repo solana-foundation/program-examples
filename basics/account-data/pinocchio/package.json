@@ -14,7 +14,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.9.0",
     "chai": "^6.2.2",
-    "litesvm": "^0.3.3",
+    "litesvm": "^0.8.0",
     "mocha": "^11.7.5",
     "tsx": "^4.23.1",
     "typescript": "^5.3.3"
