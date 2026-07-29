@@ -1,5 +1,10 @@
 {
   "type": "module",
+  "pnpm": {
+    "overrides": {
+      "litesvm": "^0.8.0"
+    }
+  },
   "dependencies": {
     "@anchor-lang/core": "1.0.0-rc.5",
     "@solana/web3.js": "^1.98.4"
@@ -8,10 +13,10 @@
     "@types/bn.js": "^5.1.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
-    "anchor-bankrun": "^0.4.0",
+    "anchor-litesvm": "^0.2.1",
     "chai": "^4.3.4",
+    "litesvm": "^0.8.0",
     "mocha": "^9.0.3",
-    "solana-bankrun": "^0.3.0",
     "ts-mocha": "^10.0.0",
     "typescript": "^5.3.3",
     "@types/node": "^20.9.0"

@@ -1,14 +1,17 @@
 import { Buffer } from 'node:buffer';
 import { describe, test } from 'node:test';
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import * as borsh from 'borsh';
-import { start } from 'solana-bankrun';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe('Carnival (Pinocchio)', async () => {
+describe('Carnival (Pinocchio)', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'repository_layout_pinocchio_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/repository_layout_pinocchio_program.so');
+
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
     const CarnivalInstructionSchema = {
         struct: {
@@ -32,10 +35,10 @@ describe('Carnival (Pinocchio)', async () => {
         return Buffer.from(borsh.serialize(schema, data));
     }
 
-    async function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
+    function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
         const tx = new Transaction();
         for (const ix of instructionsList) {
-            tx.recentBlockhash = context.lastBlockhash;
+            tx.recentBlockhash = svm.latestBlockhash();
             tx.add(
                 new TransactionInstruction({
                     keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
@@ -44,11 +47,12 @@ describe('Carnival (Pinocchio)', async () => {
                 }),
             ).sign(payer);
         }
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    test('Go on some rides!', async () => {
-        await sendCarnivalInstructions([
+    test('Go on some rides!', () => {
+        sendCarnivalInstructions([
             {
                 name: 'Jimmy',
                 height: 36,
@@ -80,8 +84,8 @@ describe('Carnival (Pinocchio)', async () => {
         ]);
     });
 
-    test('Play some games!', async () => {
-        await sendCarnivalInstructions([
+    test('Play some games!', () => {
+        sendCarnivalInstructions([
             {
                 name: 'Jimmy',
                 height: 36,
@@ -113,8 +117,8 @@ describe('Carnival (Pinocchio)', async () => {
         ]);
     });
 
-    test('Eat some food!', async () => {
-        await sendCarnivalInstructions([
+    test('Eat some food!', () => {
+        sendCarnivalInstructions([
             {
                 name: 'Jimmy',
                 height: 36,

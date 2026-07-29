@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "types": ["jest", "node"],
+        "types": ["mocha", "chai", "node"],
         "typeRoots": ["./node_modules/@types"],
         "lib": ["es2015", "dom", "es6", "es2017", "esnext.asynciterable"],
         "module": "commonjs",
@@ -23,6 +23,6 @@
         },
         "outDir": "dist"
     },
-    "include": ["tests/**/*", "programs/**/*", "jest.setup.js", "jest.config.js"],
+    "include": ["tests/**/*", "programs/**/*"],
     "exclude": ["node_modules"]
 }

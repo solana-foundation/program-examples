@@ -1,31 +1,32 @@
 import assert from 'node:assert';
 import { describe, test } from 'node:test';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { createTransferInstruction } from './instruction';
 
-describe('transfer-sol (asm)', async () => {
+describe('transfer-sol (asm)', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'transfer-sol-cpi', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/transfer-sol-cpi.so');
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
 
     const transferAmount = 1 * LAMPORTS_PER_SOL;
     const recipient = Keypair.generate();
 
-    test('Transfer SOL via CPI to the system program', async () => {
-        const [payerBefore, recipientBefore] = await getBalances(payer.publicKey, recipient.publicKey, 'Beginning');
+    test('Transfer SOL via CPI to the system program', () => {
+        const [payerBefore, recipientBefore] = getBalances(payer.publicKey, recipient.publicKey, 'Beginning');
 
         const ix = createTransferInstruction(payer.publicKey, recipient.publicKey, PROGRAM_ID, transferAmount);
 
         const tx = new Transaction();
-        const [blockhash, _] = await client.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const [payerAfter, recipientAfter] = await getBalances(payer.publicKey, recipient.publicKey, 'Resulting');
+        const [payerAfter, recipientAfter] = getBalances(payer.publicKey, recipient.publicKey, 'Resulting');
 
         assert(
             payerAfter < payerBefore - BigInt(transferAmount),
@@ -38,13 +39,9 @@ describe('transfer-sol (asm)', async () => {
         );
     });
 
-    async function getBalances(
-        payerPubkey: PublicKey,
-        recipientPubkey: PublicKey,
-        timeframe: string,
-    ): Promise<[bigint, bigint]> {
-        const payerBalance = await client.getBalance(payerPubkey);
-        const recipientBalance = await client.getBalance(recipientPubkey);
+    function getBalances(payerPubkey: PublicKey, recipientPubkey: PublicKey, timeframe: string): [bigint, bigint] {
+        const payerBalance = svm.getBalance(payerPubkey) ?? BigInt(0);
+        const recipientBalance = svm.getBalance(recipientPubkey) ?? BigInt(0);
 
         console.log(`${timeframe} balances:`);
         console.log(`   Payer: ${payerBalance}`);

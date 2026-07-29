@@ -1,24 +1,26 @@
 import { AccountLayout } from '@solana/spl-token';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { type OfferRaw, OfferSchema } from './account';
 import { buildMakeOffer, buildTakeOffer } from './instruction';
 import { createValues, mintingTokens } from './utils';
 
-describe('Escrow (Pinocchio)', async () => {
+describe('Escrow (Pinocchio)', () => {
     const values = createValues();
 
-    const context = await start([{ name: 'escrow_pinocchio_program', programId: values.programId }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(values.programId, 'tests/fixtures/escrow_pinocchio_program.so');
+
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
     // Fund the maker with token A and the taker with token B before trading.
-    await mintingTokens({ context, holder: values.maker, mintKeypair: values.mintAKeypair });
-    await mintingTokens({ context, holder: values.taker, mintKeypair: values.mintBKeypair });
+    mintingTokens({ svm, payer, holder: values.maker, mintKeypair: values.mintAKeypair });
+    mintingTokens({ svm, payer, holder: values.taker, mintKeypair: values.mintBKeypair });
 
-    it('Makes an offer', async () => {
+    it('Makes an offer', () => {
         const ix = buildMakeOffer({
             id: values.id,
             maker: values.maker.publicKey,
@@ -35,15 +37,16 @@ describe('Escrow (Pinocchio)', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, values.maker);
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const offerInfo = await client.getAccount(values.offer);
+        const offerInfo = svm.getAccount(values.offer);
         if (offerInfo === null) throw new Error('Offer account not found');
         const offer = borsh.deserialize(OfferSchema, Buffer.from(offerInfo.data)) as OfferRaw;
 
-        const vaultInfo = await client.getAccount(values.vault);
+        const vaultInfo = svm.getAccount(values.vault);
         if (vaultInfo === null) throw new Error('Vault account not found');
         const vaultTokenAccount = AccountLayout.decode(vaultInfo.data);
 
@@ -62,7 +65,7 @@ describe('Escrow (Pinocchio)', async () => {
         assert(vaultTokenAccount.amount.toString() === values.amountA.toString(), 'unexpected amount A');
     });
 
-    it('Takes the offer', async () => {
+    it('Takes the offer', () => {
         const ix = buildTakeOffer({
             maker: values.maker.publicKey,
             offer: values.offer,
@@ -78,21 +81,22 @@ describe('Escrow (Pinocchio)', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, values.taker);
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const offerInfo = await client.getAccount(values.offer);
+        const offerInfo = svm.getAccount(values.offer);
         assert(offerInfo === null, 'offer account not closed');
 
-        const vaultInfo = await client.getAccount(values.vault);
+        const vaultInfo = svm.getAccount(values.vault);
         assert(vaultInfo === null, 'vault account not closed');
 
-        const makerTokenBInfo = await client.getAccount(values.makerAccountB);
+        const makerTokenBInfo = svm.getAccount(values.makerAccountB);
         if (makerTokenBInfo === null) throw new Error('Maker token B account not found');
         const makerTokenAccountB = AccountLayout.decode(makerTokenBInfo.data);
 
-        const takerTokenAInfo = await client.getAccount(values.takerAccountA);
+        const takerTokenAInfo = svm.getAccount(values.takerAccountA);
         if (takerTokenAInfo === null) throw new Error('Taker token A account not found');
         const takerTokenAccountA = AccountLayout.decode(takerTokenAInfo.data);
 

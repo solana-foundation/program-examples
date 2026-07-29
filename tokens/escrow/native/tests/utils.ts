@@ -9,7 +9,7 @@ import {
 } from '@solana/spl-token';
 import { Keypair, PublicKey, type Signer, SystemProgram, Transaction } from '@solana/web3.js';
 import BN from 'bn.js';
-import type { ProgramTestContext } from 'solana-bankrun';
+import { FailedTransactionMetadata, type LiteSVM } from 'litesvm';
 
 export async function sleep(seconds: number) {
     new Promise(resolve => setTimeout(resolve, seconds * 1000));
@@ -24,27 +24,37 @@ export const expectRevert = async (promise: Promise<unknown>) => {
     }
 };
 
-export const mintingTokens = async ({
-    context,
+export const mintingTokens = ({
+    svm,
+    payer,
     holder,
     mintKeypair,
     mintedAmount = 100,
     decimals = 6,
 }: {
-    context: ProgramTestContext;
+    svm: LiteSVM;
+    payer: Keypair;
     holder: Signer;
     mintKeypair: Keypair;
     mintedAmount?: number;
     decimals?: number;
 }) => {
-    async function createMint(context: ProgramTestContext, mint: Keypair, decimals: number) {
-        const rent = await context.banksClient.getRent();
+    function processTransaction(transaction: Transaction, signers: Keypair[]) {
+        transaction.recentBlockhash = svm.latestBlockhash();
+        transaction.sign(...signers);
 
-        const lamports = rent.minimumBalance(BigInt(MINT_SIZE));
+        const result = svm.sendTransaction(transaction);
+        if (result instanceof FailedTransactionMetadata) {
+            throw new Error(`transaction failed: ${result.toString()}`);
+        }
+    }
+
+    function createMint(mint: Keypair, decimals: number) {
+        const lamports = svm.minimumBalanceForRentExemption(BigInt(MINT_SIZE));
 
         const transaction = new Transaction().add(
             SystemProgram.createAccount({
-                fromPubkey: context.payer.publicKey,
+                fromPubkey: payer.publicKey,
                 newAccountPubkey: mint.publicKey,
                 space: MINT_SIZE,
                 lamports: new BN(lamports.toString()).toNumber(),
@@ -53,31 +63,20 @@ export const mintingTokens = async ({
             createInitializeMint2Instruction(
                 mint.publicKey,
                 decimals,
-                context.payer.publicKey,
-                context.payer.publicKey,
+                payer.publicKey,
+                payer.publicKey,
                 TOKEN_PROGRAM_ID,
             ),
         );
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(context.payer, mint);
-
-        await context.banksClient.processTransaction(transaction);
+        processTransaction(transaction, [payer, mint]);
     }
 
-    async function createAssociatedTokenAccountIfNeeded(
-        context: ProgramTestContext,
-        mint: PublicKey,
-        owner: PublicKey,
-    ) {
+    function createAssociatedTokenAccountIfNeeded(mint: PublicKey, owner: PublicKey) {
         const associatedToken = getAssociatedTokenAddressSync(mint, owner, true);
-
-        const rent = await context.banksClient.getRent();
-
-        rent.minimumBalance(BigInt(MINT_SIZE));
 
         const transaction = new Transaction().add(
             createAssociatedTokenAccountIdempotentInstruction(
-                context.payer.publicKey,
+                payer.publicKey,
                 associatedToken,
                 owner,
                 mint,
@@ -85,36 +84,24 @@ export const mintingTokens = async ({
                 ASSOCIATED_TOKEN_PROGRAM_ID,
             ),
         );
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(context.payer);
-
-        await context.banksClient.processTransaction(transaction);
+        processTransaction(transaction, [payer]);
     }
 
-    async function mintTo(
-        context: ProgramTestContext,
-        mint: PublicKey,
-        destination: PublicKey,
-        amount: number | bigint,
-    ) {
+    function mintTo(mint: PublicKey, destination: PublicKey, amount: number | bigint) {
         const transaction = new Transaction().add(
-            createMintToInstruction(mint, destination, context.payer.publicKey, amount, [], TOKEN_PROGRAM_ID),
+            createMintToInstruction(mint, destination, payer.publicKey, amount, [], TOKEN_PROGRAM_ID),
         );
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(context.payer);
-
-        await context.banksClient.processTransaction(transaction);
+        processTransaction(transaction, [payer]);
     }
 
     // creator creates the mint
-    await createMint(context, mintKeypair, decimals);
+    createMint(mintKeypair, decimals);
 
     // create holder token account
-    await createAssociatedTokenAccountIfNeeded(context, mintKeypair.publicKey, holder.publicKey);
+    createAssociatedTokenAccountIfNeeded(mintKeypair.publicKey, holder.publicKey);
 
     // mint to holders token account
-    await mintTo(
-        context,
+    mintTo(
         mintKeypair.publicKey,
         getAssociatedTokenAddressSync(mintKeypair.publicKey, holder.publicKey, true),
         mintedAmount * 10 ** decimals,

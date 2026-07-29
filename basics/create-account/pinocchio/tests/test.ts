@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { describe, test } from 'node:test';
 import {
     Keypair,
@@ -7,17 +8,17 @@ import {
     Transaction,
     TransactionInstruction,
 } from '@solana/web3.js';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe('Create a system account', async () => {
+describe('Create a system account', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'create_account_pinocchio_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/create_account_pinocchio_program.so');
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
 
-    test('Create the account via a cross program invocation', async () => {
+    test('Create the account via a cross program invocation', () => {
         const newKeypair = Keypair.generate();
-        const blockhash = context.lastBlockhash;
 
         const ix = new TransactionInstruction({
             keys: [
@@ -30,19 +31,19 @@ describe('Create a system account', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, newKeypair);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         // Verify the account was created with space derived from the instruction data
-        const accountInfo = await client.getAccount(newKeypair.publicKey);
+        const accountInfo = svm.getAccount(newKeypair.publicKey);
         if (accountInfo?.data.length !== 512) throw new Error('unexpected account size');
     });
 
-    test('Create the account via direct call to system program', async () => {
+    test('Create the account via direct call to system program', () => {
         const newKeypair = Keypair.generate();
-        const blockhash = context.lastBlockhash;
 
         const ix = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
@@ -53,10 +54,11 @@ describe('Create a system account', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, newKeypair);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
         console.log(`Account with public key ${newKeypair.publicKey} successfully created`);
     });
 });

@@ -1,24 +1,19 @@
 import * as anchor from '@anchor-lang/core';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
-import { BankrunProvider } from 'anchor-bankrun';
-import { startAnchor } from 'solana-bankrun';
+import { LiteSVMProvider } from 'anchor-litesvm';
+import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/mint_nft.json' with { type: 'json' };
 import type { MintNft } from '../target/types/mint_nft.ts';
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 const METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 
-describe('mint-nft bankrun', async () => {
-    const context = await startAnchor(
-        '',
-        [
-            { name: 'mint_nft', programId: PROGRAM_ID },
-            { name: 'token_metadata', programId: METADATA_PROGRAM_ID },
-        ],
-        [],
-    );
-    const provider = new BankrunProvider(context);
+describe('mint-nft litesvm', () => {
+    const client = new LiteSVM();
+    client.addProgramFromFile(PROGRAM_ID, 'target/deploy/mint_nft.so');
+    client.addProgramFromFile(METADATA_PROGRAM_ID, 'tests/fixtures/token_metadata.so');
+    const provider = new LiteSVMProvider(client);
     anchor.setProvider(provider);
     const wallet = provider.wallet as anchor.Wallet;
     const program = new anchor.Program<MintNft>(IDL, provider);

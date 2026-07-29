@@ -1,4 +1,3 @@
-import { describe, it } from 'node:test';
 import * as anchor from '@anchor-lang/core';
 import {
     AccountLayout,
@@ -14,9 +13,9 @@ import {
     TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { Keypair, PublicKey, SystemProgram, Transaction, type TransactionInstruction } from '@solana/web3.js';
-import { BankrunProvider } from 'anchor-bankrun';
+import { LiteSVMProvider } from 'anchor-litesvm';
 import { assert } from 'chai';
-import { startAnchor } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/transfer_switch.json';
 import type { TransferSwitch } from '../target/types/transfer_switch';
 
@@ -31,16 +30,16 @@ const expectRevert = async (promise: Promise<any>) => {
     }
 };
 
-describe('Transfer switch', async () => {
-    const context = await startAnchor('', [{ name: 'transfer_switch', programId: PROGRAM_ID }], []);
-    const provider = new BankrunProvider(context);
+describe('Transfer switch', () => {
+    const client = new LiteSVM();
+    client.addProgramFromFile(PROGRAM_ID, 'target/deploy/transfer_switch.so');
+    const provider = new LiteSVMProvider(client);
 
-    const _wallet = provider.wallet as anchor.Wallet;
+    const wallet = provider.wallet as anchor.Wallet;
     const program = new anchor.Program<TransferSwitch>(IDL, provider);
     const connection = provider.connection;
 
-    const payer = provider.context.payer;
-    const client = provider.context.banksClient;
+    const payer = wallet.payer;
 
     // Generate keypair to use as address for the transfer-hook enabled mint
     const mint = Keypair.generate();
@@ -98,10 +97,7 @@ describe('Transfer switch', async () => {
             createInitializeMintInstruction(mint.publicKey, decimals, payer.publicKey, null, TOKEN_2022_PROGRAM_ID),
         );
 
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(payer, mint);
-
-        await client.processTransaction(transaction);
+        await provider.sendAndConfirm(transaction, [mint]);
     });
 
     // Create the two token accounts for the transfer-hook enabled mint
@@ -122,10 +118,7 @@ describe('Transfer switch', async () => {
             ),
         );
 
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(payer);
-
-        await client.processTransaction(transaction);
+        await provider.sendAndConfirm(transaction);
     });
 
     // Account to store extra accounts required by the transfer hook instruction
@@ -180,7 +173,7 @@ describe('Transfer switch', async () => {
         const amount = 1 * 10 ** decimals;
         const bigIntAmount = BigInt(amount);
 
-        const [recipient, recipientTokenAccount, recipientTokenAccountCreateIx] = newUser();
+        const [_recipient, recipientTokenAccount, recipientTokenAccountCreateIx] = newUser();
 
         // create the recipient token account ahead of the transfer,
         //
@@ -188,10 +181,7 @@ describe('Transfer switch', async () => {
             recipientTokenAccountCreateIx, // create recipient token account
         );
 
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(payer, recipient);
-
-        client.processTransaction(transaction);
+        await provider.sendAndConfirm(transaction);
 
         // Standard token transfer instruction
         const transferInstruction = await createTransferCheckedWithTransferHookInstruction(
@@ -211,14 +201,11 @@ describe('Transfer switch', async () => {
             transferInstruction, // transfer instruction
         );
 
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(payer, sender);
-
         // expect the transaction to fail
         //
-        expectRevert(client.processTransaction(transaction));
+        await expectRevert(provider.sendAndConfirm(transaction, [sender]));
 
-        const recipientTokenAccountData = (await client.getAccount(recipientTokenAccount)).data;
+        const recipientTokenAccountData = client.getAccount(recipientTokenAccount).data;
         const recipientBalance = AccountLayout.decode(recipientTokenAccountData).amount;
 
         assert(recipientBalance === BigInt(0), 'transfer was successful');
@@ -264,12 +251,9 @@ describe('Transfer switch', async () => {
 
         const transaction = new Transaction().add(recipientTokenAccountCreateIx, transferInstruction);
 
-        transaction.recentBlockhash = context.lastBlockhash;
-        transaction.sign(payer, sender);
+        await provider.sendAndConfirm(transaction, [sender]);
 
-        await client.processTransaction(transaction);
-
-        const recipientTokenAccountData = (await client.getAccount(recipientTokenAccount)).data;
+        const recipientTokenAccountData = client.getAccount(recipientTokenAccount).data;
 
         const recipientBalance = AccountLayout.decode(recipientTokenAccountData).amount;
 

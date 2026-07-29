@@ -1,14 +1,23 @@
 import { Buffer } from 'node:buffer';
 import { describe, test } from 'node:test';
-import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
+import {
+    Keypair,
+    LAMPORTS_PER_SOL,
+    PublicKey,
+    SystemProgram,
+    Transaction,
+    TransactionInstruction,
+} from '@solana/web3.js';
 import * as borsh from 'borsh';
-import { start } from 'solana-bankrun';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe('PDA Rent-Payer', async () => {
+describe('PDA Rent-Payer', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'pda_rent_payer_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/pda_rent_payer_program.so');
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(2 * LAMPORTS_PER_SOL));
 
     const MyInstruction = {
         InitRentVault: 0,
@@ -38,8 +47,7 @@ describe('PDA Rent-Payer', async () => {
         return pda;
     }
 
-    test('Initialize the Rent Vault', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Initialize the Rent Vault', () => {
         const [rentVaultPda, _] = deriveRentVaultPda();
         const ix = new TransactionInstruction({
             keys: [
@@ -55,14 +63,14 @@ describe('PDA Rent-Payer', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    test('Create a new account using the Rent Vault', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Create a new account using the Rent Vault', () => {
         const newAccount = Keypair.generate();
         const [rentVaultPda, _] = deriveRentVaultPda();
         const ix = new TransactionInstruction({
@@ -78,10 +86,11 @@ describe('PDA Rent-Payer', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, newAccount); // Add instruction and Sign the transaction
 
         // Now we process the transaction
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 });

@@ -17,9 +17,9 @@ import {
 } from '@solana/spl-token';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, type TransactionInstruction } from '@solana/web3.js';
 import { makeKeypairs } from '@solana-developers/helpers';
-import { BankrunProvider } from 'anchor-bankrun';
+import { LiteSVMProvider } from 'anchor-litesvm';
 import { assert } from 'chai';
-import { type ProgramTestContext, startAnchor } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 import type { Escrow } from '../target/types/escrow';
 
 const TOKEN_PROGRAM: typeof TOKEN_2022_PROGRAM_ID | typeof TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
@@ -32,9 +32,8 @@ const getRandomBigNumber = (size = 8) => {
     return new BN(randomBytes(size));
 };
 
-describe('Escrow Bankrun example', () => {
-    let context: ProgramTestContext;
-    let provider: BankrunProvider;
+describe('Escrow LiteSVM example', () => {
+    let provider: LiteSVMProvider;
     let connection: anchor.web3.Connection;
     let program: anchor.Program<Escrow>;
 
@@ -48,8 +47,10 @@ describe('Escrow Bankrun example', () => {
     before(
         'Creates Alice and Bob accounts, 2 token mints, and associated token accounts for both tokens for both users',
         async () => {
-            context = await startAnchor('', [{ name: 'escrow', programId: PROGRAM_ID }], []);
-            provider = new BankrunProvider(context);
+            const client = new LiteSVM();
+            client.addProgramFromFile(PROGRAM_ID, 'target/deploy/escrow.so');
+            provider = new LiteSVMProvider(client);
+            client.airdrop(provider.publicKey, BigInt(100 * LAMPORTS_PER_SOL));
             connection = provider.connection;
             program = new anchor.Program<Escrow>(IDL, provider);
 

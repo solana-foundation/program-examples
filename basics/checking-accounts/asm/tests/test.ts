@@ -1,14 +1,36 @@
 import assert from 'node:assert';
 import { describe, test } from 'node:test';
-import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { start } from 'solana-bankrun';
+import {
+    Keypair,
+    LAMPORTS_PER_SOL,
+    PublicKey,
+    SystemProgram,
+    Transaction,
+    TransactionInstruction,
+} from '@solana/web3.js';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe('Checking accounts', async () => {
+describe('Checking accounts', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'checking-account-asm-program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
-    const rent = await client.getRent();
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/checking-account-asm-program.so');
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    const rentExemptBalance = svm.minimumBalanceForRentExemption(BigInt(0));
+
+    function sendExpectSuccess(tx: Transaction) {
+        const result = svm.sendTransaction(tx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    }
+
+    function sendExpectCustomError(tx: Transaction, code: number) {
+        const result = svm.sendTransaction(tx);
+        assert.ok(result instanceof FailedTransactionMetadata, 'expected transaction to fail');
+        assert.equal(
+            result.err().toString(),
+            `TransactionErrorInstructionError { index: 0, error: InstructionErrorCustom { code: ${code} } }`,
+        );
+    }
 
     // We'll create this ahead of time.
     // Our program will try to modify it.
@@ -16,25 +38,23 @@ describe('Checking accounts', async () => {
     // Our program will create this.
     const accountToCreate = Keypair.generate();
 
-    test('Create an account owned by our program', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Create an account owned by our program', () => {
         const ix = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: accountToChange.publicKey,
-            lamports: Number(rent.minimumBalance(BigInt(0))),
+            lamports: Number(rentExemptBalance),
             space: 0,
             programId: PROGRAM_ID, // Our program
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, accountToChange);
 
-        await client.processTransaction(tx);
+        sendExpectSuccess(tx);
     });
 
-    test('Check accounts', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Check accounts', () => {
         const ix = new TransactionInstruction({
             keys: [
                 { pubkey: payer.publicKey, isSigner: true, isWritable: true },
@@ -47,14 +67,13 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, accountToChange, accountToCreate);
 
-        await client.processTransaction(tx);
+        sendExpectSuccess(tx);
     });
 
-    test('Invalid number of accounts (error 1)', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Invalid number of accounts (error 1)', () => {
         const ix = new TransactionInstruction({
             keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
             programId: PROGRAM_ID,
@@ -62,15 +81,13 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer);
 
-        const res = await client.tryProcessTransaction(tx);
-        assert.equal(res.result, 'Error processing Instruction 0: custom program error: 0x1');
+        sendExpectCustomError(tx, 1);
     });
 
-    test('Payer not signer (error 2)', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Payer not signer (error 2)', () => {
         const feePayer = Keypair.generate();
         const fakePayer = Keypair.generate();
         const acCreate = Keypair.generate();
@@ -82,9 +99,9 @@ describe('Checking accounts', async () => {
             lamports: 10_000_000,
         });
         const fundTx = new Transaction();
-        fundTx.recentBlockhash = blockhash;
+        fundTx.recentBlockhash = svm.latestBlockhash();
         fundTx.add(fund).sign(payer);
-        await client.processTransaction(fundTx);
+        sendExpectSuccess(fundTx);
 
         const ix = new TransactionInstruction({
             keys: [
@@ -98,15 +115,13 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(feePayer, acCreate, acChange);
 
-        const res = await client.tryProcessTransaction(tx);
-        assert.equal(res.result, 'Error processing Instruction 0: custom program error: 0x2');
+        sendExpectCustomError(tx, 2);
     });
 
-    test('Account to create already initialized (error 3)', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Account to create already initialized (error 3)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate();
 
@@ -120,15 +135,15 @@ describe('Checking accounts', async () => {
         const fundChange = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: acChange.publicKey,
-            lamports: Number(rent.minimumBalance(BigInt(0))),
+            lamports: Number(rentExemptBalance),
             space: 0,
             programId: PROGRAM_ID,
         });
 
         const setupTx = new Transaction();
-        setupTx.recentBlockhash = blockhash;
+        setupTx.recentBlockhash = svm.latestBlockhash();
         setupTx.add(fund, fundChange).sign(payer, acChange);
-        await client.processTransaction(setupTx);
+        sendExpectSuccess(setupTx);
 
         const ix = new TransactionInstruction({
             keys: [
@@ -142,15 +157,13 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, acCreate, acChange);
 
-        const res = await client.tryProcessTransaction(tx);
-        assert.equal(res.result, 'Error processing Instruction 0: custom program error: 0x3');
+        sendExpectCustomError(tx, 3);
     });
 
-    test('Account to change not initialized (error 4)', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Account to change not initialized (error 4)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate(); // no lamports
 
@@ -166,15 +179,13 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, acCreate, acChange);
 
-        const res = await client.tryProcessTransaction(tx);
-        assert.equal(res.result, 'Error processing Instruction 0: custom program error: 0x4');
+        sendExpectCustomError(tx, 4);
     });
 
-    test('Invalid system program (error 5)', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Invalid system program (error 5)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate();
         const fakeSystemProgram = PublicKey.unique();
@@ -182,14 +193,14 @@ describe('Checking accounts', async () => {
         const fund = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: acChange.publicKey,
-            lamports: Number(rent.minimumBalance(BigInt(0))),
+            lamports: Number(rentExemptBalance),
             space: 0,
             programId: PROGRAM_ID,
         });
         const setupTx = new Transaction();
-        setupTx.recentBlockhash = blockhash;
+        setupTx.recentBlockhash = svm.latestBlockhash();
         setupTx.add(fund).sign(payer, acChange);
-        await client.processTransaction(setupTx);
+        sendExpectSuccess(setupTx);
 
         const ix = new TransactionInstruction({
             keys: [
@@ -203,15 +214,13 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, acCreate, acChange);
 
-        const res = await client.tryProcessTransaction(tx);
-        assert.equal(res.result, 'Error processing Instruction 0: custom program error: 0x5');
+        sendExpectCustomError(tx, 5);
     });
 
-    test('Account to change wrong owner (error 6)', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Account to change wrong owner (error 6)', () => {
         const acCreate = Keypair.generate();
         const acChange = Keypair.generate();
 
@@ -222,9 +231,9 @@ describe('Checking accounts', async () => {
             lamports: 1_000_000,
         });
         const setupTx = new Transaction();
-        setupTx.recentBlockhash = blockhash;
+        setupTx.recentBlockhash = svm.latestBlockhash();
         setupTx.add(fund).sign(payer);
-        await client.processTransaction(setupTx);
+        sendExpectSuccess(setupTx);
 
         const ix = new TransactionInstruction({
             keys: [
@@ -238,10 +247,9 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, acCreate, acChange);
 
-        const res = await client.tryProcessTransaction(tx);
-        assert.equal(res.result, 'Error processing Instruction 0: custom program error: 0x6');
+        sendExpectCustomError(tx, 6);
     });
 });

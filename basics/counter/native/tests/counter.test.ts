@@ -1,19 +1,20 @@
 import { describe, test } from 'node:test';
-import { Keypair, SystemProgram, Transaction, type TransactionInstruction } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, type TransactionInstruction } from '@solana/web3.js';
 import { assert } from 'chai';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { COUNTER_ACCOUNT_SIZE, createIncrementInstruction, deserializeCounterAccount, PROGRAM_ID } from '../ts';
 
-describe('Counter Solana Native', async () => {
-    // Randomly generate the program keypair and load the program to solana-bankrun
-    const context = await start([{ name: 'counter_solana_native', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    // Get the payer keypair from the context, this will be used to sign transactions with enough lamports
-    const payer = context.payer;
+describe('Counter Solana Native', () => {
+    // Load the program to litesvm
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/counter_solana_native.so');
+    // Generate a payer keypair and fund it, this will be used to sign transactions with enough lamports
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
     // Get the rent object to calculate rent for the accounts
-    const rent = await client.getRent();
+    const rent = svm.getRent();
 
-    test('Test allocate counter + increment tx', async () => {
+    test('Test allocate counter + increment tx', () => {
         // Randomly generate the account key
         // to sign for setting up the Counter state
         const counterKeypair = Keypair.generate();
@@ -34,17 +35,17 @@ describe('Counter Solana Native', async () => {
         tx.feePayer = payer.publicKey;
 
         // Fetch a "timestamp" so validators know this is a recent transaction
-        const blockhash = context.lastBlockhash;
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
 
         // Sign the transaction with the payer's keypair
         tx.sign(payer, counterKeypair);
 
-        // Send transaction to bankrun
-        await client.processTransaction(tx);
+        // Send transaction to litesvm
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
         // Get the counter account info from network
-        const counterAccountInfo = await client.getAccount(counter);
+        const counterAccountInfo = svm.getAccount(counter);
         assert(counterAccountInfo, 'Expected counter account to have been created');
 
         // Deserialize the counter & check count has been incremented
@@ -53,7 +54,7 @@ describe('Counter Solana Native', async () => {
         console.log(`[alloc+increment] count is: ${counterAccount.count.toNumber()}`);
     });
 
-    test('Test allocate tx and increment tx', async () => {
+    test('Test allocate tx and increment tx', () => {
         const counterKeypair = Keypair.generate();
         const counter = counterKeypair.publicKey;
 
@@ -66,14 +67,15 @@ describe('Counter Solana Native', async () => {
             programId: PROGRAM_ID,
         });
         let tx = new Transaction().add(allocIx);
-        const blockhash = context.lastBlockhash;
+        const blockhash = svm.latestBlockhash();
         tx.feePayer = payer.publicKey;
         tx.recentBlockhash = blockhash;
         tx.sign(payer, counterKeypair);
 
-        await client.processTransaction(tx);
+        let result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        let counterAccountInfo = await client.getAccount(counter);
+        let counterAccountInfo = svm.getAccount(counter);
         assert(counterAccountInfo, 'Expected counter account to have been created');
 
         let counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
@@ -87,9 +89,10 @@ describe('Counter Solana Native', async () => {
         tx.recentBlockhash = blockhash;
         tx.sign(payer);
 
-        await client.processTransaction(tx);
+        result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        counterAccountInfo = await client.getAccount(counter);
+        counterAccountInfo = svm.getAccount(counter);
         assert(counterAccountInfo, 'Expected counter account to have been created');
 
         counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));

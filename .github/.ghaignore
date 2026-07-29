@@ -1,9 +1,5 @@
 # build and test error
-basics/realloc/native
 basics/cross-program-invocation/native
-
-# bankrun runtime rejects an instruction the current build-sbf toolchain emits
-basics/favorites/native
 
 # can't test on localnet
 tokens/pda-mint-authority/native
@@ -20,13 +16,6 @@ compression/cnft-burn/anchor
 
 # not live
 tokens/token-2022/group/anchor
-
-# error in tests
-tokens/external-delegate-token-master/anchor
-
-tokens/token-2022/mint-close-authority/native
-tokens/token-2022/transfer-fee/native
-tokens/token-2022/non-transferable/native
 
 # justfile-driven example: built and tested by .github/workflows/just.yml,
 # not the legacy pinocchio CI (it has no build-and-test script)

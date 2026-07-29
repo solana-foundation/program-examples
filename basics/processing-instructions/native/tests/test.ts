@@ -1,14 +1,17 @@
 import { Buffer } from 'node:buffer';
 import { describe, test } from 'node:test';
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import * as borsh from 'borsh';
-import { start } from 'solana-bankrun';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe('custom-instruction-data', async () => {
+describe('custom-instruction-data', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'processing_instructions_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/processing_instructions_program.so');
+
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
     const InstructionDataSchema = {
         struct: {
@@ -21,8 +24,8 @@ describe('custom-instruction-data', async () => {
         return Buffer.from(borsh.serialize(schema, data));
     }
 
-    test('Go to the park!', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Go to the park!', () => {
+        const blockhash = svm.latestBlockhash();
 
         const jimmy = borshSerialize(InstructionDataSchema, {
             name: 'Jimmy',
@@ -48,6 +51,7 @@ describe('custom-instruction-data', async () => {
         tx.recentBlockhash = blockhash;
         tx.add(ix1).add(ix2).sign(payer);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 });

@@ -1,23 +1,18 @@
 import * as anchor from '@anchor-lang/core';
 import { Keypair, PublicKey } from '@solana/web3.js';
-import { BankrunProvider } from 'anchor-bankrun';
-import { startAnchor } from 'solana-bankrun';
+import { LiteSVMProvider } from 'anchor-litesvm';
+import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/create_token.json' with { type: 'json' };
 import type { CreateToken } from '../target/types/create_token.ts';
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 const METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 
-describe('Bankrun example', async () => {
-    const context = await startAnchor(
-        '',
-        [
-            { name: 'create_token', programId: PROGRAM_ID },
-            { name: 'token_metadata', programId: METADATA_PROGRAM_ID },
-        ],
-        [],
-    );
-    const provider = new BankrunProvider(context);
+describe('LiteSVM example', () => {
+    const client = new LiteSVM();
+    client.addProgramFromFile(PROGRAM_ID, 'target/deploy/create_token.so');
+    client.addProgramFromFile(METADATA_PROGRAM_ID, 'tests/fixtures/token_metadata.so');
+    const provider = new LiteSVMProvider(client);
     const payer = provider.wallet as anchor.Wallet;
     const program = new anchor.Program<CreateToken>(IDL, provider);
 

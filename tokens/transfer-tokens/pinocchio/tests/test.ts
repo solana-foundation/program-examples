@@ -1,10 +1,17 @@
 import { Buffer } from 'node:buffer';
-import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
+import {
+    Keypair,
+    LAMPORTS_PER_SOL,
+    PublicKey,
+    SystemProgram,
+    Transaction,
+    TransactionInstruction,
+} from '@solana/web3.js';
 import { assert } from 'chai';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 // The legacy SPL Token and Associated Token Account programs are bundled with
-// bankrun, so they are available without loading any extra fixtures.
+// litesvm, so they are available without loading any extra fixtures.
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
 
@@ -36,11 +43,13 @@ function readTokenAmount(data: Uint8Array): number {
     return buffer.readUInt32LE(64) + buffer.readUInt32LE(68) * 4294967296; // 2^32
 }
 
-describe('Transfer Tokens (Pinocchio)', async () => {
+describe('Transfer Tokens (Pinocchio)', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'transfer_tokens_pinocchio_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/transfer_tokens_pinocchio_program.so');
+
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
     const mintKeypair = Keypair.generate();
     const recipient = Keypair.generate();
@@ -48,16 +57,17 @@ describe('Transfer Tokens (Pinocchio)', async () => {
     const payerAta = getAssociatedTokenAddress(mintKeypair.publicKey, payer.publicKey);
     const recipientAta = getAssociatedTokenAddress(mintKeypair.publicKey, recipient.publicKey);
 
-    async function sendInstruction(ix: TransactionInstruction, signers: Keypair[]) {
+    function sendInstruction(ix: TransactionInstruction, signers: Keypair[]) {
         const tx = new Transaction();
         tx.feePayer = payer.publicKey;
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix);
         tx.sign(...signers);
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     }
 
-    it('Creates an SPL token mint', async () => {
+    it('Creates an SPL token mint', () => {
         const ix = new TransactionInstruction({
             programId: PROGRAM_ID,
             keys: [
@@ -70,14 +80,14 @@ describe('Transfer Tokens (Pinocchio)', async () => {
             data: Buffer.from([CREATE_TOKEN, 9]), // 9 decimals
         });
 
-        await sendInstruction(ix, [payer, mintKeypair]);
+        sendInstruction(ix, [payer, mintKeypair]);
 
-        const mintAccount = await client.getAccount(mintKeypair.publicKey);
+        const mintAccount = svm.getAccount(mintKeypair.publicKey);
         if (mintAccount === null) throw new Error('Mint account not found');
         assert.deepEqual(mintAccount.owner.toBytes(), TOKEN_PROGRAM_ID.toBytes());
     });
 
-    it('Mints tokens to the payer', async () => {
+    it('Mints tokens to the payer', () => {
         const ix = new TransactionInstruction({
             programId: PROGRAM_ID,
             keys: [
@@ -93,14 +103,14 @@ describe('Transfer Tokens (Pinocchio)', async () => {
             data: Buffer.concat([Buffer.from([MINT_TOKENS]), u64le(150)]),
         });
 
-        await sendInstruction(ix, [payer]);
+        sendInstruction(ix, [payer]);
 
-        const ataAccount = await client.getAccount(payerAta);
+        const ataAccount = svm.getAccount(payerAta);
         if (ataAccount === null) throw new Error('Associated token account not found');
         assert.equal(readTokenAmount(ataAccount.data), 150);
     });
 
-    it('Transfers tokens to another wallet', async () => {
+    it('Transfers tokens to another wallet', () => {
         const ix = new TransactionInstruction({
             programId: PROGRAM_ID,
             keys: [
@@ -117,10 +127,10 @@ describe('Transfer Tokens (Pinocchio)', async () => {
             data: Buffer.concat([Buffer.from([TRANSFER_TOKENS]), u64le(50)]),
         });
 
-        await sendInstruction(ix, [payer]);
+        sendInstruction(ix, [payer]);
 
-        const sourceAccount = await client.getAccount(payerAta);
-        const destinationAccount = await client.getAccount(recipientAta);
+        const sourceAccount = svm.getAccount(payerAta);
+        const destinationAccount = svm.getAccount(recipientAta);
         if (sourceAccount === null || destinationAccount === null) {
             throw new Error('Associated token account not found');
         }

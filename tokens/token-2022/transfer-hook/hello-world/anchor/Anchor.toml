@@ -17,7 +17,7 @@ wallet = "~/.config/solana/id.json"
 [scripts]
 test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
-# Transfer-hook tests use the real local validator (not bankrun).
+# Transfer-hook tests use the real local validator.
 # No external program clones needed — this project doesn't use Metaplex.
 # The previous [[test.validator.clone]] of metaplex was unnecessary and
 # caused 5-minute timeouts in CI trying to fetch from devnet.

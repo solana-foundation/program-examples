@@ -1,41 +1,44 @@
 import { describe, test } from 'node:test';
 import { AccountLayout } from '@solana/spl-token';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { type OfferRaw, OfferSchema } from './account';
 import { buildMakeOffer, buildTakeOffer } from './instruction';
 import { createValues, mintingTokens } from './utils';
 
-describe('Escrow!', async () => {
+describe('Escrow!', () => {
     const values = createValues();
 
-    const context = await start([{ name: 'escrow_native_program', programId: values.programId }], []);
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(values.programId, 'tests/fixtures/escrow_native_program.so');
 
-    const client = context.banksClient;
-    const payer = context.payer;
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
 
     console.log(`Program Address    : ${values.programId}`);
     console.log(`Payer Address      : ${payer.publicKey}`);
 
-    test('mint tokens to maker and taker', async () => {
+    test('mint tokens to maker and taker', () => {
         // mint token a to maker account
-        await mintingTokens({
-            context,
+        mintingTokens({
+            svm,
+            payer,
             holder: values.maker,
             mintKeypair: values.mintAKeypair,
         });
 
         // mint Token B to Taker account
-        await mintingTokens({
-            context,
+        mintingTokens({
+            svm,
+            payer,
             holder: values.taker,
             mintKeypair: values.mintBKeypair,
         });
     });
 
-    test('Make Offer', async () => {
+    test('Make Offer', () => {
         const ix = buildMakeOffer({
             id: values.id,
             maker: values.maker.publicKey,
@@ -50,17 +53,16 @@ describe('Escrow!', async () => {
             programId: values.programId,
         });
 
-        const blockhash = context.lastBlockhash;
-
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, values.maker);
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const offerInfo = await client.getAccount(values.offer);
+        const offerInfo = svm.getAccount(values.offer);
         const offer = borsh.deserialize(OfferSchema, Buffer.from(offerInfo.data)) as OfferRaw;
 
-        const vaultInfo = await client.getAccount(values.vault);
+        const vaultInfo = svm.getAccount(values.vault);
         const vaultTokenAccount = AccountLayout.decode(vaultInfo.data);
 
         assert(offer.id.toString() === values.id.toString(), 'wrong id');
@@ -78,7 +80,7 @@ describe('Escrow!', async () => {
         assert(vaultTokenAccount.amount.toString() === values.amountA.toString(), 'unexpected amount A');
     });
 
-    test('Take Offer', async () => {
+    test('Take Offer', () => {
         const ix = buildTakeOffer({
             maker: values.maker.publicKey,
             offer: values.offer,
@@ -93,23 +95,22 @@ describe('Escrow!', async () => {
             programId: values.programId,
         });
 
-        const blockhash = context.lastBlockhash;
-
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, values.taker);
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        const offerInfo = await client.getAccount(values.offer);
+        const offerInfo = svm.getAccount(values.offer);
         assert(offerInfo === null, 'offer account not closed');
 
-        const vaultInfo = await client.getAccount(values.vault);
+        const vaultInfo = svm.getAccount(values.vault);
         assert(vaultInfo === null, 'vault account not closed');
 
-        const makerTokenBInfo = await client.getAccount(values.makerAccountB);
+        const makerTokenBInfo = svm.getAccount(values.makerAccountB);
         const makerTokenAccountB = AccountLayout.decode(makerTokenBInfo.data);
 
-        const takerTokenAInfo = await client.getAccount(values.takerAccountA);
+        const takerTokenAInfo = svm.getAccount(values.takerAccountA);
         const takerTokenAccountA = AccountLayout.decode(takerTokenAInfo.data);
 
         assert(takerTokenAccountA.amount.toString() === values.amountA.toString(), 'unexpected amount a');

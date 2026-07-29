@@ -1,19 +1,19 @@
 import * as anchor from '@anchor-lang/core';
 import { PublicKey } from '@solana/web3.js';
-import { BankrunProvider } from 'anchor-bankrun';
+import { LiteSVMProvider } from 'anchor-litesvm';
 import BN from 'bn.js';
-import { startAnchor } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/anchor.json' with { type: 'json' };
 import type { Anchor } from '../target/types/anchor.ts';
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 
-describe('anchor', async () => {
-    const context = await startAnchor('', [{ name: 'anchor', programId: PROGRAM_ID }], []);
-    const provider = new BankrunProvider(context);
+describe('anchor', () => {
+    const client = new LiteSVM();
+    client.addProgramFromFile(PROGRAM_ID, 'target/deploy/anchor.so');
+    const provider = new LiteSVMProvider(client);
     anchor.setProvider(provider);
     const program = new anchor.Program<Anchor>(IDL, provider);
-    const client = context.banksClient;
     const TOKEN_2022_PROGRAM_ID = new anchor.web3.PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
     const wallet = provider.wallet as anchor.Wallet;
     const ATA_PROGRAM_ID = new anchor.web3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
@@ -36,10 +36,7 @@ describe('anchor', async () => {
     );
 
     it('Create Token-2022 Token', async () => {
-        // await connection.requestAirdrop(receiver.publicKey, 1000000000);
-        // await connection.requestAirdrop(wallet.publicKey, 1000000000);
         const tx = new anchor.web3.Transaction();
-        const [blockhash, _height] = await client.getLatestBlockhash();
 
         const ix = await program.methods
             .createToken(tokenName)
@@ -49,16 +46,13 @@ describe('anchor', async () => {
             })
             .instruction();
 
-        tx.recentBlockhash = blockhash;
         tx.add(ix);
-        tx.sign(wallet.payer);
-        const sig = await client.processTransaction(tx);
+        const sig = await provider.sendAndConfirm(tx);
         console.log('Your transaction signature', sig);
     });
 
     it('Initialize payer ATA', async () => {
         const tx = new anchor.web3.Transaction();
-        const [blockhash, _height] = await client.getLatestBlockhash();
 
         const ix = await program.methods
             .createAssociatedTokenAccount()
@@ -70,10 +64,8 @@ describe('anchor', async () => {
             })
             .instruction();
 
-        tx.recentBlockhash = blockhash;
         tx.add(ix);
-        tx.sign(wallet.payer);
-        const sig = await client.processTransaction(tx);
+        const sig = await provider.sendAndConfirm(tx);
         console.log('Your transaction signature', sig);
     });
 
@@ -104,7 +96,6 @@ describe('anchor', async () => {
 
     it('Mint Token to payer', async () => {
         const tx = new anchor.web3.Transaction();
-        const [blockhash, _height] = await client.getLatestBlockhash();
 
         const ix = await program.methods
             .mintToken(new BN(200000000))
@@ -116,17 +107,14 @@ describe('anchor', async () => {
             })
             .instruction();
 
-        tx.recentBlockhash = blockhash;
         tx.add(ix);
-        tx.sign(wallet.payer);
-        const sig = await client.processTransaction(tx);
+        const sig = await provider.sendAndConfirm(tx);
         console.log('Your transaction signature', sig);
     });
 
     // Using init in the transfer instruction, as init if needed is bot working with Token 2022 yet.
     it('Transfer Token', async () => {
         const tx = new anchor.web3.Transaction();
-        const [blockhash, _height] = await client.getLatestBlockhash();
 
         const ix = await program.methods
             .transferToken(new BN(100))
@@ -140,10 +128,8 @@ describe('anchor', async () => {
             })
             .instruction();
 
-        tx.recentBlockhash = blockhash;
         tx.add(ix);
-        tx.sign(wallet.payer);
-        const sig = await client.processTransaction(tx);
+        const sig = await provider.sendAndConfirm(tx);
         console.log('Your transaction signature', sig);
     });
 });

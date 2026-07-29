@@ -3,6 +3,7 @@ import { describe, test } from 'node:test';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
     Keypair,
+    LAMPORTS_PER_SOL,
     PublicKey,
     SYSVAR_RENT_PUBKEY,
     SystemProgram,
@@ -11,7 +12,7 @@ import {
 } from '@solana/web3.js';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
-import { start } from 'solana-bankrun';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 const CreateTokenArgsSchema = { struct: { token_decimals: 'u8' } };
 
@@ -19,14 +20,16 @@ function borshSerialize(schema: borsh.Schema, data: object): Buffer {
     return Buffer.from(borsh.serialize(schema, data));
 }
 
-describe('Create Token', async () => {
+describe('Create Token', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'token_2022_transfer_fees_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/token_2022_transfer_fees_program.so');
 
-    test('Create a Token-22 SPL-Token !', async () => {
-        const blockhash = context.lastBlockhash;
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+
+    test('Create a Token-22 SPL-Token !', () => {
+        const blockhash = svm.latestBlockhash();
         const mintKeypair: Keypair = Keypair.generate();
 
         const instructionData = borshSerialize(CreateTokenArgsSchema, {
@@ -50,9 +53,10 @@ describe('Create Token', async () => {
         tx.recentBlockhash = blockhash;
         tx.add(ix).sign(payer, mintKeypair);
 
-        const transaction = await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-        assert(transaction.logMessages[0].startsWith(`Program ${PROGRAM_ID}`));
+        assert(result.logs()[0].startsWith(`Program ${PROGRAM_ID}`));
         console.log('Token Mint Address: ', mintKeypair.publicKey.toBase58());
     });
 });

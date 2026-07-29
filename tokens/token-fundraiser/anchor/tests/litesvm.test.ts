@@ -1,25 +1,27 @@
-import { describe, it } from 'node:test';
 import * as anchor from '@anchor-lang/core';
 import {
+    AccountLayout,
     ASSOCIATED_TOKEN_PROGRAM_ID,
-    createMint,
+    createAssociatedTokenAccountInstruction,
+    createInitializeMint2Instruction,
+    createMintToInstruction,
     getAssociatedTokenAddressSync,
-    getOrCreateAssociatedTokenAccount,
-    mintTo,
+    MINT_SIZE,
     TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
-import { BankrunProvider } from 'anchor-bankrun';
+import { LiteSVMProvider } from 'anchor-litesvm';
 import BN from 'bn.js';
-import { startAnchor } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/fundraiser.json';
 import type { Fundraiser } from '../target/types/fundraiser';
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 
-describe('fundraiser bankrun', async () => {
-    const context = await startAnchor('', [{ name: 'fundraiser', programId: PROGRAM_ID }], []);
-    const provider = new BankrunProvider(context);
+describe('fundraiser litesvm', () => {
+    const client = new LiteSVM();
+    client.addProgramFromFile(PROGRAM_ID, 'target/deploy/fundraiser.so');
+    const provider = new LiteSVMProvider(client);
     anchor.setProvider(provider);
     const wallet = provider.wallet as anchor.Wallet;
     const program = new anchor.Program<Fundraiser>(IDL, provider);
@@ -42,39 +44,34 @@ describe('fundraiser bankrun', async () => {
         program.programId,
     )[0];
 
-    const confirm = async (signature: string): Promise<string> => {
-        const block = await provider.connection.getLatestBlockhash();
-        await provider.connection.confirmTransaction({
-            signature,
-            ...block,
-        });
-        return signature;
-    };
+    const tokenBalance = (account: anchor.web3.PublicKey) =>
+        AccountLayout.decode(client.getAccount(account).data).amount;
 
     it('Test Preparation', async () => {
-        const airdrop = await provider.connection
-            .requestAirdrop(maker.publicKey, 1 * anchor.web3.LAMPORTS_PER_SOL)
-            .then(confirm);
-        console.log('\nAirdropped 1 SOL to maker', airdrop);
+        client.airdrop(maker.publicKey, BigInt(anchor.web3.LAMPORTS_PER_SOL));
+        console.log('\nAirdropped 1 SOL to maker');
 
-        mint = await createMint(provider.connection, wallet.payer, provider.publicKey, provider.publicKey, 6);
-        console.log('Mint created', mint.toBase58());
+        const mintKeypair = anchor.web3.Keypair.generate();
+        mint = mintKeypair.publicKey;
+        contributorATA = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+        makerATA = getAssociatedTokenAddressSync(mint, maker.publicKey);
 
-        contributorATA = (
-            await getOrCreateAssociatedTokenAccount(provider.connection, wallet.payer, mint, wallet.publicKey)
-        ).address;
-
-        makerATA = (await getOrCreateAssociatedTokenAccount(provider.connection, wallet.payer, mint, maker.publicKey))
-            .address;
-
-        const mintTx = await mintTo(
-            provider.connection,
-            wallet.payer,
-            mint,
-            contributorATA,
-            provider.publicKey,
-            1_000_000_0,
+        const lamports = await provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+        const setupTx = new anchor.web3.Transaction().add(
+            anchor.web3.SystemProgram.createAccount({
+                fromPubkey: wallet.publicKey,
+                newAccountPubkey: mint,
+                space: MINT_SIZE,
+                lamports,
+                programId: TOKEN_PROGRAM_ID,
+            }),
+            createInitializeMint2Instruction(mint, 6, provider.publicKey, provider.publicKey),
+            createAssociatedTokenAccountInstruction(wallet.publicKey, contributorATA, wallet.publicKey, mint),
+            createAssociatedTokenAccountInstruction(wallet.publicKey, makerATA, maker.publicKey, mint),
+            createMintToInstruction(mint, contributorATA, provider.publicKey, 1_000_000_0),
         );
+        const mintTx = await provider.sendAndConfirm(setupTx, [mintKeypair]);
+        console.log('Mint created', mint.toBase58());
         console.log('Minted 10 tokens to contributor', mintTx);
     });
 
@@ -93,8 +90,7 @@ describe('fundraiser bankrun', async () => {
                 associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             })
             .signers([maker])
-            .rpc()
-            .then(confirm);
+            .rpc();
 
         console.log('\nInitialized fundraiser Account');
         console.log('Your transaction signature', tx);
@@ -113,17 +109,17 @@ describe('fundraiser bankrun', async () => {
                 vault,
                 tokenProgram: TOKEN_PROGRAM_ID,
             })
-            .rpc()
-            .then(confirm);
+            .rpc();
 
         console.log('\nContributed to fundraiser', tx);
         console.log('Your transaction signature', tx);
-        console.log('Vault balance', (await provider.connection.getTokenAccountBalance(vault)).value.amount);
+        console.log('Vault balance', tokenBalance(vault).toString());
 
         const contributorAccount = await program.account.contributor.fetch(contributor);
         console.log('Contributor balance', contributorAccount.amount.toString());
     });
     it('Contribute to Fundraiser', async () => {
+        client.expireBlockhash();
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
         const tx = await program.methods
@@ -136,12 +132,11 @@ describe('fundraiser bankrun', async () => {
                 vault,
                 tokenProgram: TOKEN_PROGRAM_ID,
             })
-            .rpc()
-            .then(confirm);
+            .rpc();
 
         console.log('\nContributed to fundraiser', tx);
         console.log('Your transaction signature', tx);
-        console.log('Vault balance', (await provider.connection.getTokenAccountBalance(vault)).value.amount);
+        console.log('Vault balance', tokenBalance(vault).toString());
 
         const contributorAccount = await program.account.contributor.fetch(contributor);
         console.log('Contributor balance', contributorAccount.amount.toString());
@@ -161,12 +156,11 @@ describe('fundraiser bankrun', async () => {
                     vault,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .rpc()
-                .then(confirm);
+                .rpc();
 
             console.log('\nContributed to fundraiser', tx);
             console.log('Your transaction signature', tx);
-            console.log('Vault balance', (await provider.connection.getTokenAccountBalance(vault)).value.amount);
+            console.log('Vault balance', tokenBalance(vault).toString());
         } catch (error) {
             console.log('\nError contributing to fundraiser');
             console.log(error.msg);
@@ -188,12 +182,11 @@ describe('fundraiser bankrun', async () => {
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
                 .signers([maker])
-                .rpc()
-                .then(confirm);
+                .rpc();
 
             console.log('\nChecked contributions');
             console.log('Your transaction signature', tx);
-            console.log('Vault balance', (await provider.connection.getTokenAccountBalance(vault)).value.amount);
+            console.log('Vault balance', tokenBalance(vault).toString());
         } catch (error) {
             console.log('\nError checking contributions');
             console.log(error.msg);
@@ -219,11 +212,10 @@ describe('fundraiser bankrun', async () => {
                 tokenProgram: TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
             })
-            .rpc()
-            .then(confirm);
+            .rpc();
 
         console.log('\nRefunded contributions', tx);
         console.log('Your transaction signature', tx);
-        console.log('Vault balance', (await provider.connection.getTokenAccountBalance(vault)).value.amount);
+        console.log('Vault balance', tokenBalance(vault).toString());
     });
 });

@@ -1,13 +1,22 @@
+import assert from 'node:assert';
 import { describe, test } from 'node:test';
-import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { start } from 'solana-bankrun';
+import {
+    Keypair,
+    LAMPORTS_PER_SOL,
+    PublicKey,
+    SystemProgram,
+    Transaction,
+    TransactionInstruction,
+} from '@solana/web3.js';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe('Checking accounts', async () => {
+describe('Checking accounts', () => {
     const PROGRAM_ID = PublicKey.unique();
-    const context = await start([{ name: 'checking_accounts_pinocchio_program', programId: PROGRAM_ID }], []);
-    const client = context.banksClient;
-    const payer = context.payer;
-    const rent = await client.getRent();
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/checking_accounts_pinocchio_program.so');
+    const payer = Keypair.generate();
+    svm.airdrop(payer.publicKey, BigInt(LAMPORTS_PER_SOL));
+    const rentExemptBalance = svm.minimumBalanceForRentExemption(BigInt(0));
 
     // We'll create this ahead of time.
     // Our program will try to modify it.
@@ -15,25 +24,24 @@ describe('Checking accounts', async () => {
     // Our program will create this.
     const accountToCreate = Keypair.generate();
 
-    test('Create an account owned by our program', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Create an account owned by our program', () => {
         const ix = SystemProgram.createAccount({
             fromPubkey: payer.publicKey,
             newAccountPubkey: accountToChange.publicKey,
-            lamports: Number(rent.minimumBalance(BigInt(0))),
+            lamports: Number(rentExemptBalance),
             space: 0,
             programId: PROGRAM_ID, // Our program
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, accountToChange);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 
-    test('Check accounts', async () => {
-        const blockhash = context.lastBlockhash;
+    test('Check accounts', () => {
         const ix = new TransactionInstruction({
             keys: [
                 { pubkey: payer.publicKey, isSigner: true, isWritable: true },
@@ -46,9 +54,10 @@ describe('Checking accounts', async () => {
         });
 
         const tx = new Transaction();
-        tx.recentBlockhash = blockhash;
+        tx.recentBlockhash = svm.latestBlockhash();
         tx.add(ix).sign(payer, accountToChange, accountToCreate);
 
-        await client.processTransaction(tx);
+        const result = svm.sendTransaction(tx);
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
 });
