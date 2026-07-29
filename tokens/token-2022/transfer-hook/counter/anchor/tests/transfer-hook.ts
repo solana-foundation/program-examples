@@ -92,7 +92,7 @@ describe('transfer-hook', () => {
 
         const txSig = await sendAndConfirmTransaction(provider.connection, transaction, [wallet.payer, mint], {
             skipPreflight: true,
-            commitment: 'finalized',
+            commitment: 'confirmed',
         });
 
         const txDetails = await program.provider.connection.getTransaction(txSig, {
