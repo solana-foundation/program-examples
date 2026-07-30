@@ -100,6 +100,9 @@ pub enum EventDiscriminators {
     PoolInitialized = 0,
     PullRequested = 1,
     PullSettled = 2,
+    PullRefunded = 3,
+    FeesWithdrawn = 4,
+    PrizeClaimed = 5,
 }
 
 impl TryFrom<u8> for EventDiscriminators {
@@ -110,6 +113,9 @@ impl TryFrom<u8> for EventDiscriminators {
             0 => Ok(Self::PoolInitialized),
             1 => Ok(Self::PullRequested),
             2 => Ok(Self::PullSettled),
+            3 => Ok(Self::PullRefunded),
+            4 => Ok(Self::FeesWithdrawn),
+            5 => Ok(Self::PrizeClaimed),
             _ => Err(value),
         }
     }

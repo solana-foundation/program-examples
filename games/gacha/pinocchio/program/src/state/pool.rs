@@ -8,9 +8,11 @@ use crate::{gacha::MAX_TIERS, state::common::AccountDiscriminator, GachaError};
 
 /// A gacha pool: one machine, owned by an admin.
 ///
-/// Holds the fixed entry fee, the registered off-chain VRF `operator`, the reward
-/// tiers (parallel `weights` / `supplies` / `remaining` arrays), and a monotonic
-/// `pulls_count` used to derive unique pull accounts. One pool per admin wallet.
+/// Holds the fixed entry fee, the registered off-chain VRF `operator` (whose
+/// cc-vrf authority registration is pinned by `authority_label`), the fixed tier
+/// `weights`, a monotonic `pulls_count` used to derive unique pull accounts, and
+/// `pending_pulls` tracking outstanding refund liabilities. One pool per admin
+/// wallet.
 ///
 /// **PDA seeds:** `["pool", admin]`
 #[repr(C, packed)]
@@ -22,22 +24,29 @@ pub struct Pool {
     pub discriminator: u8,
     /// PDA bump seed.
     pub bump: u8,
-    /// Number of active tiers (leading entries of the tier arrays).
+    /// Number of active tiers (leading entries of `weights`).
     pub tier_count: u8,
     /// Admin that configured and owns this pool.
     pub admin: Address,
-    /// Registered VRF operator; the only signer allowed to settle pulls.
+    /// Registered VRF operator; the only signer allowed to settle pulls. Doubles
+    /// as the ECVRF public key and as the `owner` of the cc-vrf authority record.
     pub operator: Address,
-    /// Entry fee per pull, in lamports.
+    /// Label of the operator's cc-vrf authority registration; together with
+    /// `operator` it pins the exact frozen registry record settles must use.
+    pub authority_label: [u8; 32],
+    /// Entry fee per pull, in lamports. Escrowed in the vault until the pull is
+    /// settled (operator revenue) or refunded (returned to the buyer).
     pub entry_fee: u64,
     /// Number of pulls opened against this pool; the next pull's index.
     pub pulls_count: u64,
-    /// Relative draw weight per tier.
+    /// Pulls still awaiting settle or refund. The vault must always hold at
+    /// least `pending_pulls * entry_fee` on top of its rent floor.
+    pub pending_pulls: u64,
+    /// Slots after a pull's `requested_slot` before the buyer may claim a refund.
+    pub settle_deadline_slots: u64,
+    /// Relative draw weight per tier. Fixed at init, so tier odds are identical
+    /// for every pull and independent of settle order.
     pub weights: [u32; 8],
-    /// Original supply cap per tier.
-    pub supplies: [u32; 8],
-    /// Units still available per tier.
-    pub remaining: [u32; 8],
 }
 
 impl Pool {
@@ -47,7 +56,7 @@ impl Pool {
     /// PDA seed prefix.
     pub const SEED: &'static [u8] = b"pool";
 
-    /// Initializes a freshly created account, seeding `remaining` from `supplies`.
+    /// Initializes a freshly created account.
     #[inline(always)]
     #[allow(clippy::too_many_arguments)]
     pub fn init(
@@ -55,9 +64,10 @@ impl Pool {
         bump: u8,
         admin: &Address,
         operator: &Address,
+        authority_label: &[u8; 32],
         entry_fee: u64,
+        settle_deadline_slots: u64,
         weights: &[u32; MAX_TIERS],
-        supplies: &[u32; MAX_TIERS],
         tier_count: u8,
     ) -> Result<(), ProgramError> {
         if bytes.len() != Self::LEN {
@@ -69,11 +79,12 @@ impl Pool {
         account.tier_count = tier_count;
         account.admin = *admin;
         account.operator = *operator;
+        account.authority_label = *authority_label;
         account.entry_fee = entry_fee;
         account.pulls_count = 0;
+        account.pending_pulls = 0;
+        account.settle_deadline_slots = settle_deadline_slots;
         account.weights = *weights;
-        account.supplies = *supplies;
-        account.remaining = *supplies;
         Ok(())
     }
 

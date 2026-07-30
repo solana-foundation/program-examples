@@ -1,4 +1,5 @@
 import { generateKeyPair, proveVRF, publicKeyFromSeed, verifyVRF, vrfProofToHash } from '@collectorcrypt/ecvrf';
+import { sha256 } from '@noble/hashes/sha2.js';
 import {
     type Address,
     getAddressEncoder,
@@ -38,36 +39,43 @@ export async function findPullPda(
     });
 }
 
-/** The VRF input for a pull: its account address, as raw bytes. */
-export function pullAlpha(pull: Address): Uint8Array {
-    return new Uint8Array(getAddressEncoder().encode(pull));
+/**
+ * The VRF input for a pull: `SHA-256(pull_address || client_seed)`.
+ *
+ * Byte-for-byte mirror of the on-chain `derive_alpha`. Binding the buyer's
+ * `clientSeed` (32 random bytes generated client-side at buy time) makes alpha
+ * unpredictable to the operator before the buy lands — a fixed alpha alone
+ * would let the operator precompute every outcome. Verifiers recompute this
+ * from the `PullRequestedEvent` (or the pull account) to confirm the operator
+ * did not choose the VRF input.
+ */
+export function pullAlpha(pull: Address, clientSeed: Uint8Array): Uint8Array {
+    const pullBytes = new Uint8Array(getAddressEncoder().encode(pull));
+    const input = new Uint8Array(pullBytes.length + clientSeed.length);
+    input.set(pullBytes, 0);
+    input.set(clientSeed, pullBytes.length);
+    return sha256(input);
 }
 
 /**
- * Selects a reward tier from a VRF output, weighted by each tier's weight and
- * restricted to tiers with remaining supply.
+ * Selects a reward tier from a VRF output, weighted by the pool's fixed tier
+ * weights.
  *
  * Byte-for-byte mirror of the on-chain `select_tier`: the first 16 bytes of `beta`
- * are read as a little-endian u128 and reduced modulo the total available weight,
- * then the target walks the tiers in order, skipping any with zero remaining supply.
- * Throws when no tier has remaining supply.
+ * are read as a little-endian u128 and reduced modulo the total weight, then the
+ * target walks the tiers in order. Weights are fixed at pool init, so every pull
+ * faces identical odds regardless of settle order. Throws when the total weight
+ * is zero.
  */
-export function selectTier(
-    beta: Uint8Array,
-    weights: readonly number[],
-    remaining: readonly number[],
-    tierCount: number,
-): number {
+export function selectTier(beta: Uint8Array, weights: readonly number[], tierCount: number): number {
     const count = Math.min(tierCount, MAX_TIERS);
 
     let total = 0n;
     for (let i = 0; i < count; i++) {
-        if ((remaining[i] ?? 0) > 0) {
-            total += BigInt(weights[i] ?? 0);
-        }
+        total += BigInt(weights[i] ?? 0);
     }
     if (total === 0n) {
-        throw new Error('pool exhausted: no tier has remaining supply');
+        throw new Error('invalid tier config: total weight is zero');
     }
 
     let seed = 0n;
@@ -77,9 +85,6 @@ export function selectTier(
     let target = seed % total;
 
     for (let i = 0; i < count; i++) {
-        if ((remaining[i] ?? 0) === 0) {
-            continue;
-        }
         const weight = BigInt(weights[i] ?? 0);
         if (target < weight) {
             return i;
@@ -87,7 +92,7 @@ export function selectTier(
         target -= weight;
     }
 
-    throw new Error('pool exhausted: no tier has remaining supply');
+    throw new Error('invalid tier config: total weight is zero');
 }
 
 /** The ECVRF output and proof produced by an operator for a pull's `alpha`. */

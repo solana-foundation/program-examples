@@ -23,9 +23,10 @@ serde_json = { workspace = true }
 codama = { workspace = true }
 const-crypto = { workspace = true }
 pinocchio = { workspace = true }
+pinocchio-associated-token-account = { workspace = true }
 pinocchio-system = { workspace = true }
-pinocchio-token = { workspace = true }
 pinocchio-token-2022 = { workspace = true }
 solana-address = { workspace = true }
 solana-security-txt = { workspace = true }
+solana-sha256-hasher = { workspace = true }
 thiserror = { workspace = true }

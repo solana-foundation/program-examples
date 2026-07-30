@@ -14,10 +14,12 @@ pub const TIER_UNSET: u8 = u8::MAX;
 
 /// A single pull against a [`Pool`](super::pool::Pool).
 ///
-/// Created at commit with a fixed `alpha` (this account's own address) as the VRF
-/// input. On reveal the operator supplies `beta`; the program records it, the
-/// selected `tier`, and the `settled_slot`. The 80-byte proof is not stored — it is
-/// emitted in the settle event for off-chain verification.
+/// Created at commit with a fixed VRF input `alpha = SHA-256(pull_address ||
+/// client_seed)`, where `client_seed` is buyer-supplied entropy — so the operator
+/// cannot precompute `beta` for a pull that has not been bought yet. On reveal the
+/// operator supplies `beta`; the program records it, the selected `tier`, and the
+/// `settled_slot`. The 80-byte proof is not stored — it is anchored in the cc-vrf
+/// registry and emitted in the settle event for off-chain verification.
 ///
 /// **PDA seeds:** `["pull", pool, buyer, index_le]`
 #[repr(C, packed)]
@@ -37,10 +39,16 @@ pub struct Pull {
     pub buyer: Address,
     /// Pool pull index at commit; part of this account's seeds.
     pub index: u64,
-    /// VRF input, fixed at commit. Equal to this account's address.
+    /// Buyer-supplied entropy mixed into `alpha`; stored so anyone can recompute
+    /// `alpha` and verify it was not operator-chosen.
+    pub client_seed: [u8; 32],
+    /// VRF input, fixed at commit: `SHA-256(pull_address || client_seed)`.
     pub alpha: [u8; 32],
     /// VRF output recorded at reveal; zeroed while pending.
     pub beta: [u8; 64],
+    /// Slot at which the pull was opened; refunds unlock
+    /// `pool.settle_deadline_slots` after this.
+    pub requested_slot: u64,
     /// Slot at which the pull was settled; zero while pending.
     pub settled_slot: u64,
 }
@@ -54,13 +62,16 @@ impl Pull {
 
     /// Initializes a freshly created pending pull.
     #[inline(always)]
+    #[allow(clippy::too_many_arguments)]
     pub fn init(
         bytes: &mut [u8],
         bump: u8,
         pool: &Address,
         buyer: &Address,
         index: u64,
+        client_seed: &[u8; 32],
         alpha: &[u8; 32],
+        requested_slot: u64,
     ) -> Result<(), ProgramError> {
         if bytes.len() != Self::LEN {
             return Err(GachaError::InvalidAccountData.into());
@@ -73,8 +84,10 @@ impl Pull {
         account.pool = *pool;
         account.buyer = *buyer;
         account.index = index;
+        account.client_seed = *client_seed;
         account.alpha = *alpha;
         account.beta = [0u8; 64];
+        account.requested_slot = requested_slot;
         account.settled_slot = 0;
         Ok(())
     }
@@ -86,6 +99,12 @@ impl Pull {
         self.tier_selected = tier;
         self.settled_slot = slot;
         self.status = PullStatus::Settled as u8;
+    }
+
+    /// Marks the prize as minted.
+    #[inline(always)]
+    pub fn claim(&mut self) {
+        self.status = PullStatus::Claimed as u8;
     }
 
     /// Deserializes a mutable reference from raw account data.

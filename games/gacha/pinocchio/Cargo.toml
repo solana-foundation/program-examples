@@ -28,11 +28,12 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 codama = "=0.9.3"
 const-crypto = "0.3"
 pinocchio = { version = "0.11.1", features = ["cpi", "copy"] }
+pinocchio-associated-token-account = "0.4.0"
 pinocchio-system = "0.6.1"
-pinocchio-token = "0.6.0"
 pinocchio-token-2022 = "0.3.1"
 serde_json = "1"
 solana-address = { version = "2", features = ["curve25519"] }
+solana-sha256-hasher = { version = "3", default-features = false, features = ["sha2"] }
 solana-security-txt = "1.1.3"
 thiserror = { version = "2", default-features = false }
 

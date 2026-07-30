@@ -1,12 +1,7 @@
 use core::mem::{size_of, transmute};
 
 use codama::CodamaType;
-use pinocchio::{
-    cpi::Seed,
-    error::ProgramError,
-    sysvars::{rent::Rent, Sysvar},
-    AccountView, Address, ProgramResult,
-};
+use pinocchio::{cpi::Seed, error::ProgramError, AccountView, Address, ProgramResult};
 
 use crate::{
     event_engine::{self, EventSerialize},
@@ -16,7 +11,6 @@ use crate::{
     state::{
         common::{find_pool_pda, find_vault_pda, POOL_SEED, VAULT_SEED},
         pool::Pool,
-        pull::Pull,
     },
     GachaError,
 };
@@ -26,21 +20,24 @@ pub const DISCRIMINATOR: &u8 = &0;
 
 /// Instruction data for [`InitPool`](crate::GachaInstruction::InitPool).
 ///
-/// `weights` and `supplies` are fixed-length; only the first `tier_count` entries
-/// are used. Remaining entries should be zero.
+/// `weights` is fixed-length; only the first `tier_count` entries are used.
+/// Remaining entries should be zero.
 #[repr(C, packed)]
 #[derive(CodamaType, Debug, Clone)]
 pub struct InitPoolData {
-    /// VRF operator registered as the only signer allowed to settle pulls.
+    /// VRF operator registered as the only signer allowed to settle pulls. Must
+    /// match the `owner` and ECVRF `pk` of a frozen cc-vrf authority record.
     pub operator: Address,
+    /// Label of the operator's cc-vrf authority registration.
+    pub authority_label: [u8; 32],
     /// Entry fee per pull, in lamports.
     pub entry_fee: u64,
+    /// Slots a pull may stay pending before the buyer can claim a refund.
+    pub settle_deadline_slots: u64,
     /// Number of active tiers.
     pub tier_count: u8,
     /// Relative draw weight per tier.
     pub weights: [u32; 8],
-    /// Supply cap per tier.
-    pub supplies: [u32; 8],
 }
 
 impl InitPoolData {
@@ -87,23 +84,34 @@ pub fn process(accounts: &mut [AccountView], data: &InitPoolData) -> ProgramResu
     let accounts = InitPoolAccounts::try_from(accounts)?;
 
     let operator = data.operator;
+    let authority_label = data.authority_label;
     let entry_fee = data.entry_fee;
+    let settle_deadline_slots = data.settle_deadline_slots;
     let tier_count = data.tier_count;
     let weights = data.weights;
-    let supplies = data.supplies;
 
     if tier_count == 0 || tier_count as usize > MAX_TIERS {
         return Err(GachaError::TooManyTiers.into());
     }
-    for i in 0..tier_count as usize {
-        if weights[i] == 0 || supplies[i] == 0 {
+    for &weight in &weights[..tier_count as usize] {
+        if weight == 0 {
             return Err(GachaError::InvalidTierConfig.into());
         }
     }
 
-    let pull_rent = Rent::get()?.try_minimum_balance(Pull::LEN)?;
-    if entry_fee < pull_rent {
+    if entry_fee == 0 {
         return Err(GachaError::InvalidEntryFee.into());
+    }
+    if settle_deadline_slots == 0 {
+        return Err(GachaError::InvalidSettleDeadline.into());
+    }
+
+    // The operator address doubles as the ECVRF public key, so it must be a
+    // valid curve point. On-curve here only rules out malformed keys; that the
+    // operator actually controls the ECVRF secret is attested by its frozen
+    // cc-vrf authority record, checked at settle.
+    if operator == Address::default() || operator == *accounts.admin.address() || !operator.is_on_curve() {
+        return Err(GachaError::InvalidOperator.into());
     }
 
     if accounts.pool.data_len() > 0 {
@@ -122,12 +130,12 @@ pub fn process(accounts: &mut [AccountView], data: &InitPoolData) -> ProgramResu
     let pool_bump_bytes = [pool_bump];
     let pool_seeds =
         [Seed::from(POOL_SEED), Seed::from(accounts.admin.address().as_ref()), Seed::from(&pool_bump_bytes[..])];
-    create_pda_account(accounts.admin, accounts.pool, &pool_seeds, Pool::LEN)?;
+    create_pda_account(accounts.admin, accounts.pool, &pool_seeds, Pool::LEN, &crate::ID)?;
 
     let vault_bump_bytes = [vault_bump];
     let vault_seeds =
         [Seed::from(VAULT_SEED), Seed::from(accounts.admin.address().as_ref()), Seed::from(&vault_bump_bytes[..])];
-    create_pda_account(accounts.admin, accounts.vault, &vault_seeds, 0)?;
+    create_pda_account(accounts.admin, accounts.vault, &vault_seeds, 0, &crate::ID)?;
 
     {
         let mut pool_data = accounts.pool.try_borrow_mut()?;
@@ -136,14 +144,22 @@ pub fn process(accounts: &mut [AccountView], data: &InitPoolData) -> ProgramResu
             pool_bump,
             accounts.admin.address(),
             &operator,
+            &authority_label,
             entry_fee,
+            settle_deadline_slots,
             &weights,
-            &supplies,
             tier_count,
         )?;
     }
 
-    let event = PoolInitializedEvent::new(*accounts.admin.address(), operator, entry_fee, tier_count);
+    let event = PoolInitializedEvent::new(
+        *accounts.admin.address(),
+        operator,
+        authority_label,
+        entry_fee,
+        settle_deadline_slots,
+        tier_count,
+    );
     event_engine::emit_event(&crate::ID, accounts.event_authority, accounts.self_program, &event.to_bytes())?;
 
     Ok(())

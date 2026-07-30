@@ -11,6 +11,8 @@ pub const POOL_SEED: &[u8] = b"pool";
 pub const VAULT_SEED: &[u8] = b"vault";
 /// PDA seed prefix for pull accounts.
 pub const PULL_SEED: &[u8] = b"pull";
+/// PDA seed prefix for per-pull prize mints.
+pub const MINT_SEED: &[u8] = b"mint";
 
 /// One-byte discriminator identifying the type of a program-owned account.
 ///
@@ -45,10 +47,12 @@ impl From<AccountDiscriminator> for u8 {
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Debug, CodamaType)]
 pub enum PullStatus {
-    /// Committed and awaiting the operator's reveal.
+    /// Committed and awaiting the operator's reveal (or a post-deadline refund).
     Pending = 0,
-    /// Revealed: `beta` and the selected tier are recorded.
+    /// Revealed: `beta` and the selected tier are recorded; prize not yet minted.
     Settled = 1,
+    /// Prize NFT minted to the buyer.
+    Claimed = 2,
 }
 
 impl TryFrom<u8> for PullStatus {
@@ -57,6 +61,7 @@ impl TryFrom<u8> for PullStatus {
         match value {
             0 => Ok(Self::Pending),
             1 => Ok(Self::Settled),
+            2 => Ok(Self::Claimed),
             _ => Err(GachaError::InvalidAccountData.into()),
         }
     }
@@ -75,4 +80,9 @@ pub fn find_vault_pda(admin: &Address) -> (Address, u8) {
 /// Finds the pull PDA and bump for a `(pool, buyer, index)` triple.
 pub fn find_pull_pda(pool: &Address, buyer: &Address, index: u64) -> (Address, u8) {
     Address::find_program_address(&[PULL_SEED, pool.as_ref(), buyer.as_ref(), &index.to_le_bytes()], &crate::ID)
+}
+
+/// Finds the prize mint PDA and bump for a pull.
+pub fn find_mint_pda(pull: &Address) -> (Address, u8) {
+    Address::find_program_address(&[MINT_SEED, pull.as_ref()], &crate::ID)
 }

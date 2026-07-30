@@ -10,15 +10,24 @@ use crate::event_engine::{EventDiscriminator, EventDiscriminators, EventSerializ
 pub struct PoolInitializedEvent {
     pub admin: Address,
     pub operator: Address,
+    pub authority_label: [u8; 32],
     pub entry_fee: u64,
+    pub settle_deadline_slots: u64,
     pub tier_count: u8,
 }
 
 impl PoolInitializedEvent {
     pub const DATA_LEN: usize = size_of::<Self>();
 
-    pub fn new(admin: Address, operator: Address, entry_fee: u64, tier_count: u8) -> Self {
-        Self { admin, operator, entry_fee, tier_count }
+    pub fn new(
+        admin: Address,
+        operator: Address,
+        authority_label: [u8; 32],
+        entry_fee: u64,
+        settle_deadline_slots: u64,
+        tier_count: u8,
+    ) -> Self {
+        Self { admin, operator, authority_label, entry_fee, settle_deadline_slots, tier_count }
     }
 }
 
@@ -31,9 +40,12 @@ impl EventSerialize for PoolInitializedEvent {
 
     fn write_inner(&self, writer: &mut Vec<u8>) {
         let entry_fee = self.entry_fee;
+        let settle_deadline_slots = self.settle_deadline_slots;
         writer.extend_from_slice(self.admin.as_ref());
         writer.extend_from_slice(self.operator.as_ref());
+        writer.extend_from_slice(&self.authority_label);
         writer.extend_from_slice(&entry_fee.to_le_bytes());
+        writer.extend_from_slice(&settle_deadline_slots.to_le_bytes());
         writer.push(self.tier_count);
     }
 }
