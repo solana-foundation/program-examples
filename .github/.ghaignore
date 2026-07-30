@@ -72,3 +72,5 @@ tokens/transfer-tokens/steel
 # justfile-driven example: built and tested by .github/workflows/just.yml,
 # not the legacy pinocchio CI (it has no build-and-test script)
 games/world-cup/pinocchio
+games/gacha/pinocchio
+

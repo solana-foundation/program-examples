@@ -2,7 +2,6 @@
 .idea
 **/node_modules
 dist
-.next
 bun.lockb
 
 **/generated/
@@ -26,16 +25,11 @@ config.json
 
 keys/
 
-# Webapp output
-webapp/playwright-report/
-webapp/test-results/
-webapp/tsconfig.tsbuildinfo
+# Dumped mainnet program fixtures
+tests/fixtures/
 
 # TypeDoc generated API docs
 clients/typescript/docs/
-
-# Vercel project config
-.vercel
 
 .claude/
 

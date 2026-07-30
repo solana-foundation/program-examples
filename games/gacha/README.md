@@ -2,12 +2,15 @@
 
 A provably-fair **gacha** (loot-box / pack-pull) game — the on-chain mechanic behind
 Solana RWA pack platforms like Collector Crypt and Phygitals. An admin configures a
-pool of weighted reward tiers with limited supply and a fixed entry fee; buyers open
-pulls that are revealed with a verifiable random function (RFC 9381 ECVRF), following
-the model Collector Crypt ships in [`cc-vrf`](https://vrf.collectorcrypt.com).
+pool of fixed-weight reward tiers and a fixed entry fee; buyers open pulls that are
+revealed with a verifiable random function (RFC 9381 ECVRF) anchored in Collector
+Crypt's deployed [`cc-vrf`](https://vrf.collectorcrypt.com) registry by CPI, and each
+prize is minted as a Token-2022 NFT carrying its `rarity` in the token metadata.
 
-Randomness is committed before it is known (the pull address is the VRF input) and
-publicly verifiable off-chain, so every pull is provably fair.
+The VRF input binds buyer-supplied entropy (`SHA-256(pull || client_seed)`), so no
+one — including the operator — can predict an outcome before the buy lands, and
+every reveal is publicly verifiable off-chain. Unsettled pulls are refundable after
+a deadline.
 
 | Framework | Path |
 | --- | --- |
