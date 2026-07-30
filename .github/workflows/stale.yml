@@ -28,7 +28,8 @@ jobs:
             This PR has had no activity for 45 days. If it's still relevant,
             rebase it onto current main and make sure it follows the repo
             conventions (see AGENTS.md and CONTRIBUTING.md) — any push or
-            comment resets this timer. Add the `keep-open` label to opt out.
+            comment resets this timer. Ask a maintainer to add the `keep-open`
+            label to opt out.
             Otherwise it will be closed in 14 days.
           close-pr-message: >
             Closed for inactivity. Feel free to reopen or resubmit against
