@@ -1,0 +1,816 @@
+{
+    "address": "ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ",
+    "metadata": {
+        "name": "cc_vrf",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Permissionless on-chain VRF authority + proof commitment registry"
+    },
+    "instructions": [
+        {
+            "name": "commit_proof",
+            "docs": [
+                "Posts a per-VRF-call commitment to a new VrfProofCommit compressed",
+                "PDA. Address is `(authority_pda, memo_hash)` — replay-protected by",
+                "the PDA itself."
+            ],
+            "discriminator": [193, 148, 104, 185, 119, 15, 183, 75],
+            "accounts": [
+                {
+                    "name": "owner",
+                    "writable": true,
+                    "signer": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "proof",
+                    "type": {
+                        "defined": {
+                            "name": "ValidityProof"
+                        }
+                    }
+                },
+                {
+                    "name": "authority_account_meta",
+                    "type": {
+                        "defined": {
+                            "name": "CompressedAccountMetaReadOnly"
+                        }
+                    }
+                },
+                {
+                    "name": "current_authority",
+                    "type": {
+                        "defined": {
+                            "name": "VrfAuthority"
+                        }
+                    }
+                },
+                {
+                    "name": "address_tree_info",
+                    "type": {
+                        "defined": {
+                            "name": "PackedAddressTreeInfo"
+                        }
+                    }
+                },
+                {
+                    "name": "output_state_tree_index",
+                    "type": "u8"
+                },
+                {
+                    "name": "memo_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "proof_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "alpha_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "commit_proof_event",
+            "docs": [
+                "Event-mode commit: proves the frozen authority read-only and emits a",
+                "`VrfProofCommitted` log instead of creating a compressed PDA. No",
+                "on-chain replay protection — verifiers must detect duplicate memos and",
+                "pick the proof that satisfies the VRF math."
+            ],
+            "discriminator": [169, 197, 162, 183, 63, 145, 136, 30],
+            "accounts": [
+                {
+                    "name": "owner",
+                    "writable": true,
+                    "signer": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "proof",
+                    "type": {
+                        "defined": {
+                            "name": "ValidityProof"
+                        }
+                    }
+                },
+                {
+                    "name": "authority_account_meta",
+                    "type": {
+                        "defined": {
+                            "name": "CompressedAccountMetaReadOnly"
+                        }
+                    }
+                },
+                {
+                    "name": "current_authority",
+                    "type": {
+                        "defined": {
+                            "name": "VrfAuthority"
+                        }
+                    }
+                },
+                {
+                    "name": "label",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "memo_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "proof_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "alpha_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "commit_proof_with_beta",
+            "docs": [
+                "Like `commit_proof`, but also stores the 64-byte ECVRF beta output",
+                "(split as `beta_lo` + `beta_hi`) in the new compressed PDA. Use this",
+                "when another Solana program needs to read the random value directly",
+                "via a Light SDK CPI, without going through an off-chain fetch of the",
+                "proof bytes. Uses the same seed prefix as `commit_proof` so one memo",
+                "can only be committed in one registry mode."
+            ],
+            "discriminator": [199, 253, 178, 3, 187, 191, 68, 230],
+            "accounts": [
+                {
+                    "name": "owner",
+                    "writable": true,
+                    "signer": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "proof",
+                    "type": {
+                        "defined": {
+                            "name": "ValidityProof"
+                        }
+                    }
+                },
+                {
+                    "name": "authority_account_meta",
+                    "type": {
+                        "defined": {
+                            "name": "CompressedAccountMetaReadOnly"
+                        }
+                    }
+                },
+                {
+                    "name": "current_authority",
+                    "type": {
+                        "defined": {
+                            "name": "VrfAuthority"
+                        }
+                    }
+                },
+                {
+                    "name": "address_tree_info",
+                    "type": {
+                        "defined": {
+                            "name": "PackedAddressTreeInfo"
+                        }
+                    }
+                },
+                {
+                    "name": "output_state_tree_index",
+                    "type": "u8"
+                },
+                {
+                    "name": "memo_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "proof_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "alpha_hash",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "beta_lo",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "beta_hi",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "freeze_authority",
+            "docs": ["One-way: flip `frozen=true`. After this, the pk and suite are", "permanent."],
+            "discriminator": [59, 124, 222, 89, 27, 146, 178, 7],
+            "accounts": [
+                {
+                    "name": "owner",
+                    "writable": true,
+                    "signer": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "proof",
+                    "type": {
+                        "defined": {
+                            "name": "ValidityProof"
+                        }
+                    }
+                },
+                {
+                    "name": "current_authority",
+                    "type": {
+                        "defined": {
+                            "name": "VrfAuthority"
+                        }
+                    }
+                },
+                {
+                    "name": "account_meta",
+                    "type": {
+                        "defined": {
+                            "name": "CompressedAccountMeta"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "init_authority",
+            "docs": [
+                "Create a new VrfAuthority compressed PDA owned by signer. The",
+                "`(owner, label)` pair determines the PDA address — one owner can",
+                "have multiple authorities by varying the label."
+            ],
+            "discriminator": [136, 150, 94, 172, 74, 199, 236, 85],
+            "accounts": [
+                {
+                    "name": "owner",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "proof",
+                    "type": {
+                        "defined": {
+                            "name": "ValidityProof"
+                        }
+                    }
+                },
+                {
+                    "name": "address_tree_info",
+                    "type": {
+                        "defined": {
+                            "name": "PackedAddressTreeInfo"
+                        }
+                    }
+                },
+                {
+                    "name": "output_state_tree_index",
+                    "type": "u8"
+                },
+                {
+                    "name": "pk",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                },
+                {
+                    "name": "suite",
+                    "type": "u8"
+                },
+                {
+                    "name": "label",
+                    "type": {
+                        "array": ["u8", 32]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "revoke_authority",
+            "docs": ["Sets the `revoked` flag. Informational only — does not change pk."],
+            "discriminator": [233, 254, 239, 15, 49, 183, 105, 21],
+            "accounts": [
+                {
+                    "name": "owner",
+                    "writable": true,
+                    "signer": true
+                }
+            ],
+            "args": [
+                {
+                    "name": "proof",
+                    "type": {
+                        "defined": {
+                            "name": "ValidityProof"
+                        }
+                    }
+                },
+                {
+                    "name": "current_authority",
+                    "type": {
+                        "defined": {
+                            "name": "VrfAuthority"
+                        }
+                    }
+                },
+                {
+                    "name": "account_meta",
+                    "type": {
+                        "defined": {
+                            "name": "CompressedAccountMeta"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "events": [
+        {
+            "name": "VrfAuthority",
+            "discriminator": [254, 19, 130, 138, 217, 56, 150, 129]
+        },
+        {
+            "name": "VrfProofCommit",
+            "discriminator": [10, 149, 91, 111, 147, 42, 21, 141]
+        },
+        {
+            "name": "VrfProofCommitWithBeta",
+            "discriminator": [122, 231, 247, 49, 102, 24, 126, 222]
+        },
+        {
+            "name": "VrfProofCommitted",
+            "discriminator": [161, 215, 0, 96, 144, 150, 236, 162]
+        }
+    ],
+    "errors": [
+        {
+            "code": 6000,
+            "name": "AuthorityFrozen",
+            "msg": "Authority is frozen and cannot be modified"
+        },
+        {
+            "code": 6001,
+            "name": "AlreadyFrozen",
+            "msg": "Authority is already frozen"
+        },
+        {
+            "code": 6002,
+            "name": "AuthorityNotFrozen",
+            "msg": "Authority must be frozen before committing proofs"
+        },
+        {
+            "code": 6003,
+            "name": "AuthorityRevoked",
+            "msg": "Authority is revoked"
+        },
+        {
+            "code": 6004,
+            "name": "NotOwner",
+            "msg": "Signer is not the authority owner"
+        },
+        {
+            "code": 6005,
+            "name": "AuthorityLabelMismatch",
+            "msg": "Authority label does not match the requested label"
+        },
+        {
+            "code": 6006,
+            "name": "AuthorityAddressMismatch",
+            "msg": "Authority address does not match owner and label seeds"
+        },
+        {
+            "code": 6007,
+            "name": "LabelTooLong",
+            "msg": "Label exceeds 32 bytes"
+        },
+        {
+            "code": 6008,
+            "name": "UnsupportedSuite",
+            "msg": "Unsupported VRF suite identifier"
+        },
+        {
+            "code": 6009,
+            "name": "InvalidPublicKeyLength",
+            "msg": "Invalid public key length"
+        }
+    ],
+    "types": [
+        {
+            "name": "CompressedAccountMeta",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "tree_info",
+                        "docs": ["Merkle tree context."],
+                        "type": {
+                            "defined": {
+                                "name": "PackedStateTreeInfo"
+                            }
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "docs": ["Address."],
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "output_state_tree_index",
+                        "docs": ["Output merkle tree index."],
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CompressedAccountMetaReadOnly",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "tree_info",
+                        "docs": ["State Merkle tree context."],
+                        "type": {
+                            "defined": {
+                                "name": "PackedStateTreeInfo"
+                            }
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "docs": ["Address."],
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CompressedProof",
+            "repr": {
+                "kind": "c"
+            },
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "a",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "b",
+                        "type": {
+                            "array": ["u8", 64]
+                        }
+                    },
+                    {
+                        "name": "c",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PackedAddressTreeInfo",
+            "docs": [
+                "Packed address tree info for instruction data.",
+                "Contains indices to address tree accounts and root index."
+            ],
+            "repr": {
+                "kind": "c"
+            },
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "address_merkle_tree_pubkey_index",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "address_queue_pubkey_index",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "root_index",
+                        "type": "u16"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PackedStateTreeInfo",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "root_index",
+                        "type": "u16"
+                    },
+                    {
+                        "name": "prove_by_index",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "merkle_tree_pubkey_index",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "queue_pubkey_index",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "leaf_index",
+                        "type": "u32"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ValidityProof",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "option": {
+                            "defined": {
+                                "name": "CompressedProof"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "VrfAuthority",
+            "docs": [
+                "Per-operator authority. Locks a published VRF public key on-chain so the",
+                "operator cannot silently rotate to a different secret key. The",
+                "`frozen` flag is one-way: once set, the pk and suite are permanent.",
+                "`revoked` is informational — a soft-deprecation flag for graceful key",
+                "rotation (the operator creates a new authority and marks the old one",
+                "revoked; historical proofs remain verifiable against the old pk).",
+                "",
+                "Stored as a Light compressed PDA. Seeds:",
+                "[\"vrf_authority\", owner_pubkey, label_bytes]"
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "owner",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "pk",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "suite",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "frozen",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "revoked",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "label",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "created_slot",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "VrfProofCommit",
+            "docs": [
+                "One per VRF call. Stores a cryptographic commitment to the proof bytes.",
+                "The actual proof is held off-chain by the operator (in DB or wherever);",
+                "what lives on-chain is `sha256(proof_bytes)`, plus convenience hashes of",
+                "the memo and alpha for verifiers.",
+                "",
+                "Stored as a Light compressed PDA. Seeds:",
+                "[\"vrf_proof\", authority_pda_pubkey, memo_hash]",
+                "",
+                "Memo collision within an authority is impossible because `memo_hash` is",
+                "part of the seed (also gives free replay protection)."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "memo_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "proof_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "alpha_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "committed_slot",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "VrfProofCommitWithBeta",
+            "docs": [
+                "Same address namespace as `VrfProofCommit`, but also stores the 64-byte",
+                "`beta` output of `vrfProofToHash`. With `beta` on-chain, other Solana",
+                "programs can read the random value directly via a Light SDK CPI without",
+                "needing the original proof bytes off-chain.",
+                "",
+                "Trust model is identical to `VrfProofCommit`: anyone can later audit that",
+                "the stored `beta` matches `vrfProofToHash(proof)` and that the proof",
+                "satisfies ECVRF — but a consuming program reading on-chain trusts that",
+                "the operator (whose pk is frozen in `VrfAuthority`) populated it",
+                "correctly.",
+                "",
+                "Seeds: [\"vrf_proof\", authority_pda_pubkey, memo_hash]"
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "memo_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "proof_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "alpha_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "beta_lo",
+                        "docs": [
+                            "First 32 bytes of the 64-byte beta. Split because LightHasher caps",
+                            "each field at 32 bytes."
+                        ],
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "beta_hi",
+                        "docs": ["Second 32 bytes of the 64-byte beta."],
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "committed_slot",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "VrfProofCommitted",
+            "docs": [
+                "Event-mode commitment emitted by `commit_proof_event`. Unlike `VrfProofCommit`,",
+                "this never creates a compressed PDA — it just lives in the transaction log.",
+                "",
+                "Off-chain verifiers reconstruct the authority address from `(owner, label)`",
+                "using the same seed derivation as a `VrfAuthority`, then look up the",
+                "authority's compressed PDA for the published pk / suite / frozen state.",
+                "",
+                "Replay protection is moved from the chain to the verifier: a malicious",
+                "operator could emit two events with the same `memo_hash` and different",
+                "`proof_hash`es. The VRF proof is deterministic given the pk + alpha, so at",
+                "most one of those would pass ECVRF verification — verifiers must scan for",
+                "duplicates and pick the canonical commit."
+            ],
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "owner",
+                        "docs": [
+                            "The signer who emitted this commit. Implicitly the authority owner —",
+                            "off-chain verifiers re-derive the authority address from (owner, label)."
+                        ],
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "label",
+                        "docs": ["32-byte authority label, matches the seed used by `VrfAuthority`."],
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "memo_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "proof_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "alpha_hash",
+                        "type": {
+                            "array": ["u8", 32]
+                        }
+                    },
+                    {
+                        "name": "committed_slot",
+                        "type": "u64"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -9,6 +9,17 @@ program_dir := "program"
 ts_client_dir := "clients/typescript"
 idl_file := "idl/gacha.json"
 generated_paths := "idl clients/typescript/src/generated clients/rust/src/generated"
+cc_vrf_program_id := "ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ"
+cc_vrf_fixture := "tests/fixtures/cc_vrf.so"
+
+# light-program-test loads the Light programs from this CLI's install dir. The
+# version is pinned because the bundled programs must match the proving keys
+# served by Light's CDN; 0.27.x pairs with a key set that is no longer
+# downloadable. 0.28.x dropped spl_noop.so — `just light-bootstrap` restores it
+# and prepares the local prover (see tests/light-integration-tests/README.md).
+zk_cli_version := "0.28.4"
+proving_keys_cdn := "https://d1wbn9ra8wjh7t.cloudfront.net"
+light_prover_version := "2.0.7"
 
 # List available recipes
 default:
@@ -18,11 +29,11 @@ default:
 # Setup
 # ============================================
 
-# Install dependencies
+# Install dependencies (incl. the pinned Light Protocol CLI for light-test)
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
-    commands=(pnpm cargo solana-keygen)
+    commands=(pnpm cargo solana-keygen npm)
     for cmd in "${commands[@]}"; do
         if ! command -v "$cmd" &>/dev/null; then
             echo "Error: $cmd is required but not installed"
@@ -30,6 +41,9 @@ setup:
         fi
     done
     pnpm install
+    if ! command -v light &>/dev/null || [[ "$(light --version 2>/dev/null)" != *"{{zk_cli_version}}"* ]]; then
+        npm install -g @lightprotocol/zk-compression-cli@{{zk_cli_version}}
+    fi
     echo "✓ Setup complete"
 
 # Print program ID from keypair
@@ -84,8 +98,8 @@ build-rust-client: generate-clients
 # Test
 # ============================================
 
-# Run all tests (unit + integration + client)
-test: unit-test integration-test client-test
+# Run all tests (unit + integration + light + client)
+test: unit-test integration-test light-test client-test
 
 # Run Rust unit tests
 unit-test:
@@ -94,6 +108,73 @@ unit-test:
 # Run LiteSVM integration tests (builds the .so first)
 integration-test: build-program
     cargo test -p tests-gacha
+
+# Dump the mainnet cc-vrf program for the Light-stack tests
+dump-cc-vrf:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ ! -f "{{cc_vrf_fixture}}" ]]; then
+        mkdir -p "$(dirname "{{cc_vrf_fixture}}")"
+        solana program dump {{cc_vrf_program_id}} "{{cc_vrf_fixture}}" -u m
+    fi
+    echo "✓ cc-vrf fixture ready"
+
+# Prepare the Light environment for light-test: restore spl_noop.so (dropped
+# from CLI 0.28.x but required by light-program-test), pre-download the gnark
+# proving keys (~35 MB, cached in ~/.config/light), and start the local prover
+# on :3001 if it is not already running
+light-bootstrap:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin_dir="$(npm root -g)/@lightprotocol/zk-compression-cli/bin"
+    if [[ ! -f "$bin_dir/spl_noop.so" ]]; then
+        echo "Restoring spl_noop.so into the Light CLI..."
+        tmp=$(mktemp -d)
+        curl -sfL "$(npm view @lightprotocol/zk-compression-cli@0.27.1-alpha.2 dist.tarball)" | tar -xz -C "$tmp"
+        cp "$tmp/package/bin/spl_noop.so" "$bin_dir/"
+        rm -rf "$tmp"
+    fi
+    keys_dir="$HOME/.config/light/proving-keys"
+    mkdir -p "$keys_dir"
+    keys=(v2_inclusion_32_1.key v2_inclusion_32_2.key
+          v2_non-inclusion_40_1.key v2_non-inclusion_40_2.key
+          v2_combined_32_40_1_1.key v2_combined_32_40_1_2.key v2_combined_32_40_2_1.key
+          CHECKSUM)
+    for key in "${keys[@]}"; do
+        [[ -f "$keys_dir/$key" ]] || curl -sfL "{{proving_keys_cdn}}/$key" -o "$keys_dir/$key"
+    done
+    os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    arch="$(uname -m)"
+    [[ "$arch" == "x86_64" ]] && arch="amd64"
+    prover_bin="$HOME/.config/light/bin/prover-$os-$arch"
+    if [[ ! -x "$prover_bin" ]]; then
+        echo "Downloading Light prover v{{light_prover_version}}..."
+        mkdir -p "$(dirname "$prover_bin")"
+        curl -sfL "https://github.com/Lightprotocol/light-protocol/releases/download/light-prover-v{{light_prover_version}}/prover-$os-$arch" -o "$prover_bin"
+        chmod +x "$prover_bin"
+    fi
+    # The prover is started directly rather than through `light start-prover`:
+    # the CLI passes no --download-url, and the binary's default points at a
+    # dead GCS bucket that the prover re-validates keys against on every prove
+    # request, failing them all.
+    if ! curl -sf http://localhost:3001/health >/dev/null; then
+        echo "Starting Light prover on :3001..."
+        nohup "$prover_bin" start --keys-dir "$keys_dir/" --prover-address 0.0.0.0:3001 \
+            --auto-download --download-url "{{proving_keys_cdn}}" > .light-prover.log 2>&1 &
+        for _ in $(seq 1 60); do
+            if curl -sf http://localhost:3001/health >/dev/null; then break; fi
+            sleep 2
+        done
+        curl -sf http://localhost:3001/health >/dev/null || { echo "Error: prover failed to start; see .light-prover.log"; exit 1; }
+    fi
+    echo "✓ Light prover ready"
+
+# Run Light Protocol integration tests: the real settle -> cc-vrf -> Light CPI
+# chain with validity proofs from the local prover (single-threaded because
+# test binaries share the prover port)
+light-test: light-bootstrap build-program dump-cc-vrf
+    cp target/deploy/gacha_program.so tests/fixtures/
+    cd tests/light-integration-tests && cargo test -- --test-threads=1
 
 # Run TypeScript client tests
 client-test: build-client
@@ -114,24 +195,28 @@ demo: build-client
 # Check formatting without fixing
 fmt-check:
     @cargo fmt -p gacha-program -p tests-gacha --check
+    @cargo fmt --manifest-path tests/light-integration-tests/Cargo.toml --check
     @pnpm run format:check
     @echo "✓ Format check passed"
 
 # Auto-format all code
 fmt:
     @cargo fmt -p gacha-program -p tests-gacha
+    @cargo fmt --manifest-path tests/light-integration-tests/Cargo.toml
     @pnpm run format
     @echo "✓ Code formatted"
 
 # Lint with auto-fix
 lint:
     @cargo clippy --workspace --exclude gacha-client --all-targets --no-deps --fix -- -D warnings
+    @cargo clippy --manifest-path tests/light-integration-tests/Cargo.toml --all-targets --no-deps --fix -- -D warnings
     @pnpm run lint:fix
     @echo "✓ Code linted"
 
 # Check linting without fixing
 lint-check:
     @cargo clippy --workspace --exclude gacha-client --all-targets --no-deps -- -D warnings
+    @cargo clippy --manifest-path tests/light-integration-tests/Cargo.toml --all-targets --no-deps -- -D warnings
     @pnpm run lint
     @echo "✓ Lint check passed"
 
