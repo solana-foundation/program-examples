@@ -129,7 +129,7 @@ describe('escrow', async () => {
 
         const transactionSignature = await program.methods
             .makeOffer(offerId, tokenAOfferedAmount, tokenBWantedAmount)
-            .accounts({ ...accounts })
+            .accountsPartial({ ...accounts })
             .signers([alice])
             .rpc();
 
@@ -152,7 +152,7 @@ describe('escrow', async () => {
     it("Puts the tokens from the vault into Bob's account, and gives Alice Bob's tokens, when Bob takes an offer", async () => {
         const transactionSignature = await program.methods
             .takeOffer()
-            .accounts({ ...accounts })
+            .accountsPartial({ ...accounts })
             .signers([bob])
             .rpc();
 

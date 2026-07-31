@@ -152,7 +152,7 @@ describe('Escrow LiteSVM example', () => {
 
         const _transactionSignature = await program.methods
             .makeOffer(offerId, tokenAOfferedAmount, tokenBWantedAmount)
-            .accounts({ ...accounts })
+            .accountsPartial({ ...accounts })
             .signers([alice])
             .rpc();
 
@@ -174,7 +174,7 @@ describe('Escrow LiteSVM example', () => {
     const take = async () => {
         const _transactionSignature = await program.methods
             .takeOffer()
-            .accounts({ ...accounts })
+            .accountsPartial({ ...accounts })
             .signers([bob])
             .rpc();
 
