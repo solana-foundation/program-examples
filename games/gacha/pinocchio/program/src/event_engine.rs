@@ -71,16 +71,6 @@ pub trait EventSerialize: EventDiscriminator {
     /// Appends the event's field data to the given buffer.
     fn write_inner(&self, writer: &mut Vec<u8>);
 
-    fn load(bytes: &[u8]) -> Result<&Self, ProgramError>
-    where
-        Self: Sized,
-    {
-        if bytes.len() != Self::DATA_LEN {
-            return Err(GachaError::InvalidEventData.into());
-        }
-        Ok(unsafe { &*bytes.as_ptr().cast::<Self>() })
-    }
-
     fn to_bytes(&self) -> Vec<u8> {
         let mut data = Vec::with_capacity(Self::DATA_LEN + EVENT_DISCRIMINATOR_LEN);
         data.extend_from_slice(&EVENT_IX_TAG_LE);

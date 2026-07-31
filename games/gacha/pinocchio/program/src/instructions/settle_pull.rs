@@ -46,6 +46,12 @@ impl SettlePullData {
 }
 
 /// Validated accounts for [`SettlePull`](crate::GachaInstruction::SettlePull).
+///
+/// The Light passthrough accounts are forwarded opaquely to the cc-vrf CPI,
+/// which — together with the Light system program — validates them and rejects
+/// any address tree other than the canonical one. Only the CPI target itself is
+/// pinned during account validation, so a settle cannot be redirected at an
+/// impostor program.
 pub struct SettlePullAccounts<'a> {
     pub operator: &'a AccountView,
     pub pool: &'a mut AccountView,
@@ -82,10 +88,6 @@ impl<'a> TryFrom<&'a mut [AccountView]> for SettlePullAccounts<'a> {
         check_writable(pull)?;
         Pull::check(pull)?;
 
-        // The Light passthrough accounts are forwarded opaquely: cc-vrf and the
-        // Light system program validate them (and cc-vrf rejects any address
-        // tree other than the canonical one). Only the CPI target itself must
-        // be pinned here, so a settle cannot be pointed at an impostor program.
         if cc_vrf_program.address() != &ccvrf::CC_VRF_PROGRAM_ID {
             return Err(GachaError::NotCcVrfProgram.into());
         }

@@ -98,6 +98,11 @@ pub fn process(accounts: &mut [AccountView], data: &InitPoolData) -> ProgramResu
             return Err(GachaError::InvalidTierConfig.into());
         }
     }
+    for &weight in &weights[tier_count as usize..] {
+        if weight != 0 {
+            return Err(GachaError::InvalidTierConfig.into());
+        }
+    }
 
     if entry_fee == 0 {
         return Err(GachaError::InvalidEntryFee.into());

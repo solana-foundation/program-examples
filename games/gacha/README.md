@@ -1,7 +1,7 @@
 # Gacha
 
 A provably-fair **gacha** (loot-box / pack-pull) game — the on-chain mechanic behind
-Solana RWA pack platforms like Collector Crypt and Phygitals. An admin configures a
+Solana RWA pack platforms . An admin configures a
 pool of fixed-weight reward tiers and a fixed entry fee; buyers open pulls that are
 revealed with a verifiable random function (RFC 9381 ECVRF) anchored in Collector
 Crypt's deployed [`cc-vrf`](https://vrf.collectorcrypt.com) registry by CPI, and each
