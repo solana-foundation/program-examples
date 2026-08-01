@@ -87,9 +87,9 @@ export function VerifyPanel({ initialPull = '' }: { initialPull?: string }) {
                     <ShieldCheck className="size-4" /> Verify a pull
                 </CardTitle>
                 <CardDescription>
-                    Recompute the outcome from on-chain data. The VRF input <code>alpha = SHA-256(pull || client_seed)</code>{' '}
-                    and the selected tier are pure functions of the stored seed and the operator’s <code>beta</code> — so
-                    anyone can reproduce them.
+                    Recompute the outcome from on-chain data. The VRF input{' '}
+                    <code>alpha = SHA-256(pull || client_seed)</code> and the selected tier are pure functions of the
+                    stored seed and the operator’s <code>beta</code> — so anyone can reproduce them.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -116,7 +116,9 @@ export function VerifyPanel({ initialPull = '' }: { initialPull?: string }) {
                                 label={`tier reproduced from beta → ${RARITY_LABELS[loaded.reproducedTier ?? 0]} (matches recorded)`}
                             />
                         ) : (
-                            <p className="text-sm text-muted-foreground">Pull is still pending — no beta to reproduce yet.</p>
+                            <p className="text-sm text-muted-foreground">
+                                Pull is still pending — no beta to reproduce yet.
+                            </p>
                         )}
 
                         <dl className="grid gap-1 rounded-xl border bg-secondary/40 p-3 font-mono text-[11px] break-all text-muted-foreground">
@@ -147,7 +149,11 @@ export function VerifyPanel({ initialPull = '' }: { initialPull?: string }) {
                                 {proofOk != null && (
                                     <CheckRow
                                         ok={proofOk}
-                                        label={proofOk ? 'ECVRF proof verifies for this operator' : 'ECVRF proof does NOT verify'}
+                                        label={
+                                            proofOk
+                                                ? 'ECVRF proof verifies for this operator'
+                                                : 'ECVRF proof does NOT verify'
+                                        }
                                     />
                                 )}
                             </div>

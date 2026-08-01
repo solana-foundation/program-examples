@@ -82,19 +82,30 @@ function InitCard({ onDone }: { onDone: () => void }) {
                 <CardTitle>Create a pool</CardTitle>
                 <CardDescription>
                     Your wallet becomes the pool admin. The operator must be a key registered and frozen in the cc-vrf
-                    registry (see <code>scripts/setup-pool.ts</code>) for reveals to settle.
+                    registry (see <code>scripts/register-operator.ts</code>) for reveals to settle.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
                 <Labeled label="Operator address (cc-vrf key)">
-                    <Input value={operator} onChange={e => setOperator(e.target.value)} placeholder="operator pubkey" className="font-mono text-xs" />
+                    <Input
+                        value={operator}
+                        onChange={e => setOperator(e.target.value)}
+                        placeholder="operator pubkey"
+                        className="font-mono text-xs"
+                    />
                 </Labeled>
                 <div className="grid grid-cols-2 gap-3">
                     <Labeled label="cc-vrf label">
                         <Input value={label} onChange={e => setLabel(e.target.value)} />
                     </Labeled>
                     <Labeled label="Entry fee (SOL)">
-                        <Input value={feeSol} onChange={e => setFeeSol(e.target.value)} type="number" min="0" step="0.01" />
+                        <Input
+                            value={feeSol}
+                            onChange={e => setFeeSol(e.target.value)}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                        />
                     </Labeled>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -148,7 +159,14 @@ function WithdrawCard({ pool, onDone }: { pool: NonNullable<ReturnType<typeof us
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-2">
-                <Input value={amountSol} onChange={e => setAmountSol(e.target.value)} type="number" min="0" step="0.01" placeholder="Amount (SOL)" />
+                <Input
+                    value={amountSol}
+                    onChange={e => setAmountSol(e.target.value)}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Amount (SOL)"
+                />
                 <Button onClick={() => void submit()} disabled={isSending || !amountSol}>
                     {isSending ? 'Withdrawing…' : 'Withdraw'}
                 </Button>

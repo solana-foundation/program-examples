@@ -1,4 +1,4 @@
-import { type Address,address } from '@solana/kit';
+import { type Address, address } from '@solana/kit';
 import { useConnectedWallet } from '@solana/kit-plugin-wallet/react';
 
 import { useAppClient } from '@/lib/client-provider';

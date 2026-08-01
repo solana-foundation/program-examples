@@ -39,5 +39,5 @@ export function useBalance(address?: Address) {
         return () => abortController.abort();
     }, [address, client, mutate]);
 
-    return { error, isLoading, lamports: (data ?? null), mutate };
+    return { error, isLoading, lamports: data ?? null, mutate };
 }

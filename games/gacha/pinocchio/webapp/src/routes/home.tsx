@@ -22,7 +22,11 @@ export function Home() {
     }
 
     if (isLoading && !pool) {
-        return <Card><CardContent className="py-16 text-center text-sm text-muted-foreground">Loading pool…</CardContent></Card>;
+        return (
+            <Card>
+                <CardContent className="py-16 text-center text-sm text-muted-foreground">Loading pool…</CardContent>
+            </Card>
+        );
     }
 
     if (!pool) {

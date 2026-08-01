@@ -52,7 +52,7 @@ function labelBytes(label: string): number[] {
 
 async function loadSigner(path: string) {
     const bytes = Uint8Array.from(JSON.parse(readFileSync(path, 'utf-8')) as number[]);
-    return createKeyPairSignerFromBytes(bytes);
+    return await createKeyPairSignerFromBytes(bytes);
 }
 
 async function main() {

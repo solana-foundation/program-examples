@@ -189,6 +189,34 @@ demo: build-client
     pnpm exec tsx scripts/operator-demo.ts
 
 # ============================================
+# Webapp
+# ============================================
+
+# Start the webapp dev server
+webapp-dev:
+    pnpm --filter gacha-webapp dev
+
+# Build the webapp
+webapp-build:
+    pnpm --filter gacha-webapp build
+
+# Deploy the program to devnet (needs a devnet-configured Solana CLI + funded wallet; run `just build-program` first)
+deploy-devnet:
+    solana program deploy target/deploy/gacha_program.so --program-id keys/gacha-keypair.json
+
+# Create a pool on-chain (config via env, e.g. OPERATOR_PUBKEY, ADMIN_KEYPAIR, ENTRY_FEE_SOL, WEIGHTS)
+setup-pool:
+    pnpm exec tsx scripts/setup-pool.ts
+
+# Register and freeze the operator's cc-vrf authority
+register-operator:
+    pnpm exec tsx scripts/register-operator.ts
+
+# Run the operator crank, auto-settling pending pulls as they arrive
+operator-watch:
+    pnpm exec tsx scripts/operator-settle.ts --watch
+
+# ============================================
 # Format and lint
 # ============================================
 

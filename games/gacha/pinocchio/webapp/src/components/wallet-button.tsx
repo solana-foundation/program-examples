@@ -1,4 +1,10 @@
-import { useConnect, useConnectedWallet, useDisconnect, useWallets, useWalletStatus } from '@solana/kit-plugin-wallet/react';
+import {
+    useConnect,
+    useConnectedWallet,
+    useDisconnect,
+    useWallets,
+    useWalletStatus,
+} from '@solana/kit-plugin-wallet/react';
 import { ChevronDown, Copy, ExternalLink, LogOut, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 

@@ -34,7 +34,10 @@ export function PoolSummary({ pool }: { pool: PoolView }) {
                     </div>
                     {odds.map(tier => (
                         <div key={tier.tier} className="flex items-center gap-3">
-                            <span className="w-24 shrink-0 text-sm font-medium capitalize" style={{ color: rarityColor(tier.tier) }}>
+                            <span
+                                className="w-24 shrink-0 text-sm font-medium capitalize"
+                                style={{ color: rarityColor(tier.tier) }}
+                            >
                                 {tier.label}
                             </span>
                             <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
