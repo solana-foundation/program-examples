@@ -20,28 +20,14 @@
  * Run: `RPC_URL=… OPERATOR_PUBKEY=… pnpm exec tsx scripts/setup-pool.ts`
  */
 
-import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 
 import { findPoolPda, getInitPoolInstructionAsync, MAX_TIERS } from '@solana/gacha';
-import {
-    address,
-    appendTransactionMessageInstruction,
-    assertIsTransactionWithBlockhashLifetime,
-    createKeyPairSignerFromBytes,
-    createSolanaRpc,
-    createSolanaRpcSubscriptions,
-    createTransactionMessage,
-    getSignatureFromTransaction,
-    pipe,
-    sendAndConfirmTransactionFactory,
-    setTransactionMessageFeePayerSigner,
-    setTransactionMessageLifetimeUsingBlockhash,
-    signTransactionMessageWithSigners,
-} from '@solana/kit';
+import { address, createClient } from '@solana/kit';
+import { solanaRpc } from '@solana/kit-plugin-rpc';
+import { signerFromFile } from '@solana/kit-plugin-signer';
 
 const RPC_URL = process.env.RPC_URL ?? 'https://api.devnet.solana.com';
-const WS_URL = RPC_URL.replace(/^http/, 'ws');
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
 function labelBytes(label: string): number[] {
@@ -50,18 +36,16 @@ function labelBytes(label: string): number[] {
     return Array.from(bytes);
 }
 
-async function loadSigner(path: string) {
-    const bytes = Uint8Array.from(JSON.parse(readFileSync(path, 'utf-8')) as number[]);
-    return await createKeyPairSignerFromBytes(bytes);
-}
-
 async function main() {
     const operatorEnv = process.env.OPERATOR_PUBKEY;
     if (!operatorEnv) throw new Error('OPERATOR_PUBKEY is required');
     const operator = address(operatorEnv);
 
     const adminPath = process.env.ADMIN_KEYPAIR ?? `${homedir()}/.config/solana/id.json`;
-    const admin = await loadSigner(adminPath);
+    const client = await createClient()
+        .use(signerFromFile(adminPath))
+        .use(solanaRpc({ rpcUrl: RPC_URL }));
+    const admin = client.payer;
 
     const weights = (process.env.WEIGHTS ?? '70,25,5')
         .split(',')
@@ -87,18 +71,7 @@ async function main() {
         },
     });
 
-    const rpc = createSolanaRpc(RPC_URL);
-    const rpcSubscriptions = createSolanaRpcSubscriptions(WS_URL);
-    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-    const message = pipe(
-        createTransactionMessage({ version: 0 }),
-        tx => setTransactionMessageFeePayerSigner(admin, tx),
-        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        tx => appendTransactionMessageInstruction(ix, tx),
-    );
-    const signed = await signTransactionMessageWithSigners(message);
-    assertIsTransactionWithBlockhashLifetime(signed);
-    await sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(signed, { commitment: 'confirmed' });
+    const { context } = await client.sendTransaction(ix);
 
     const [poolAddress] = await findPoolPda({ admin: admin.address });
     console.log('✓ Pool created');
@@ -107,7 +80,7 @@ async function main() {
     console.log(`  pool:      ${poolAddress}`);
     console.log(`  entry fee: ${Number(entryFee) / LAMPORTS_PER_SOL} SOL`);
     console.log(`  weights:   ${weights.join('/')}`);
-    console.log(`  tx:        ${getSignatureFromTransaction(signed)}`);
+    console.log(`  tx:        ${context.signature}`);
     console.log('\nSet VITE_POOL_ADMIN in the webapp to feature this pool:');
     console.log(`  VITE_POOL_ADMIN=${admin.address}`);
 }

@@ -13,46 +13,27 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 
 import { fetchPool, findPoolPda, findPullPda, findVaultPda, getBuyPullInstructionAsync } from '@solana/gacha';
-import {
-    address,
-    appendTransactionMessageInstruction,
-    assertIsTransactionWithBlockhashLifetime,
-    createKeyPairSignerFromBytes,
-    createSolanaRpc,
-    createSolanaRpcSubscriptions,
-    createTransactionMessage,
-    getSignatureFromTransaction,
-    pipe,
-    sendAndConfirmTransactionFactory,
-    setTransactionMessageFeePayerSigner,
-    setTransactionMessageLifetimeUsingBlockhash,
-    signTransactionMessageWithSigners,
-} from '@solana/kit';
+import { address, createClient } from '@solana/kit';
+import { solanaRpc } from '@solana/kit-plugin-rpc';
+import { signerFromFile } from '@solana/kit-plugin-signer';
 
 const RPC_URL = process.env.RPC_URL ?? 'https://api.devnet.solana.com';
-const WS_URL = RPC_URL.replace(/^http/, 'ws');
-
-async function loadSigner(path: string) {
-    const bytes = Uint8Array.from(JSON.parse(readFileSync(path, 'utf-8')) as number[]);
-    return await createKeyPairSignerFromBytes(bytes);
-}
 
 async function main(): Promise<void> {
     const buyerPath = process.env.BUYER_KEYPAIR ?? `${homedir()}/.config/solana/id.json`;
-    const buyer = await loadSigner(buyerPath);
+    const client = await createClient()
+        .use(signerFromFile(buyerPath))
+        .use(solanaRpc({ rpcUrl: RPC_URL }));
+    const buyer = client.payer;
     const admin = process.env.POOL_ADMIN ? address(process.env.POOL_ADMIN) : buyer.address;
 
     const [pool] = await findPoolPda({ admin });
     const [vault] = await findVaultPda({ admin });
 
-    const rpc = createSolanaRpc(RPC_URL);
-    const rpcSubscriptions = createSolanaRpcSubscriptions(WS_URL);
-
-    const poolAccount = await fetchPool(rpc, pool);
+    const poolAccount = await fetchPool(client.rpc, pool);
     const index = poolAccount.data.pullsCount;
     const [pull] = await findPullPda({ buyer: buyer.address, index, pool });
 
@@ -66,16 +47,7 @@ async function main(): Promise<void> {
         vault,
     });
 
-    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-    const message = pipe(
-        createTransactionMessage({ version: 0 }),
-        tx => setTransactionMessageFeePayerSigner(buyer, tx),
-        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        tx => appendTransactionMessageInstruction(ix, tx),
-    );
-    const signed = await signTransactionMessageWithSigners(message);
-    assertIsTransactionWithBlockhashLifetime(signed);
-    await sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(signed, { commitment: 'confirmed' });
+    const { context } = await client.sendTransaction(ix);
 
     console.log('✓ Pull opened (Pending)');
     console.log(`  pool:       ${pool}`);
@@ -83,7 +55,7 @@ async function main(): Promise<void> {
     console.log(`  pull:       ${pull}`);
     console.log(`  index:      ${index}`);
     console.log(`  clientSeed: ${Buffer.from(clientSeed).toString('hex')}`);
-    console.log(`  tx:         ${getSignatureFromTransaction(signed)}`);
+    console.log(`  tx:         ${context.signature}`);
 }
 
 main().catch(err => {
