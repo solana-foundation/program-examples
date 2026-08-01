@@ -23,15 +23,15 @@
     "dependencies": {
         "@collectorcrypt/ecvrf": "^0.1.1",
         "@noble/hashes": "^2.2.0",
-        "@solana/kit-plugin-rpc": "^0.11.1",
-        "@solana/kit-plugin-signer": "^0.10.0",
-        "@solana/program-client-core": "^6.10.0"
+        "@solana/kit-plugin-rpc": "^0.15.0",
+        "@solana/kit-plugin-signer": "^0.13.0",
+        "@solana/program-client-core": "^7.0.0"
     },
     "peerDependencies": {
-        "@solana/kit": "^6.10.0"
+        "@solana/kit": "^7.0.0"
     },
     "devDependencies": {
-        "@solana/kit": "^6.10.0",
+        "@solana/kit": "^7.0.0",
         "@types/node": "^25.7.0",
         "tsup": "^8.3.0",
         "tsx": "^4.22.0",
