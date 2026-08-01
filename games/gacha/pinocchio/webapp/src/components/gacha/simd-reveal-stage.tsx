@@ -1,5 +1,5 @@
 import { CircleAlert, CircleCheck, ExternalLink, Gift, PackageOpen, RotateCcw, Sparkles, WifiOff } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,6 +72,7 @@ export function PendingPackStage({
 
 type SimdRevealStageProps = {
     accentColor: string;
+    autoReveal?: boolean;
     card: SimdCard;
     claimLabel?: string;
     claimedLabel?: string;
@@ -82,9 +83,10 @@ type SimdRevealStageProps = {
     settledLabel?: string;
 };
 
-/** A user-controlled pack tear that reveals the SIMD card assigned to a settled pull. */
+/** A pack-opening stage that can reveal automatically once its card image is ready. */
 export function SimdRevealStage({
     accentColor,
+    autoReveal = false,
     card,
     claimLabel = 'Claim prize NFT',
     claimedLabel = 'Prize NFT minted to the buyer',
@@ -110,7 +112,7 @@ export function SimdRevealStage({
         if (isRevealed) headingRef.current?.focus();
     }, [isRevealed]);
 
-    function revealCard() {
+    const revealCard = useCallback(() => {
         if (!imageReady || phase !== 'sealed') return;
 
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -120,7 +122,11 @@ export function SimdRevealStage({
 
         setPhase('revealing');
         revealTimer.current = window.setTimeout(() => setPhase('revealed'), REVEAL_DURATION_MS);
-    }
+    }, [imageReady, phase]);
+
+    useEffect(() => {
+        if (autoReveal) revealCard();
+    }, [autoReveal, revealCard]);
 
     return (
         <Card className="gap-0 overflow-hidden py-0">
@@ -153,7 +159,7 @@ export function SimdRevealStage({
                             </div>
                         </div>
 
-                        {phase === 'sealed' && (
+                        {phase === 'sealed' && !autoReveal && (
                             <Button
                                 size="lg"
                                 className="absolute inset-x-auto bottom-7 min-w-44 shadow-lg"
@@ -182,8 +188,9 @@ export function SimdRevealStage({
                                 </p>
                                 <h2 className="mt-2 text-3xl font-bold tracking-tight">Your pull is ready.</h2>
                                 <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-                                    Break the physical seal to meet a character inspired by an actual Solana Improvement
-                                    Document. The rarity is already locked by the settled pull.
+                                    {autoReveal
+                                        ? 'Your pack is opening automatically. The rarity is already locked by the settled pull.'
+                                        : 'Break the physical seal to meet a character inspired by an actual Solana Improvement Document. The rarity is already locked by the settled pull.'}
                                 </p>
                                 <div className="mt-7 grid gap-3 border-t pt-6 text-sm text-muted-foreground">
                                     <p className="flex items-center gap-2">

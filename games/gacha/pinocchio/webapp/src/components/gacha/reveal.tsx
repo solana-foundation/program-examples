@@ -6,7 +6,6 @@ import { useSWRConfig } from 'swr';
 
 import { PendingPackStage, SimdRevealStage } from '@/components/gacha/simd-reveal-stage';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useCurrentSlot } from '@/hooks/use-current-slot';
 import { usePull } from '@/hooks/use-my-pulls';
 import type { PoolView } from '@/hooks/use-pool';
@@ -52,9 +51,12 @@ export function Reveal({
 
     if (!pull) {
         return (
-            <Card>
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">Loading pull…</CardContent>
-            </Card>
+            <PendingPackStage
+                detail="No further wallet approval is needed."
+                eyebrow="Opening pack"
+                message="Your signed pull is being submitted, revealed, and minted. This pack will open automatically as soon as the on-chain transactions confirm."
+                title="Preparing your reveal…"
+            />
         );
     }
 
@@ -143,6 +145,7 @@ export function Reveal({
         <SimdRevealStage
             key={`${pullAddress}:${card.number}`}
             accentColor={rarityColor(tier)}
+            autoReveal
             card={card}
             isClaimed={status === PullStatus.Claimed}
             isClaiming={isSending}

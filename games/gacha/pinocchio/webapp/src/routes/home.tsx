@@ -50,7 +50,14 @@ export function Home() {
         <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
             <div className="space-y-6">
                 <PoolSummary pool={pool} />
-                <BuyCard pool={pool} onOpened={setActivePull} />
+                <BuyCard
+                    pool={pool}
+                    onOpened={setActivePull}
+                    onProcessing={setActivePull}
+                    onProcessingFailed={(pull, submitted) => {
+                        if (!submitted) setActivePull(current => (current === pull ? null : current));
+                    }}
+                />
             </div>
             <div className="space-y-6">
                 {activePull && (

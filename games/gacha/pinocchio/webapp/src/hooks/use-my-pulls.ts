@@ -58,7 +58,8 @@ export function usePull(pullAddress: Address | null, { watch = false }: { watch?
             return account.exists ? account.data : null;
         },
         {
-            refreshInterval: latestPull => (watch && latestPull?.status === PullStatus.Pending ? 2_000 : 0),
+            refreshInterval: latestPull =>
+                watch && (!latestPull || latestPull.status === PullStatus.Pending) ? 2_000 : 0,
         },
     );
 

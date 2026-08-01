@@ -32,7 +32,14 @@ function computeUnitPriceInstruction(microLamports: bigint): Instruction {
     return { data, programAddress: COMPUTE_BUDGET_PROGRAM };
 }
 
-export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: Address) => void }) {
+type BuyCardProps = {
+    pool: PoolView;
+    onOpened: (pull: Address) => void;
+    onProcessing: (pull: Address) => void;
+    onProcessingFailed: (pull: Address, submitted: boolean) => void;
+};
+
+export function BuyCard({ pool, onOpened, onProcessing, onProcessingFailed }: BuyCardProps) {
     const { address, client, signer } = useWallet();
     const { cluster } = useCluster();
     const [stage, setStage] = useState<'idle' | 'signing' | 'processing'>('idle');
@@ -42,14 +49,17 @@ export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: A
     async function process(transaction: string, buyer: Address, pull: Address) {
         setError(null);
         setStage('processing');
+        onProcessing(pull);
         try {
             await processPull(buyer, transaction);
             setRetry(null);
             onOpened(pull);
         } catch (cause) {
-            if (cause instanceof PullApiError && cause.failure.retryable && cause.failure.buySignature) {
+            const submitted = cause instanceof PullApiError && Boolean(cause.failure.buySignature);
+            if (cause instanceof PullApiError && cause.failure.retryable && submitted) {
                 setRetry({ buyer, pull, transaction });
             }
+            onProcessingFailed(pull, submitted);
             setError(cause instanceof PullApiError ? cause.failure.message : 'The pull could not be completed.');
         } finally {
             setStage('idle');
