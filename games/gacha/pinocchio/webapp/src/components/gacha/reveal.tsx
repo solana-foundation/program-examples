@@ -1,14 +1,14 @@
 import type { Address } from '@solana/kit';
-import { Gift, PackageOpen, Sparkles } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { PendingPackStage, SimdRevealStage } from '@/components/gacha/simd-reveal-stage';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePull } from '@/hooks/use-my-pulls';
 import { useSend } from '@/hooks/use-send';
 import { useWallet } from '@/hooks/use-wallet';
 import { useCluster } from '@/lib/cluster-context';
 import { findBuyerAta, PullStatus, rarityColor, rarityLabel } from '@/lib/gacha';
+import { simdCardForTier } from '@/lib/simd-cards';
 import { clusterSupportsReveal } from '@/lib/solana-client';
 
 /**
@@ -61,56 +61,29 @@ export function Reveal({ pullAddress, onChange }: { pullAddress: Address; onChan
     if (status === PullStatus.Pending) {
         const revealable = clusterSupportsReveal(cluster);
         return (
-            <Card className="overflow-hidden">
-                <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-                    <div className="pack-shake text-primary">
-                        <PackageOpen className="size-16" />
-                    </div>
-                    <div>
-                        <div className="text-lg font-semibold tracking-tight">Opening your pack…</div>
-                        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                            {revealable
-                                ? 'The operator is revealing your pull on-chain. It resolves the moment the settle transaction confirms.'
-                                : `Reveal needs the cc-vrf + Light stack, which is not deployed on ${cluster}. Run on devnet or mainnet to watch the pack open.`}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+            <PendingPackStage
+                message={
+                    revealable
+                        ? 'The operator is revealing your pull on-chain. It resolves the moment the settle transaction confirms.'
+                        : `Reveal needs the cc-vrf + Light stack, which is not deployed on ${cluster}. Run on devnet or mainnet to watch the pack open.`
+                }
+            />
         );
     }
 
     const tier = pull.tierSelected;
-    const label = rarityLabel(pull) ?? '';
-    const color = rarityColor(tier);
+    const rarity = rarityLabel(pull) ?? 'common';
+    const card = simdCardForTier(tier);
 
     return (
-        <Card className="overflow-hidden">
-            <div className="h-1.5 w-full" style={{ backgroundColor: color }} />
-            <CardContent className="hero-entrance flex flex-col items-center gap-4 py-10 text-center">
-                <div
-                    className="flex size-16 items-center justify-center rounded-2xl"
-                    style={{ backgroundColor: `color-mix(in oklch, ${color} 16%, transparent)`, color }}
-                >
-                    <Sparkles className="size-8" />
-                </div>
-                <div>
-                    <div className="text-sm text-muted-foreground">You pulled</div>
-                    <div className="mt-1 text-3xl font-black capitalize tracking-tight" style={{ color }}>
-                        {label}
-                    </div>
-                </div>
-
-                {status === PullStatus.Settled && (
-                    <Button onClick={() => void claim()} disabled={isSending}>
-                        <Gift /> {isSending ? 'Claiming…' : 'Claim prize NFT'}
-                    </Button>
-                )}
-                {status === PullStatus.Claimed && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm text-muted-foreground">
-                        <Gift className="size-4" /> Prize NFT minted to the buyer
-                    </span>
-                )}
-            </CardContent>
-        </Card>
+        <SimdRevealStage
+            key={`${pullAddress}:${card.number}`}
+            accentColor={rarityColor(tier)}
+            card={card}
+            isClaimed={status === PullStatus.Claimed}
+            isClaiming={isSending}
+            onClaim={() => void claim()}
+            rarity={rarity}
+        />
     );
 }

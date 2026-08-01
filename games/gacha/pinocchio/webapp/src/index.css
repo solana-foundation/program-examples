@@ -144,35 +144,213 @@ samp {
 }
 
 .hero-entrance {
-    animation: hero-entrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: hero-entrance 0.5s ease-out both;
 }
 
-@keyframes pack-shake {
+@keyframes simd-pack-arrival {
+    from {
+        opacity: 0;
+        transform: translateY(12px) rotate(-2deg) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) rotate(0) scale(1);
+    }
+}
+
+@keyframes simd-pack-top-open {
     0%,
+    14% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+
+    58% {
+        opacity: 1;
+        transform: translate3d(-9px, -72px, 0) rotate(-4deg);
+    }
+
     100% {
-        transform: translateX(0) rotate(0deg);
-    }
-    20% {
-        transform: translateX(-3px) rotate(-1.5deg);
-    }
-    40% {
-        transform: translateX(3px) rotate(1.5deg);
-    }
-    60% {
-        transform: translateX(-2px) rotate(-1deg);
-    }
-    80% {
-        transform: translateX(2px) rotate(1deg);
+        opacity: 0;
+        transform: translate3d(-18px, -128px, 0) rotate(-8deg);
     }
 }
 
-.pack-shake {
-    animation: pack-shake 0.6s ease-in-out infinite;
+@keyframes simd-pack-body-open {
+    0%,
+    14% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+
+    58% {
+        opacity: 1;
+        transform: translate3d(6px, 82px, 0) rotate(2deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate3d(12px, 148px, 0) rotate(4deg);
+    }
+}
+
+@keyframes simd-card-reveal {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 72px, 0) rotateY(-12deg) scale(0.88);
+    }
+
+    72% {
+        opacity: 1;
+        transform: translate3d(0, -7px, 0) rotateY(2deg) scale(1.02);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotateY(0) scale(1);
+    }
+}
+
+@keyframes simd-reveal-ring {
+    0% {
+        opacity: 0;
+        transform: scale(0.78);
+    }
+
+    35% {
+        opacity: 0.65;
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes simd-copy-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.simd-pending-arena,
+.simd-reveal-arena {
+    background-color: oklch(0.235 0.018 175);
+}
+
+.simd-pack-arrival {
+    animation: simd-pack-arrival 0.55s ease-out both;
+}
+
+.simd-reveal-arena {
+    perspective: 1100px;
+}
+
+.simd-pack-shell,
+.simd-prize-card {
+    position: absolute;
+    top: 42px;
+    width: 232px;
+    aspect-ratio: 2 / 3;
+}
+
+.simd-pack-shell {
+    z-index: 2;
+    filter: drop-shadow(0 20px 22px oklch(0.08 0 0 / 0.42));
+    transform-style: preserve-3d;
+}
+
+.simd-pack-piece {
+    position: absolute;
+    inset: 0;
+    will-change: transform, opacity;
+}
+
+.simd-pack-top {
+    clip-path: inset(0 0 87% 0);
+    transform-origin: 42% 11%;
+}
+
+.simd-pack-body {
+    clip-path: inset(12% 0 0 0);
+    transform-origin: 55% 76%;
+}
+
+.simd-pack-image {
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    object-fit: cover;
+}
+
+.simd-prize-card {
+    z-index: 1;
+    overflow: hidden;
+    border: 1px solid oklch(0.91 0.03 95 / 0.68);
+    border-radius: 0.75rem;
+    opacity: 0;
+    box-shadow: 0 24px 42px oklch(0.08 0 0 / 0.48);
+    transform: translate3d(0, 72px, 0) rotateY(-12deg) scale(0.88);
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+}
+
+.simd-reveal-ring {
+    position: absolute;
+    top: 30px;
+    z-index: 0;
+    width: 250px;
+    aspect-ratio: 2 / 3;
+    border: 2px solid oklch(0.8 0.17 165 / 0.8);
+    border-radius: 1rem;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.simd-reveal-stage[data-phase='revealing'] .simd-pack-top {
+    animation: simd-pack-top-open 0.72s ease-in both;
+}
+
+.simd-reveal-stage[data-phase='revealing'] .simd-pack-body {
+    animation: simd-pack-body-open 0.78s ease-in both;
+}
+
+.simd-reveal-stage[data-phase='revealing'] .simd-prize-card {
+    animation: simd-card-reveal 0.65s 0.2s ease-out both;
+}
+
+.simd-reveal-stage[data-phase='revealing'] .simd-reveal-ring {
+    animation: simd-reveal-ring 0.6s 0.22s ease-out both;
+}
+
+.simd-reveal-stage[data-phase='revealed'] .simd-pack-piece {
+    opacity: 0;
+}
+
+.simd-reveal-stage[data-phase='revealed'] .simd-prize-card {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateY(0) scale(1);
+}
+
+.simd-card-copy {
+    animation: simd-copy-in 0.38s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .hero-entrance,
-    .pack-shake {
+    .simd-pack-arrival,
+    .simd-card-copy,
+    .simd-reveal-stage[data-phase='revealing'] .simd-pack-top,
+    .simd-reveal-stage[data-phase='revealing'] .simd-pack-body,
+    .simd-reveal-stage[data-phase='revealing'] .simd-prize-card,
+    .simd-reveal-stage[data-phase='revealing'] .simd-reveal-ring {
         animation: none;
     }
 }

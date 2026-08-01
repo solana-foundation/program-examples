@@ -31,20 +31,28 @@ export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: A
     }
 
     return (
-        <Card>
+        <Card className="overflow-hidden">
             <CardHeader>
-                <CardTitle>Open a pack</CardTitle>
+                <p className="font-mono text-xs tracking-[0.16em] text-muted-foreground uppercase">First edition</p>
+                <CardTitle className="text-xl">SIMD All-Stars</CardTitle>
                 <CardDescription>
-                    Pay the entry fee to open a pull. Your wallet mixes 32 bytes of fresh entropy into the VRF input, so
-                    the outcome can’t be known — even by the operator — until your buy lands.
+                    One proposal-inspired character per pack. Your wallet mixes fresh entropy into the VRF input, so
+                    nobody knows the rarity before your buy lands.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                <div className="mx-auto w-full max-w-[180px] overflow-hidden rounded-xl border bg-secondary shadow-sm">
+                    <img
+                        src="/cards/simd/simd-all-stars-pack.jpg"
+                        alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
+                        className="aspect-[2/3] h-auto w-full object-cover"
+                    />
+                </div>
                 <Button className="w-full" size="lg" onClick={() => void open()} disabled={isSending}>
-                    <Dices /> {isSending ? 'Opening…' : `Open pack · ${formatSol(pool.pool.entryFee)} SOL`}
+                    <Dices /> {isSending ? 'Opening…' : `Open one pack · ${formatSol(pool.pool.entryFee)} SOL`}
                 </Button>
                 <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                    <ShieldCheck className="size-3.5" /> Provably fair · every reveal is verifiable off-chain
+                    <ShieldCheck className="size-3.5" /> Provably fair · every pull is independently verifiable
                 </p>
             </CardContent>
         </Card>

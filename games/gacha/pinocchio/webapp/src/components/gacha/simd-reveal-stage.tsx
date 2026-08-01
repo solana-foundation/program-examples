@@ -1,0 +1,232 @@
+import { CircleCheck, ExternalLink, Gift, PackageOpen, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import type { SimdCard } from '@/lib/simd-cards';
+
+const PACK_IMAGE = '/cards/simd/simd-all-stars-pack.jpg';
+const REVEAL_DURATION_MS = 900;
+
+type RevealPhase = 'sealed' | 'revealing' | 'revealed';
+
+/** The waiting state shown while the operator settles a pull on-chain. */
+export function PendingPackStage({ message }: { message: string }) {
+    return (
+        <Card className="gap-0 overflow-hidden py-0">
+            <CardContent className="p-0">
+                <div className="grid md:grid-cols-[minmax(240px,0.8fr)_minmax(280px,1fr)]">
+                    <div className="simd-pending-arena flex min-h-[390px] items-center justify-center overflow-hidden p-8">
+                        <img
+                            src={PACK_IMAGE}
+                            alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
+                            className="simd-pack-arrival h-auto w-full max-w-[220px] select-none shadow-xl"
+                        />
+                    </div>
+                    <div className="flex flex-col justify-center p-7 sm:p-9">
+                        <span className="mb-5 flex size-10 items-center justify-center rounded-full bg-secondary text-primary">
+                            <PackageOpen className="size-5" aria-hidden="true" />
+                        </span>
+                        <p className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                            Pull submitted
+                        </p>
+                        <h2 className="mt-2 text-2xl font-bold tracking-tight">Your pack is on the clock.</h2>
+                        <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground" aria-live="polite">
+                            {message}
+                        </p>
+                        <div className="mt-6 flex items-center gap-2 border-t pt-5 text-xs text-muted-foreground">
+                            <Sparkles className="size-4" aria-hidden="true" />
+                            The seal becomes breakable as soon as the pull settles.
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+type SimdRevealStageProps = {
+    accentColor: string;
+    card: SimdCard;
+    claimLabel?: string;
+    claimedLabel?: string;
+    isClaimed: boolean;
+    isClaiming: boolean;
+    onClaim: () => void;
+    rarity: string;
+    settledLabel?: string;
+};
+
+/** A user-controlled pack tear that reveals the SIMD card assigned to a settled pull. */
+export function SimdRevealStage({
+    accentColor,
+    card,
+    claimLabel = 'Claim prize NFT',
+    claimedLabel = 'Prize NFT minted to the buyer',
+    isClaimed,
+    isClaiming,
+    onClaim,
+    rarity,
+    settledLabel = 'Settled on-chain',
+}: SimdRevealStageProps) {
+    const [phase, setPhase] = useState<RevealPhase>('sealed');
+    const [imageReady, setImageReady] = useState(false);
+    const headingRef = useRef<HTMLHeadingElement>(null);
+    const revealTimer = useRef<number | undefined>(undefined);
+    const isRevealed = phase === 'revealed';
+
+    useEffect(() => {
+        return () => {
+            if (revealTimer.current !== undefined) window.clearTimeout(revealTimer.current);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (isRevealed) headingRef.current?.focus();
+    }, [isRevealed]);
+
+    function revealCard() {
+        if (!imageReady || phase !== 'sealed') return;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            setPhase('revealed');
+            return;
+        }
+
+        setPhase('revealing');
+        revealTimer.current = window.setTimeout(() => setPhase('revealed'), REVEAL_DURATION_MS);
+    }
+
+    return (
+        <Card className="gap-0 overflow-hidden py-0">
+            <div className="h-1.5 w-full" style={{ backgroundColor: accentColor }} />
+            <CardContent className="p-0">
+                <div
+                    className="simd-reveal-stage grid md:grid-cols-[minmax(300px,0.95fr)_minmax(300px,1.05fr)]"
+                    data-phase={phase}
+                >
+                    <div className="simd-reveal-arena relative flex min-h-[530px] items-center justify-center overflow-hidden p-8">
+                        <div className="simd-reveal-ring" aria-hidden="true" />
+                        <div className="simd-prize-card">
+                            <img
+                                key={card.image}
+                                src={card.image}
+                                alt={isRevealed ? `${card.character}, the SIMD ${card.number} collectible card` : ''}
+                                aria-hidden={!isRevealed}
+                                className="h-full w-full object-cover"
+                                onLoad={() => setImageReady(true)}
+                                onError={() => setImageReady(true)}
+                            />
+                        </div>
+
+                        <div className="simd-pack-shell" aria-hidden="true">
+                            <div className="simd-pack-piece simd-pack-top">
+                                <img src={PACK_IMAGE} alt="" className="simd-pack-image" />
+                            </div>
+                            <div className="simd-pack-piece simd-pack-body">
+                                <img src={PACK_IMAGE} alt="" className="simd-pack-image" />
+                            </div>
+                        </div>
+
+                        {phase === 'sealed' && (
+                            <Button
+                                size="lg"
+                                className="absolute inset-x-auto bottom-7 min-w-44 shadow-lg"
+                                onClick={revealCard}
+                                disabled={!imageReady}
+                            >
+                                <PackageOpen aria-hidden="true" />
+                                {imageReady ? 'Break the seal' : 'Preparing card…'}
+                            </Button>
+                        )}
+                        {phase === 'revealing' && (
+                            <span
+                                className="absolute bottom-8 z-10 rounded-full bg-card px-4 py-2 text-sm font-medium shadow-lg"
+                                role="status"
+                            >
+                                Breaking the seal…
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex min-h-[420px] flex-col justify-center p-7 sm:p-9">
+                        {!isRevealed ? (
+                            <div className="simd-anticipation-copy">
+                                <p className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                                    {settledLabel}
+                                </p>
+                                <h2 className="mt-2 text-3xl font-bold tracking-tight">Your pull is ready.</h2>
+                                <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+                                    Break the physical seal to meet a character inspired by an actual Solana Improvement
+                                    Document. The rarity is already locked by the settled pull.
+                                </p>
+                                <div className="mt-7 grid gap-3 border-t pt-6 text-sm text-muted-foreground">
+                                    <p className="flex items-center gap-2">
+                                        <CircleCheck className="size-4 text-primary" aria-hidden="true" /> Eight-card
+                                        first edition
+                                    </p>
+                                    <p className="flex items-center gap-2">
+                                        <CircleCheck className="size-4 text-primary" aria-hidden="true" /> Official
+                                        proposal source included
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="simd-card-copy">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize"
+                                        style={{
+                                            backgroundColor: `color-mix(in oklch, ${accentColor} 16%, transparent)`,
+                                            color: accentColor,
+                                        }}
+                                    >
+                                        {rarity}
+                                    </span>
+                                    <span className="rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                                        {card.status}
+                                    </span>
+                                </div>
+                                <p className="mt-6 font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                                    SIMD {card.number} · {card.role}
+                                </p>
+                                <h2
+                                    ref={headingRef}
+                                    tabIndex={-1}
+                                    className="mt-2 scroll-mt-24 rounded-sm text-3xl font-black tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-4xl"
+                                >
+                                    {card.character}
+                                </h2>
+                                <p className="mt-2 text-lg font-semibold tracking-tight">{card.title}</p>
+                                <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+                                    {card.summary}
+                                </p>
+
+                                <div className="mt-7 flex flex-wrap gap-3 border-t pt-6">
+                                    {isClaimed ? (
+                                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm text-muted-foreground">
+                                            <Gift className="size-4" aria-hidden="true" /> {claimedLabel}
+                                        </span>
+                                    ) : (
+                                        <Button onClick={onClaim} disabled={isClaiming}>
+                                            <Gift aria-hidden="true" /> {isClaiming ? 'Claiming…' : claimLabel}
+                                        </Button>
+                                    )}
+                                    <Button asChild variant="outline">
+                                        <a href={card.href} target="_blank" rel="noreferrer">
+                                            Read SIMD {card.number}
+                                            <ExternalLink aria-hidden="true" />
+                                        </a>
+                                    </Button>
+                                </div>
+                                <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+                                    Collectible rarity reflects this pull, not the proposal’s status or importance.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}

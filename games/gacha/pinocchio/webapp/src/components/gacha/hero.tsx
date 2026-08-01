@@ -6,32 +6,41 @@ import type { PoolView } from '@/hooks/use-pool';
 const STEPS = [
     {
         title: 'Open a pack',
-        body: 'Pay the entry fee. Your wallet commits 32 random bytes so the outcome is unknowable — even to the operator — until the buy lands.',
+        body: 'Your wallet commits fresh entropy, keeping the card rarity unknowable — even to the operator — until the buy lands.',
     },
     {
-        title: 'The operator reveals',
-        body: 'A backend operator settles your pull with a verifiable random function, anchored in Collector Crypt’s cc-vrf registry. The pack “opens” a few seconds later.',
+        title: 'Break the seal',
+        body: 'A verifiable random function settles the pull. Tear open the physical wrapper once the result confirms on-chain.',
     },
     {
-        title: 'Claim & verify',
-        body: 'The prize mints as a Token-2022 NFT carrying its rarity. Anyone can reproduce the result off-chain — provably fair.',
+        title: 'Meet a SIMD',
+        body: 'Reveal a proposal-inspired character, read the source document, then claim the collectible as a Token-2022 NFT.',
     },
 ];
 
 export function Hero({ pool }: { pool: PoolView | null }) {
     return (
         <div className="mx-auto w-full max-w-5xl">
-            <section className="hero-entrance">
-                <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                    <Sparkles className="size-3.5" /> Provably-fair gacha · cc-vrf + Token-2022
+            <section className="hero-entrance grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                        <Sparkles className="size-3.5" /> SIMD-inspired collectibles · cc-vrf + Token-2022
+                    </div>
+                    <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+                        Open a pack. Pull a piece of Solana’s future.
+                    </h1>
+                    <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+                        SIMD All-Stars turns Solana Improvement Documents into character-driven trading cards, then
+                        lets a verifiable pull choose yours.
+                    </p>
                 </div>
-                <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-                    Open a pack. Pull your rarity. Verify the odds.
-                </h1>
-                <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-                    A loot-box game where every reveal is anchored in a verifiable random function — connect a wallet to
-                    open a pull.
-                </p>
+                <div className="simd-pending-arena flex min-h-[390px] items-center justify-center overflow-hidden rounded-2xl border p-8">
+                    <img
+                        src="/cards/simd/simd-all-stars-pack.jpg"
+                        alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
+                        className="simd-pack-arrival h-auto w-full max-w-[220px] select-none shadow-xl"
+                    />
+                </div>
             </section>
 
             {pool && (

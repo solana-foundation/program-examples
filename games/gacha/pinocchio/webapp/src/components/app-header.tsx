@@ -18,7 +18,10 @@ export function AppHeader() {
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
                 <Link to="/" className="flex items-center gap-2">
                     <img src="/gacha.svg" alt="" className="h-6 w-6 shrink-0" />
-                    <span className="text-lg font-semibold tracking-tight">Gacha</span>
+                    <span className="text-lg font-semibold tracking-tight">
+                        <span className="sm:hidden">SIMD</span>
+                        <span className="hidden sm:inline">SIMD All-Stars</span>
+                    </span>
                 </Link>
 
                 <nav className="hidden items-center gap-1 md:flex">

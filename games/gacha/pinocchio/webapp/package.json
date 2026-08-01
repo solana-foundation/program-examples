@@ -5,6 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
+        "dev:simd": "vite --open /simd-preview.html",
         "build": "tsc -b && vite build",
         "preview": "vite preview",
         "lint": "eslint src",

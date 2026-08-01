@@ -19,6 +19,17 @@ Opening a pull is two steps, on purpose — this is how real gacha sites work, n
 
 The operator is the `scripts/register-operator.ts` (one-time: registers + freezes the operator's cc-vrf authority) and `scripts/operator-settle.ts` (the crank: watches for pending pulls and settles them) pair — see the `just register-operator` and `just operator-watch` recipes. The canonical, tested settle wiring — the exact accounts, Light validity proof, and CPI layout — lives in the Rust integration suite at `tests/light-integration-tests`; the scripts follow that reference.
 
+## Local reveal simulator
+
+Preview the complete SIMD pack flow without a wallet, RPC connection, deployed program, or devnet transaction:
+
+```bash
+just webapp-simd-preview
+# or: pnpm --filter gacha-webapp dev:simd
+```
+
+The command opens `http://localhost:5173/simd-preview.html`. The standalone reveal lab can select any card, switch between pending and locally settled states, replay the pack animation, and simulate claiming. All state is kept in browser memory, and the standalone HTML/JavaScript entry is not included in the default production build.
+
 ## Cluster support matrix
 
 | Cluster  | Buy | Refund | Reveal + Claim                                                    |

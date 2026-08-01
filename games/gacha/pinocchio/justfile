@@ -196,6 +196,10 @@ demo: build-client
 webapp-dev:
     pnpm --filter gacha-webapp dev
 
+# Open the standalone SIMD reveal simulator (no wallet, RPC, or transactions)
+webapp-simd-preview:
+    pnpm --filter gacha-webapp dev:simd
+
 # Build the webapp
 webapp-build:
     pnpm --filter gacha-webapp build
