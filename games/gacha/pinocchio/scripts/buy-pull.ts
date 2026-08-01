@@ -15,7 +15,7 @@
 import { randomBytes } from 'node:crypto';
 import { homedir } from 'node:os';
 
-import { fetchPool, findPoolPda, findPullPda, findVaultPda, getBuyPullInstructionAsync } from '@solana/gacha';
+import { findPullPda, gachaProgram } from '@solana/gacha';
 import { address, createClient } from '@solana/kit';
 import { solanaRpc } from '@solana/kit-plugin-rpc';
 import { signerFromFile } from '@solana/kit-plugin-signer';
@@ -26,28 +26,29 @@ async function main(): Promise<void> {
     const buyerPath = process.env.BUYER_KEYPAIR ?? `${homedir()}/.config/solana/id.json`;
     const client = await createClient()
         .use(signerFromFile(buyerPath))
-        .use(solanaRpc({ rpcUrl: RPC_URL }));
+        .use(solanaRpc({ rpcUrl: RPC_URL }))
+        .use(gachaProgram());
     const buyer = client.payer;
     const admin = process.env.POOL_ADMIN ? address(process.env.POOL_ADMIN) : buyer.address;
 
-    const [pool] = await findPoolPda({ admin });
-    const [vault] = await findVaultPda({ admin });
+    const [pool] = await client.gacha.pdas.pool({ admin });
+    const [vault] = await client.gacha.pdas.vault({ admin });
 
-    const poolAccount = await fetchPool(client.rpc, pool);
+    const poolAccount = await client.gacha.accounts.pool.fetch(pool);
     const index = poolAccount.data.pullsCount;
     const [pull] = await findPullPda({ buyer: buyer.address, index, pool });
 
     const clientSeed = new Uint8Array(randomBytes(32));
 
-    const ix = await getBuyPullInstructionAsync({
-        buyPullData: { clientSeed: Array.from(clientSeed) },
-        buyer,
-        pool,
-        pull,
-        vault,
-    });
-
-    const { context } = await client.sendTransaction(ix);
+    const { context } = await client.gacha.instructions
+        .buyPull({
+            buyPullData: { clientSeed: Array.from(clientSeed) },
+            buyer,
+            pool,
+            pull,
+            vault,
+        })
+        .sendTransaction();
 
     console.log('✓ Pull opened (Pending)');
     console.log(`  pool:       ${pool}`);

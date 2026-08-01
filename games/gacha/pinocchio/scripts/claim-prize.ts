@@ -14,7 +14,7 @@
 
 import { homedir } from 'node:os';
 
-import { fetchPull, findPrizeMintPda, getClaimPrizeInstructionAsync } from '@solana/gacha';
+import { gachaProgram } from '@solana/gacha';
 import { type Address, address, createClient, getAddressEncoder, getProgramDerivedAddress } from '@solana/kit';
 import { solanaRpc } from '@solana/kit-plugin-rpc';
 import { signerFromFile } from '@solana/kit-plugin-signer';
@@ -43,18 +43,19 @@ async function main(): Promise<void> {
     const payerPath = process.env.PAYER_KEYPAIR ?? `${homedir()}/.config/solana/id.json`;
     const client = await createClient()
         .use(signerFromFile(payerPath))
-        .use(solanaRpc({ rpcUrl: RPC_URL }));
+        .use(solanaRpc({ rpcUrl: RPC_URL }))
+        .use(gachaProgram());
     const payer = client.payer;
 
-    const pullAccount = await fetchPull(client.rpc, pull);
+    const pullAccount = await client.gacha.accounts.pull.fetch(pull);
     const { buyer, pool } = pullAccount.data;
 
-    const [mint] = await findPrizeMintPda({ pull });
+    const [mint] = await client.gacha.pdas.prizeMint({ pull });
     const buyerAta = await deriveAta(buyer, mint);
 
-    const ix = await getClaimPrizeInstructionAsync({ buyer, buyerAta, mint, payer, pool, pull });
-
-    const { context } = await client.sendTransaction(ix);
+    const { context } = await client.gacha.instructions
+        .claimPrize({ buyer, buyerAta, mint, payer, pool, pull })
+        .sendTransaction();
 
     console.log('✓ Prize claimed');
     console.log(`  pull:     ${pull}`);

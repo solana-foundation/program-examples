@@ -22,7 +22,7 @@
 
 import { homedir } from 'node:os';
 
-import { findPoolPda, getInitPoolInstructionAsync, MAX_TIERS } from '@solana/gacha';
+import { gachaProgram, MAX_TIERS } from '@solana/gacha';
 import { address, createClient } from '@solana/kit';
 import { solanaRpc } from '@solana/kit-plugin-rpc';
 import { signerFromFile } from '@solana/kit-plugin-signer';
@@ -44,7 +44,8 @@ async function main() {
     const adminPath = process.env.ADMIN_KEYPAIR ?? `${homedir()}/.config/solana/id.json`;
     const client = await createClient()
         .use(signerFromFile(adminPath))
-        .use(solanaRpc({ rpcUrl: RPC_URL }));
+        .use(solanaRpc({ rpcUrl: RPC_URL }))
+        .use(gachaProgram());
     const admin = client.payer;
 
     const weights = (process.env.WEIGHTS ?? '70,25,5')
@@ -59,21 +60,21 @@ async function main() {
     const entryFee = BigInt(Math.round(Number(process.env.ENTRY_FEE_SOL ?? '0.05') * LAMPORTS_PER_SOL));
     const settleDeadlineSlots = BigInt(Math.max(0, Math.floor(Number(process.env.DEADLINE_SLOTS ?? '300'))));
 
-    const ix = await getInitPoolInstructionAsync({
-        admin,
-        initPoolData: {
-            authorityLabel: labelBytes(process.env.LABEL ?? 'gacha-demo'),
-            entryFee,
-            operator,
-            settleDeadlineSlots,
-            tierCount: weights.length,
-            weights: paddedWeights,
-        },
-    });
+    const { context } = await client.gacha.instructions
+        .initPool({
+            admin,
+            initPoolData: {
+                authorityLabel: labelBytes(process.env.LABEL ?? 'gacha-demo'),
+                entryFee,
+                operator,
+                settleDeadlineSlots,
+                tierCount: weights.length,
+                weights: paddedWeights,
+            },
+        })
+        .sendTransaction();
 
-    const { context } = await client.sendTransaction(ix);
-
-    const [poolAddress] = await findPoolPda({ admin: admin.address });
+    const [poolAddress] = await client.gacha.pdas.pool({ admin: admin.address });
     console.log('✓ Pool created');
     console.log(`  admin:     ${admin.address}`);
     console.log(`  operator:  ${operator}`);
