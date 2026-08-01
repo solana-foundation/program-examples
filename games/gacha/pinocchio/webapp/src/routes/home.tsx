@@ -53,8 +53,22 @@ export function Home() {
                 <BuyCard pool={pool} onOpened={setActivePull} />
             </div>
             <div className="space-y-6">
-                {activePull && <Reveal pullAddress={activePull} onChange={() => void refresh()} />}
-                <PullList pool={pool} onSelect={setActivePull} />
+                {activePull && (
+                    <Reveal
+                        pool={pool}
+                        pullAddress={activePull}
+                        onChange={() => void refresh()}
+                        onRefunded={() => setActivePull(null)}
+                    />
+                )}
+                <PullList
+                    pool={pool}
+                    onSelect={setActivePull}
+                    onRefunded={pull => {
+                        if (pull === activePull) setActivePull(null);
+                        void refresh();
+                    }}
+                />
             </div>
         </div>
     );

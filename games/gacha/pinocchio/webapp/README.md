@@ -54,19 +54,24 @@ cp webapp/.env.example webapp/.env.local
 #   VITE_DEVNET_RPC_URL=<a Photon-capable RPC, e.g. Helius>
 #   VITE_POOL_ADMIN=<the admin pubkey printed by setup-pool>
 
-just webapp-dev                 # or: pnpm --filter gacha-webapp dev
+just webapp-dev                 # starts the reveal operator + Vite
 ```
 
-For the full reveal loop you also need a deployed program, a pool, and a running operator — see `just deploy-devnet`, `just setup-pool`, `just register-operator`, and `just operator-watch` in the root `justfile`, and the corresponding scripts under `scripts/`.
+`just webapp-dev` loads the Photon RPC from `webapp/.env.local`, starts the operator watcher, and then starts Vite. When Vite exits, it stops the local watcher too. Use `just webapp-ui` when you want only the browser app because an operator is already running elsewhere.
+
+The operator must be registered once before using the combined command. For a fresh deployment, run `just deploy-devnet`, `just register-operator`, and `just setup-pool` first. You can also run the watcher independently with `just operator-watch`; it loads the same local RPC configuration.
+
+The combined command is for local development. In production, run `scripts/operator-settle.ts --watch` as a persistent server-side worker and give it a server-only `RPC_URL`. The operator key must never enter the browser bundle; note that every `VITE_` variable is browser-visible.
 
 ## Env vars
 
-| Variable               | Description                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| `VITE_DEFAULT_CLUSTER` | Cluster the app opens on: `solana:devnet` \| `solana:mainnet` \| `solana:localnet`          |
-| `VITE_POOL_ADMIN`      | Admin pubkey of the featured pool; if unset, the app discovers pools on-chain               |
-| `VITE_DEVNET_RPC_URL`  | Devnet RPC (needs Photon indexing for the reveal path); falls back to the public devnet RPC |
-| `VITE_MAINNET_RPC_URL` | Mainnet RPC; falls back to the public mainnet-beta RPC (heavily rate-limited)               |
+| Variable               | Description                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| `VITE_DEFAULT_CLUSTER` | Cluster the app opens on: `solana:devnet` \| `solana:mainnet` \| `solana:localnet` |
+| `VITE_POOL_ADMIN`      | Admin pubkey of the featured pool; if unset, the app discovers pools on-chain      |
+| `VITE_DEVNET_RPC_URL`  | Photon-capable devnet RPC shared by the browser and local operator                 |
+| `VITE_MAINNET_RPC_URL` | Mainnet RPC; falls back to the public mainnet-beta RPC (heavily rate-limited)      |
+| `RPC_URL`              | Server-only Photon RPC override used by operator CLI processes                     |
 
 ## Routes
 

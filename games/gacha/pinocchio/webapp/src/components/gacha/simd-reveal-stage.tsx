@@ -1,5 +1,5 @@
-import { CircleCheck, ExternalLink, Gift, PackageOpen, Sparkles } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { CircleAlert, CircleCheck, ExternalLink, Gift, PackageOpen, RotateCcw, Sparkles, WifiOff } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,8 +10,24 @@ const REVEAL_DURATION_MS = 900;
 
 type RevealPhase = 'sealed' | 'revealing' | 'revealed';
 
-/** The waiting state shown while the operator settles a pull on-chain. */
-export function PendingPackStage({ message }: { message: string }) {
+type PendingPackStageProps = {
+    action?: ReactNode;
+    detail?: string;
+    eyebrow?: string;
+    message: string;
+    state?: 'waiting' | 'refundable' | 'unavailable';
+    title?: string;
+};
+
+/** The pending state shown while a pull awaits settlement or becomes refundable. */
+export function PendingPackStage({
+    action,
+    detail = 'The seal becomes breakable as soon as the pull settles.',
+    eyebrow = 'Pull submitted',
+    message,
+    state = 'waiting',
+    title = 'Your pack is in the reveal queue.',
+}: PendingPackStageProps) {
     return (
         <Card className="gap-0 overflow-hidden py-0">
             <CardContent className="p-0">
@@ -25,18 +41,27 @@ export function PendingPackStage({ message }: { message: string }) {
                     </div>
                     <div className="flex flex-col justify-center p-7 sm:p-9">
                         <span className="mb-5 flex size-10 items-center justify-center rounded-full bg-secondary text-primary">
-                            <PackageOpen className="size-5" aria-hidden="true" />
+                            {state === 'refundable' ? (
+                                <RotateCcw className="size-5" aria-hidden="true" />
+                            ) : state === 'unavailable' ? (
+                                <WifiOff className="size-5" aria-hidden="true" />
+                            ) : (
+                                <PackageOpen className="size-5" aria-hidden="true" />
+                            )}
                         </span>
-                        <p className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">
-                            Pull submitted
-                        </p>
-                        <h2 className="mt-2 text-2xl font-bold tracking-tight">Your pack is on the clock.</h2>
+                        <p className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">{eyebrow}</p>
+                        <h2 className="mt-2 text-balance text-2xl font-bold tracking-tight">{title}</h2>
                         <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground" aria-live="polite">
                             {message}
                         </p>
+                        {action && <div className="mt-6 flex flex-wrap gap-3">{action}</div>}
                         <div className="mt-6 flex items-center gap-2 border-t pt-5 text-xs text-muted-foreground">
-                            <Sparkles className="size-4" aria-hidden="true" />
-                            The seal becomes breakable as soon as the pull settles.
+                            {state === 'refundable' ? (
+                                <CircleAlert className="size-4" aria-hidden="true" />
+                            ) : (
+                                <Sparkles className="size-4" aria-hidden="true" />
+                            )}
+                            <span className="tabular-nums">{detail}</span>
                         </div>
                     </div>
                 </div>

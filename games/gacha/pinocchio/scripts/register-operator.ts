@@ -12,7 +12,8 @@
  *
  * Env:
  *   RPC_URL        Photon-capable devnet RPC (required for compressed reads /
- *                  validity proofs). Falls back to VITE_DEVNET_RPC_URL.
+ *                  validity proofs). Falls back to VITE_DEVNET_RPC_URL loaded
+ *                  from webapp/.env.local.
  *   PAYER_KEYPAIR  path to the funding keypair (default ~/.config/solana/id.json)
  *   LABEL          cc-vrf authority label (default "gacha-demo")
  *   FUND_SOL       operator top-up amount when under-funded (default 0.5)
@@ -44,7 +45,14 @@ import {
     Transaction,
 } from '@solana/web3.js';
 
-const RPC_URL = process.env.RPC_URL ?? process.env.VITE_DEVNET_RPC_URL ?? 'https://api.devnet.solana.com';
+import { loadWebappEnv } from './load-webapp-env.js';
+
+loadWebappEnv();
+
+const RPC_URL = process.env.RPC_URL ?? process.env.VITE_DEVNET_RPC_URL;
+if (!RPC_URL) {
+    throw new Error('Set RPC_URL or VITE_DEVNET_RPC_URL in webapp/.env.local to a Photon-capable endpoint');
+}
 const OPERATOR_KEYPAIR_PATH = resolve(process.cwd(), 'keys/operator-keypair.json');
 const FUND_SOL = Number(process.env.FUND_SOL ?? '0.5');
 const MIN_OPERATOR_SOL = 0.3;

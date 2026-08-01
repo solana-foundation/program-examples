@@ -17,7 +17,7 @@ const PREVIEW_RARITIES = [
     { accentColor: 'var(--color-rarity-divine)', label: 'divine' },
 ] as const;
 
-type PreviewMode = 'pending' | 'settled';
+type PreviewMode = 'pending' | 'refundable' | 'settled';
 
 function randomCardIndex(): number {
     const entropy = new Uint32Array(1);
@@ -121,7 +121,15 @@ export function SimdPreview() {
                             >
                                 Settled
                             </Button>
-                            {mode === 'pending' && (
+                            <Button
+                                size="sm"
+                                variant={mode === 'refundable' ? 'secondary' : 'outline'}
+                                aria-pressed={mode === 'refundable'}
+                                onClick={() => resetPreview(cardIndex, 'refundable')}
+                            >
+                                Refundable
+                            </Button>
+                            {mode !== 'settled' && (
                                 <Button
                                     size="sm"
                                     className="sm:ml-auto"
@@ -136,7 +144,24 @@ export function SimdPreview() {
 
                 <section className="mt-6" aria-label="SIMD pack reveal preview">
                     {mode === 'pending' ? (
-                        <PendingPackStage message="This is the local waiting-state preview. Select Settled or choose Settle locally when you are ready to unlock the pack." />
+                        <PendingPackStage
+                            detail="184 slots until refund is available."
+                            eyebrow="Waiting for operator"
+                            message="The operator worker settles this pull without another wallet approval. This view updates automatically when the transaction confirms."
+                        />
+                    ) : mode === 'refundable' ? (
+                        <PendingPackStage
+                            action={
+                                <Button onClick={() => resetPreview(cardIndex, 'pending')}>
+                                    <RotateCcw aria-hidden="true" /> Simulate refund
+                                </Button>
+                            }
+                            detail="Settlement can still win the race until your refund confirms."
+                            eyebrow="Operator timeout"
+                            message="The operator did not settle within the configured window. You can now reclaim the entry fee and pull-account rent."
+                            state="refundable"
+                            title="Your pull is refundable."
+                        />
                     ) : (
                         <SimdRevealStage
                             key={`${card.number}:${previewKey}`}

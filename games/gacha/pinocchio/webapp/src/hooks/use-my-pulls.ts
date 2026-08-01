@@ -57,7 +57,9 @@ export function usePull(pullAddress: Address | null, { watch = false }: { watch?
             const account = await client.gacha.accounts.pull.fetchMaybe(addr);
             return account.exists ? account.data : null;
         },
-        { refreshInterval: watch ? 2_000 : 0 },
+        {
+            refreshInterval: latestPull => (watch && latestPull?.status === PullStatus.Pending ? 2_000 : 0),
+        },
     );
 
     return { error, isLoading, pull: data ?? null, refresh: () => mutate() };

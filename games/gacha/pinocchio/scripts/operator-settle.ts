@@ -10,7 +10,8 @@
  * `settle_ix`).
  *
  * Env:
- *   RPC_URL        Photon-capable devnet RPC (required). Falls back to VITE_DEVNET_RPC_URL.
+ *   RPC_URL        Photon-capable devnet RPC (required). Falls back to VITE_DEVNET_RPC_URL
+ *                  loaded from webapp/.env.local.
  *   ADMIN_KEYPAIR  admin keypair whose pool to crank (default ~/.config/solana/id.json).
  *                  Ignored when POOL is set.
  *   POOL           pool address to crank (overrides ADMIN_KEYPAIR derivation)
@@ -59,7 +60,14 @@ import {
     TransactionInstruction,
 } from '@solana/web3.js';
 
-const RPC_URL = process.env.RPC_URL ?? process.env.VITE_DEVNET_RPC_URL ?? 'https://api.devnet.solana.com';
+import { loadWebappEnv } from './load-webapp-env.js';
+
+loadWebappEnv();
+
+const RPC_URL = process.env.RPC_URL ?? process.env.VITE_DEVNET_RPC_URL;
+if (!RPC_URL) {
+    throw new Error('Set RPC_URL or VITE_DEVNET_RPC_URL in webapp/.env.local to a Photon-capable endpoint');
+}
 const POLL_MS = Number(process.env.POLL_MS ?? '5000');
 const OPERATOR_KEYPAIR_PATH = resolve(process.cwd(), 'keys/operator-keypair.json');
 

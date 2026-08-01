@@ -62,6 +62,20 @@ export function rarityColor(tier: number): string {
     return `var(--color-rarity-${label})`;
 }
 
+/** The first slot after which a still-pending pull can be refunded. */
+export function pullRefundSlot(pull: Pick<Pull, 'requestedSlot'>, pool: Pick<Pool, 'settleDeadlineSlots'>): bigint {
+    return pull.requestedSlot + pool.settleDeadlineSlots + 1n;
+}
+
+/** Whether the buyer can refund a pending pull at the current slot. */
+export function isPullRefundable(
+    pull: Pick<Pull, 'requestedSlot' | 'status'>,
+    pool: Pick<Pool, 'settleDeadlineSlots'>,
+    currentSlot: bigint | null,
+): boolean {
+    return currentSlot !== null && pull.status === PullStatus.Pending && currentSlot >= pullRefundSlot(pull, pool);
+}
+
 export function statusLabel(status: number): 'Pending' | 'Settled' | 'Claimed' {
     if (status === PullStatus.Settled) return 'Settled';
     if (status === PullStatus.Claimed) return 'Claimed';

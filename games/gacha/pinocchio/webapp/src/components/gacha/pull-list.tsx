@@ -1,26 +1,30 @@
 import { getRefundPullInstructionAsync } from '@solana/gacha';
 import type { Address } from '@solana/kit';
 import { Eye, RotateCcw } from 'lucide-react';
-import useSWR from 'swr';
 
 import { RarityBadge } from '@/components/gacha/rarity-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCurrentSlot } from '@/hooks/use-current-slot';
 import { useMyPulls, type PullView } from '@/hooks/use-my-pulls';
 import { useSend } from '@/hooks/use-send';
 import { useWallet } from '@/hooks/use-wallet';
 import type { PoolView } from '@/hooks/use-pool';
-import { useCluster } from '@/lib/cluster-context';
-import { PullStatus, rarityLabel, statusLabel } from '@/lib/gacha';
+import { isPullRefundable, PullStatus, rarityLabel, statusLabel } from '@/lib/gacha';
 import { cn } from '@/lib/utils';
 
-export function PullList({ pool, onSelect }: { pool: PoolView; onSelect: (pull: Address) => void }) {
+export function PullList({
+    pool,
+    onSelect,
+    onRefunded,
+}: {
+    pool: PoolView;
+    onSelect: (pull: Address) => void;
+    onRefunded?: (pull: Address) => void;
+}) {
     const { address } = useWallet();
-    const { cluster } = useCluster();
-    const { client } = useWallet();
     const { pulls, refresh } = useMyPulls(pool.poolAddress, address);
-
-    const { data: slot } = useSWR(['slot', cluster], () => client.rpc.getSlot().send(), { refreshInterval: 10_000 });
+    const { slot } = useCurrentSlot();
 
     if (pulls.length === 0) {
         return (
@@ -46,9 +50,12 @@ export function PullList({ pool, onSelect }: { pool: PoolView; onSelect: (pull: 
                         key={view.address}
                         view={view}
                         pool={pool}
-                        currentSlot={slot ?? null}
+                        currentSlot={slot}
                         onSelect={onSelect}
-                        onRefunded={refresh}
+                        onRefunded={() => {
+                            void refresh();
+                            onRefunded?.(view.address);
+                        }}
                     />
                 ))}
             </CardContent>
@@ -74,10 +81,7 @@ function PullRow({
     const { pull, address } = view;
     const label = rarityLabel(pull);
 
-    const refundable =
-        pull.status === PullStatus.Pending &&
-        currentSlot != null &&
-        currentSlot > pull.requestedSlot + pool.pool.settleDeadlineSlots;
+    const refundable = isPullRefundable(pull, pool.pool, currentSlot);
 
     async function refund() {
         if (!signer) return;
