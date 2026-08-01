@@ -1,4 +1,3 @@
-import { findPrizeMintPda, getClaimPrizeInstructionAsync } from '@solana/gacha';
 import type { Address } from '@solana/kit';
 import { Gift, PackageOpen, Sparkles } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -18,7 +17,7 @@ import { clusterSupportsReveal } from '@/lib/solana-client';
  * rarity, which anyone can then claim as the prize NFT.
  */
 export function Reveal({ pullAddress, onChange }: { pullAddress: Address; onChange?: () => void }) {
-    const { signer } = useWallet();
+    const { client, signer } = useWallet();
     const { cluster } = useCluster();
     const { run, isSending } = useSend();
 
@@ -43,9 +42,9 @@ export function Reveal({ pullAddress, onChange }: { pullAddress: Address; onChan
 
     async function claim() {
         if (!signer || !pull) return;
-        const [mint] = await findPrizeMintPda({ pull: pullAddress });
+        const [mint] = await client.gacha.pdas.prizeMint({ pull: pullAddress });
         const buyerAta = await findBuyerAta(pull.buyer, mint);
-        const ix = await getClaimPrizeInstructionAsync({
+        const ix = await client.gacha.instructions.claimPrize({
             payer: signer,
             pool: pull.pool,
             pull: pullAddress,

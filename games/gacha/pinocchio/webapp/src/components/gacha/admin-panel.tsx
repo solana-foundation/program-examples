@@ -1,4 +1,4 @@
-import { getInitPoolInstructionAsync, getWithdrawFeesInstructionAsync, MAX_TIERS } from '@solana/gacha';
+import { MAX_TIERS } from '@solana/gacha';
 import { address } from '@solana/kit';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -34,7 +34,7 @@ export function AdminPanel() {
 }
 
 function InitCard({ onDone }: { onDone: () => void }) {
-    const { signer } = useWallet();
+    const { client, signer } = useWallet();
     const { run, isSending } = useSend();
     const [operator, setOperator] = useState('');
     const [label, setLabel] = useState('gacha-demo');
@@ -61,7 +61,7 @@ function InitCard({ onDone }: { onDone: () => void }) {
         }
         const padded = [...parsed, ...Array(MAX_TIERS - parsed.length).fill(0)];
 
-        const ix = await getInitPoolInstructionAsync({
+        const ix = await client.gacha.instructions.initPool({
             admin: signer,
             initPoolData: {
                 authorityLabel: labelToBytes(label.trim()),
@@ -125,7 +125,7 @@ function InitCard({ onDone }: { onDone: () => void }) {
 }
 
 function WithdrawCard({ pool, onDone }: { pool: NonNullable<ReturnType<typeof usePool>['pool']>; onDone: () => void }) {
-    const { signer } = useWallet();
+    const { client, signer } = useWallet();
     const { run, isSending } = useSend();
     const [amountSol, setAmountSol] = useState('');
 
@@ -136,7 +136,7 @@ function WithdrawCard({ pool, onDone }: { pool: NonNullable<ReturnType<typeof us
             toast.error('Enter an amount to withdraw');
             return;
         }
-        const ix = await getWithdrawFeesInstructionAsync({
+        const ix = await client.gacha.instructions.withdrawFees({
             admin: signer,
             pool: pool.poolAddress,
             vault: pool.vaultAddress,

@@ -1,3 +1,4 @@
+import { gachaProgram } from '@solana/gacha';
 import { createClient, type MicroLamports } from '@solana/kit';
 import { rpcAirdrop, solanaRpc } from '@solana/kit-plugin-rpc';
 import { walletSigner } from '@solana/kit-plugin-wallet';
@@ -63,7 +64,8 @@ export function createAppClient(cluster: ClusterMoniker) {
                 },
             }),
         )
-        .use(rpcAirdrop());
+        .use(rpcAirdrop())
+        .use(gachaProgram());
 }
 
 export type AppClient = ReturnType<typeof createAppClient>;

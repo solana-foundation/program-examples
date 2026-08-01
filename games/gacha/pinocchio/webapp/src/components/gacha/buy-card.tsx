@@ -1,4 +1,4 @@
-import { findPullPda, getBuyPullInstructionAsync } from '@solana/gacha';
+import { findPullPda } from '@solana/gacha';
 import type { Address } from '@solana/kit';
 import { Dices, ShieldCheck } from 'lucide-react';
 
@@ -11,7 +11,7 @@ import { formatSol } from '@/lib/format';
 import { newClientSeed } from '@/lib/gacha';
 
 export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: Address) => void }) {
-    const { address, signer } = useWallet();
+    const { address, client, signer } = useWallet();
     const { run, isSending } = useSend();
 
     async function open() {
@@ -19,7 +19,7 @@ export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: A
         const index = pool.pool.pullsCount;
         const [pull] = await findPullPda({ buyer: address, index, pool: pool.poolAddress });
         const clientSeed = newClientSeed();
-        const ix = await getBuyPullInstructionAsync({
+        const ix = await client.gacha.instructions.buyPull({
             buyer: signer,
             buyPullData: { clientSeed: Array.from(clientSeed) },
             pool: pool.poolAddress,

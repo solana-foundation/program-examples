@@ -1,4 +1,4 @@
-import { fetchMaybePull, getPullDecoder, type Pull, PullStatus } from '@solana/gacha';
+import { type Pull, PullStatus } from '@solana/gacha';
 import { type Address, getBase64Encoder } from '@solana/kit';
 import useSWR from 'swr';
 
@@ -33,7 +33,7 @@ export function useMyPulls(poolAddress: Address | null, buyer: Address | null) {
             return accounts
                 .map(({ pubkey, account }) => ({
                     address: pubkey,
-                    pull: getPullDecoder().decode(new Uint8Array(base64.encode(account.data[0]))),
+                    pull: client.gacha.accounts.pull.decode(new Uint8Array(base64.encode(account.data[0]))),
                 }))
                 .sort((a, b) => Number(b.pull.index - a.pull.index));
         },
@@ -54,7 +54,7 @@ export function usePull(pullAddress: Address | null, { watch = false }: { watch?
     const { data, error, isLoading, mutate } = useSWR(
         pullAddress ? (['pull', cluster, pullAddress] as const) : null,
         async ([, , addr]): Promise<Pull | null> => {
-            const account = await fetchMaybePull(client.rpc, addr);
+            const account = await client.gacha.accounts.pull.fetchMaybe(addr);
             return account.exists ? account.data : null;
         },
         { refreshInterval: watch ? 2_000 : 0 },

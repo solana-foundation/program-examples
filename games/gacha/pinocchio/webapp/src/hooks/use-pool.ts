@@ -1,12 +1,4 @@
-import {
-    decodePool,
-    fetchMaybePool,
-    findPoolPda,
-    findVaultPda,
-    GACHA_PROGRAM_ADDRESS,
-    getPoolDecoder,
-    type Pool,
-} from '@solana/gacha';
+import { decodePool, GACHA_PROGRAM_ADDRESS, type Pool } from '@solana/gacha';
 import { type Address, address, getBase64Encoder } from '@solana/kit';
 import useSWR from 'swr';
 
@@ -34,9 +26,9 @@ export function useFeaturedPool() {
         async (): Promise<PoolView | null> => {
             if (FEATURED_ADMIN) {
                 const admin = address(FEATURED_ADMIN);
-                return await loadPool(client.rpc, admin);
+                return await loadPool(client, admin);
             }
-            const pools = await discoverPools(client.rpc);
+            const pools = await discoverPools(client);
             return pools[0] ?? null;
         },
         { refreshInterval: 15_000 },
@@ -52,24 +44,26 @@ export function usePool(admin: Address | null) {
 
     const { data, error, isLoading, mutate } = useSWR(
         admin ? (['pool', cluster, admin] as const) : null,
-        async ([, , adminAddr]) => await loadPool(client.rpc, adminAddr),
+        async ([, , adminAddr]) => await loadPool(client, adminAddr),
         { refreshInterval: 15_000 },
     );
 
     return { error, isLoading, pool: data ?? null, refresh: () => mutate() };
 }
 
-async function loadPool(rpc: ReturnType<typeof useAppClient>['rpc'], admin: Address): Promise<PoolView | null> {
-    const [poolAddress] = await findPoolPda({ admin });
-    const [vaultAddress] = await findVaultPda({ admin });
-    const account = await fetchMaybePool(rpc, poolAddress);
+type Client = ReturnType<typeof useAppClient>;
+
+async function loadPool(client: Client, admin: Address): Promise<PoolView | null> {
+    const [poolAddress] = await client.gacha.pdas.pool({ admin });
+    const [vaultAddress] = await client.gacha.pdas.vault({ admin });
+    const account = await client.gacha.accounts.pool.fetchMaybe(poolAddress);
     if (!account.exists) return null;
     return { admin, pool: account.data, poolAddress, vaultAddress };
 }
 
-async function discoverPools(rpc: ReturnType<typeof useAppClient>['rpc']): Promise<PoolView[]> {
+async function discoverPools(client: Client): Promise<PoolView[]> {
     const base64 = getBase64Encoder();
-    const accounts = await rpc
+    const accounts = await client.rpc
         .getProgramAccounts(GACHA_PROGRAM_ADDRESS, {
             encoding: 'base64',
             filters: [{ dataSize: POOL_ACCOUNT_SIZE }],
@@ -79,8 +73,8 @@ async function discoverPools(rpc: ReturnType<typeof useAppClient>['rpc']): Promi
     const views: PoolView[] = [];
     for (const { pubkey, account } of accounts) {
         const bytes = new Uint8Array(base64.encode(account.data[0]));
-        const pool = getPoolDecoder().decode(bytes);
-        const [vaultAddress] = await findVaultPda({ admin: pool.admin });
+        const pool = client.gacha.accounts.pool.decode(bytes);
+        const [vaultAddress] = await client.gacha.pdas.vault({ admin: pool.admin });
         views.push({ admin: pool.admin, pool, poolAddress: pubkey, vaultAddress });
     }
     return views;

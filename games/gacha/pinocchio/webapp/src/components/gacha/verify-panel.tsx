@@ -1,4 +1,4 @@
-import { fetchMaybePool, fetchMaybePull, type Pool, type Pull, pullAlpha, selectTier, verifyPull } from '@solana/gacha';
+import { type Pool, type Pull, pullAlpha, selectTier, verifyPull } from '@solana/gacha';
 import { address, getAddressEncoder } from '@solana/kit';
 import { Check, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
@@ -43,10 +43,10 @@ export function VerifyPanel({ initialPull = '' }: { initialPull?: string }) {
         setProofOk(null);
         try {
             const pullAddress = address(input.trim());
-            const pullAccount = await fetchMaybePull(client.rpc, pullAddress);
+            const pullAccount = await client.gacha.accounts.pull.fetchMaybe(pullAddress);
             if (!pullAccount.exists) throw new Error('No pull account at that address');
             const pull = pullAccount.data;
-            const poolAccount = await fetchMaybePool(client.rpc, pull.pool);
+            const poolAccount = await client.gacha.accounts.pool.fetchMaybe(pull.pool);
             if (!poolAccount.exists) throw new Error('Pool not found for this pull');
             const pool = poolAccount.data;
 
