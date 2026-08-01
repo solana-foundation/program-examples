@@ -126,7 +126,7 @@ export function Reveal({
                 eyebrow={revealable ? 'Waiting for operator' : 'Reveal unavailable'}
                 message={
                     revealable
-                        ? 'The operator worker settles this pull without another wallet approval. This view updates automatically when the transaction confirms.'
+                        ? 'The pull API settles and mints without another wallet approval. This view updates automatically when the transactions confirm.'
                         : `Reveal needs the cc-vrf + Light stack, which is not deployed on ${cluster}. Run on devnet or mainnet to watch the pack open.`
                 }
                 state={revealable ? 'waiting' : 'unavailable'}

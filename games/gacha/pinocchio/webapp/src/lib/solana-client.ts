@@ -13,14 +13,14 @@ export const CLUSTER_LABELS: Record<ClusterMoniker, string> = {
     localnet: 'Localnet',
 };
 
-const DEVNET_RPC = import.meta.env.VITE_DEVNET_RPC_URL || 'https://api.devnet.solana.com';
-const MAINNET_RPC = import.meta.env.VITE_MAINNET_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const DEVNET_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+const MAINNET_RPC = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || 'https://api.mainnet-beta.solana.com';
 
 /**
- * Localnet RPC is proxied through the Vite dev server (`/rpc` → :8899) to dodge
+ * Localnet RPC is proxied through a development-only Next.js route to dodge
  * CORS; outside dev it hits the validator directly.
  */
-const LOCALNET_RPC = import.meta.env.DEV ? '/rpc' : 'http://localhost:8899';
+const LOCALNET_RPC = process.env.NODE_ENV === 'development' ? '/api/localnet-rpc' : 'http://localhost:8899';
 
 function httpUrl(cluster: ClusterMoniker): string {
     if (cluster === 'devnet') return DEVNET_RPC;

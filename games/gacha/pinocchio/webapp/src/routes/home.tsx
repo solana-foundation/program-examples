@@ -1,5 +1,5 @@
 import type { Address } from '@solana/kit';
-import { Link } from 'react-router';
+import Link from 'next/link';
 import { useState } from 'react';
 
 import { BuyCard } from '@/components/gacha/buy-card';
@@ -36,10 +36,10 @@ export function Home() {
                     <h1 className="text-2xl font-bold tracking-tight">No pool found</h1>
                     <p className="max-w-md text-muted-foreground">
                         No gacha pool exists on this network yet. Create one from the Admin page, or point{' '}
-                        <code>VITE_POOL_ADMIN</code> at an existing pool’s admin.
+                        <code>NEXT_PUBLIC_POOL_ADMIN</code> at an existing pool’s admin.
                     </p>
                     <Button asChild>
-                        <Link to="/admin">Go to Admin</Link>
+                        <Link href="/admin">Go to Admin</Link>
                     </Button>
                 </CardContent>
             </Card>

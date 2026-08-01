@@ -30,8 +30,8 @@ export function Hero({ pool }: { pool: PoolView | null }) {
                         Open a pack. Pull a piece of Solana’s future.
                     </h1>
                     <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-                        SIMD All-Stars turns Solana Improvement Documents into character-driven trading cards, then
-                        lets a verifiable pull choose yours.
+                        SIMD All-Stars turns Solana Improvement Documents into character-driven trading cards, then lets
+                        a verifiable pull choose yours.
                     </p>
                 </div>
                 <div className="simd-pending-arena flex min-h-[390px] items-center justify-center overflow-hidden rounded-2xl border p-8">

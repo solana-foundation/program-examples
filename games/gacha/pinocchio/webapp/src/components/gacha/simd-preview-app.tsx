@@ -147,7 +147,7 @@ export function SimdPreview() {
                         <PendingPackStage
                             detail="184 slots until refund is available."
                             eyebrow="Waiting for operator"
-                            message="The operator worker settles this pull without another wallet approval. This view updates automatically when the transaction confirms."
+                            message="The pull API settles and mints without another wallet approval. This view updates automatically when the transactions confirm."
                         />
                     ) : mode === 'refundable' ? (
                         <PendingPackStage

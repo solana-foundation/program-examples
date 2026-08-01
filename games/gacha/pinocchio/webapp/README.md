@@ -1,86 +1,59 @@
 # Gacha Webapp
 
-A provably-fair gacha (loot-box) front-end wired to the on-chain `gacha` program. Connect a wallet, open a pull, watch the pack "open" as an off-chain operator settles it against Collector Crypt's `cc-vrf` registry, then claim the Token-2022 prize NFT. Built on `@solana/kit` v7 with the latest kit wallet plugins (`@solana/kit-plugin-wallet` + `@solana/react` + `@solana/kit-plugin-rpc`).
+A Next.js App Router frontend for the Pinocchio gacha program. A player approves one `buy_pull` transaction; the browser sends its signed bytes to `POST /api/pull`, which submits the buy, produces and anchors the operator's cc-vrf reveal, settles the pull, and mints the Token-2022 prize to the buyer.
 
-## Features
+The on-chain lifecycle remains `buy_pull → settle_pull → claim_prize`. The API performs those instructions as separate transactions because the Light settle accounts and validity proof do not leave enough packet space for the Token-2022 mint flow.
 
-- **Wallet connect** — any Wallet Standard wallet, via `@solana/kit-plugin-wallet` + `@solana/react`
-- **Cluster switch** — devnet / mainnet / localnet, persisted locally
-- **Open a pull** — pays the pool's entry fee and mixes in fresh client-side entropy
-- **Pack-opening reveal** — live-polls the pull account until the operator settles it, then reveals the rarity
-- **Claim** — mints the Token-2022 prize NFT (rarity carried in its metadata) to the buyer
-- **Refund** — reclaim the entry fee once the settle deadline has passed and no reveal has landed
-- **Client-side fairness verification** — recompute `alpha`, reproduce the tier from the on-chain `beta`, optionally paste an ECVRF proof to check
-- **Dev admin panel** — create a pool, withdraw settled fees
+## Local setup
 
-## How the reveal works
-
-Opening a pull is two steps, on purpose — this is how real gacha sites work, not a simplification. The browser sends `buy_pull` and then polls the pull account; it never reveals anything itself. A backend **operator** does the reveal: it proves the ECVRF output for the pull's `alpha`, anchors that proof as a one-time commit in Collector Crypt's `cc-vrf` registry (via a Light Protocol CPI), and calls `settle_pull`. Once that lands, the poll picks up the new status and rarity and the UI unlocks the claim button.
-
-The operator is the `scripts/register-operator.ts` (one-time: registers + freezes the operator's cc-vrf authority) and `scripts/operator-settle.ts` (the crank: watches for pending pulls and settles them) pair — see the `just register-operator` and `just operator-watch` recipes. The canonical, tested settle wiring — the exact accounts, Light validity proof, and CPI layout — lives in the Rust integration suite at `tests/light-integration-tests`; the scripts follow that reference.
-
-## Local reveal simulator
-
-Preview the complete SIMD pack flow without a wallet, RPC connection, deployed program, or devnet transaction:
-
-```bash
-just webapp-simd-preview
-# or: pnpm --filter gacha-webapp dev:simd
-```
-
-The command opens `http://localhost:5173/simd-preview.html`. The standalone reveal lab can select any card, switch between pending and locally settled states, replay the pack animation, and simulate claiming. All state is kept in browser memory, and the standalone HTML/JavaScript entry is not included in the default production build.
-
-## Cluster support matrix
-
-| Cluster  | Buy | Refund | Reveal + Claim                                                    |
-| -------- | --- | ------ | ----------------------------------------------------------------- |
-| Devnet   | ✓   | ✓      | ✓ — cc-vrf, Light Protocol, and a Photon RPC are all live         |
-| Mainnet  | ✓   | ✓      | ✓ — same stack, live on mainnet                                   |
-| Localnet | ✓   | ✓      | ✗ — a plain local validator has neither cc-vrf nor Light deployed |
-
-On localnet the reveal UI shows a note explaining why settle/claim aren't reachable there.
-
-## Quickstart
-
-From the repo root (`games/gacha/pinocchio`):
+From `games/gacha/pinocchio`:
 
 ```bash
 pnpm install
-just build-client              # builds @solana/gacha, the webapp's workspace dep
-
+just build-client
 cp webapp/.env.example webapp/.env.local
-# edit webapp/.env.local:
-#   VITE_DEFAULT_CLUSTER=solana:devnet
-#   VITE_DEVNET_RPC_URL=<a Photon-capable RPC, e.g. Helius>
-#   VITE_POOL_ADMIN=<the admin pubkey printed by setup-pool>
-
-just webapp-dev                 # starts the reveal operator + Vite
+just webapp-dev
 ```
 
-`just webapp-dev` loads the Photon RPC from `webapp/.env.local`, starts the operator watcher, and then starts Vite. When Vite exits, it stops the local watcher too. Use `just webapp-ui` when you want only the browser app because an operator is already running elsewhere.
+Open `http://localhost:3000`. The standalone reveal preview is at `/simd-preview`.
 
-The operator must be registered once before using the combined command. For a fresh deployment, run `just deploy-devnet`, `just register-operator`, and `just setup-pool` first. You can also run the watcher independently with `just operator-watch`; it loads the same local RPC configuration.
+## Configuration
 
-The combined command is for local development. In production, run `scripts/operator-settle.ts --watch` as a persistent server-side worker and give it a server-only `RPC_URL`. The operator key must never enter the browser bundle; note that every `VITE_` variable is browser-visible.
+| Variable                      | Visibility    | Purpose                                                         |
+| ----------------------------- | ------------- | --------------------------------------------------------------- |
+| `NEXT_PUBLIC_SOLANA_RPC_URL`  | Browser       | Browser-safe devnet RPC for reads and transaction preparation   |
+| `NEXT_PUBLIC_POOL_ADMIN`      | Browser       | Optional featured-pool discovery hint                           |
+| `NEXT_PUBLIC_DEFAULT_CLUSTER` | Browser       | Initial cluster selector value                                  |
+| `SOLANA_RPC_URL`              | Server        | Photon-capable devnet endpoint used for cc-vrf and Light proofs |
+| `GACHA_POOL_ADDRESS`          | Server        | The only pool accepted by `/api/pull`                           |
+| `OPERATOR_KEYPAIR_BASE64`     | Server secret | Base64 encoding of the operator's 64-byte Solana keypair        |
 
-## Env vars
+Never prefix the operator key or server RPC with `NEXT_PUBLIC_`. On Vercel, store the operator key as a Sensitive Environment Variable and enable Fluid Compute. The API route uses the Node runtime with a five-minute maximum duration.
 
-| Variable               | Description                                                                        |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| `VITE_DEFAULT_CLUSTER` | Cluster the app opens on: `solana:devnet` \| `solana:mainnet` \| `solana:localnet` |
-| `VITE_POOL_ADMIN`      | Admin pubkey of the featured pool; if unset, the app discovers pools on-chain      |
-| `VITE_DEVNET_RPC_URL`  | Photon-capable devnet RPC shared by the browser and local operator                 |
-| `VITE_MAINNET_RPC_URL` | Mainnet RPC; falls back to the public mainnet-beta RPC (heavily rate-limited)      |
-| `RPC_URL`              | Server-only Photon RPC override used by operator CLI processes                     |
+`OPERATOR_KEYPAIR_BASE64` expects the raw 64 keypair bytes rather than the JSON text. Convert the keypair JSON array to bytes before base64-encoding it, and never print the resulting value in logs.
+
+## `POST /api/pull`
+
+Request:
+
+```json
+{
+    "buyer": "wallet address",
+    "signedBuyTransaction": "base64 wire transaction"
+}
+```
+
+The route is a strict relay. It accepts a versioned transaction with one wallet signer, allowlisted compute-budget instructions, and exactly one `buy_pull` targeting the configured pool. It rejects lookup tables, extra programs, unexpected accounts, stale pull PDAs, and unsigned transactions before broadcasting.
+
+The route is retry-safe. It derives the transaction signature with Kit's base58 codec, checks transaction history, and resumes from the pull's on-chain Pending, Settled, or Claimed state. Retrying after a confirmed buy does not require another wallet approval.
 
 ## Routes
 
-| Route     | Description                                  |
-| --------- | -------------------------------------------- |
-| `/`       | Play — pool summary, buy, reveal, your pulls |
-| `/verify` | Verify a pull's fairness by address          |
-| `/admin`  | Create and manage a pool                     |
+| Route           | Purpose                                                 |
+| --------------- | ------------------------------------------------------- |
+| `/`             | Buy, reveal, pull history, claim state, and refund      |
+| `/verify`       | Reproduce alpha, tier selection, and ECVRF verification |
+| `/admin`        | Create a pool and withdraw settled fees                 |
+| `/simd-preview` | Wallet-free reveal animation preview                    |
 
-## Tech stack
-
-React 19, TypeScript, Vite, Tailwind CSS v4, `@solana/kit` v7, `@solana/kit-plugin-wallet`, `@solana/react`, SWR, sonner.
+Automated `/api/pull` processing is devnet-only. Other cluster selections retain the existing read, admin, verification, and manual transaction behavior.

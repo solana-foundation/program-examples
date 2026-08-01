@@ -69,7 +69,7 @@ export const SIMD_CARDS: readonly SimdCard[] = [
         number: '0215',
         role: 'Hash keeper',
         status: 'Activated',
-        summary: 'Maintains a fast incremental hash of the network\'s total account state.',
+        summary: "Maintains a fast incremental hash of the network's total account state.",
         title: 'Homomorphic Hashing of Account State',
     },
     {

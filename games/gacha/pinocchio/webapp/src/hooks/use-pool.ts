@@ -14,9 +14,9 @@ export type PoolView = {
     vaultAddress: Address;
 };
 
-const FEATURED_ADMIN = import.meta.env.VITE_POOL_ADMIN?.trim() || null;
+const FEATURED_ADMIN = process.env.NEXT_PUBLIC_POOL_ADMIN?.trim() || null;
 
-/** Resolves the featured pool: the `VITE_POOL_ADMIN` pool if configured, else the first discovered. */
+/** Resolves the featured pool: the configured admin's pool, or the first discovered pool. */
 export function useFeaturedPool() {
     const { cluster } = useCluster();
     const client = useAppClient();

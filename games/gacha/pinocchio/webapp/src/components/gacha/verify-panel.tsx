@@ -1,3 +1,5 @@
+'use client';
+
 import { type Pool, type Pull, pullAlpha, selectTier, verifyPull } from '@solana/gacha';
 import { address, getAddressEncoder } from '@solana/kit';
 import { Check, ShieldCheck, X } from 'lucide-react';

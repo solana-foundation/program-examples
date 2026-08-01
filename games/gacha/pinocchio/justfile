@@ -192,40 +192,17 @@ demo: build-client
 # Webapp
 # ============================================
 
-# Start the complete local webapp flow (operator + Vite)
+# Start the Next.js webapp. Its /api/pull route runs the operator flow.
 webapp-dev:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    operator_pid=""
-    cleanup() {
-        if [[ -n "$operator_pid" ]] && kill -0 "$operator_pid" 2>/dev/null; then
-            kill "$operator_pid" 2>/dev/null || true
-            wait "$operator_pid" 2>/dev/null || true
-        fi
-    }
-    trap cleanup EXIT
-    trap 'exit 0' INT TERM
-
-    echo "Starting reveal operator..."
-    pnpm exec tsx scripts/operator-settle.ts --watch &
-    operator_pid=$!
-    sleep 1
-    if ! kill -0 "$operator_pid" 2>/dev/null; then
-        echo "Reveal operator failed to start." >&2
-        wait "$operator_pid" 2>/dev/null || true
-        exit 1
-    fi
-    echo "Starting webapp..."
     pnpm --filter gacha-webapp dev
 
-# Start only the Vite UI (without the reveal operator)
+# Start only the Next.js UI/API process
 webapp-ui:
     pnpm --filter gacha-webapp dev
 
 # Open the standalone SIMD reveal simulator (no wallet, RPC, or transactions)
 webapp-simd-preview:
-    pnpm --filter gacha-webapp dev:simd
+    @echo "Start 'just webapp-ui', then open http://localhost:3000/simd-preview"
 
 # Build the webapp
 webapp-build:

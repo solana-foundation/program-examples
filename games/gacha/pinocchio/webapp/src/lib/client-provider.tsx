@@ -1,3 +1,5 @@
+'use client';
+
 import { ClientProvider, useClient } from '@solana/react';
 import { useMemo, type ReactNode } from 'react';
 

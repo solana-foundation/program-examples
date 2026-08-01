@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { getExplorerUrl } from './explorer';
@@ -20,13 +22,14 @@ function normalize(id: string | undefined | null): ClusterMoniker | null {
 }
 
 function readInitialCluster(): ClusterMoniker {
+    if (typeof window === 'undefined') return normalize(process.env.NEXT_PUBLIC_DEFAULT_CLUSTER) ?? 'devnet';
     try {
         const stored = normalize(localStorage.getItem(STORAGE_KEY));
         if (stored) return stored;
     } catch {
         // localStorage unavailable (e.g. Safari private mode)
     }
-    return normalize(import.meta.env.VITE_DEFAULT_CLUSTER) ?? 'devnet';
+    return normalize(process.env.NEXT_PUBLIC_DEFAULT_CLUSTER) ?? 'devnet';
 }
 
 export function ClusterProvider({ children }: { children: ReactNode }) {

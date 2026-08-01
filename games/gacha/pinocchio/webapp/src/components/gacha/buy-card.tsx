@@ -1,21 +1,66 @@
 import { findPullPda } from '@solana/gacha';
-import type { Address } from '@solana/kit';
+import {
+    address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    getBase64EncodedWireTransaction,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    setTransactionMessageLifetimeUsingBlockhash,
+    signTransactionMessageWithSigners,
+    type Address,
+    type Instruction,
+} from '@solana/kit';
 import { Dices, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSend } from '@/hooks/use-send';
 import { useWallet } from '@/hooks/use-wallet';
 import type { PoolView } from '@/hooks/use-pool';
 import { formatSol } from '@/lib/format';
 import { newClientSeed } from '@/lib/gacha';
+import { processPull, PullApiError } from '@/lib/pull-api';
+import { useCluster } from '@/lib/cluster-context';
+
+const COMPUTE_BUDGET_PROGRAM = address('ComputeBudget111111111111111111111111111111');
+
+function computeUnitPriceInstruction(microLamports: bigint): Instruction {
+    const data = new Uint8Array(9);
+    data[0] = 3;
+    new DataView(data.buffer).setBigUint64(1, microLamports, true);
+    return { data, programAddress: COMPUTE_BUDGET_PROGRAM };
+}
 
 export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: Address) => void }) {
     const { address, client, signer } = useWallet();
-    const { run, isSending } = useSend();
+    const { cluster } = useCluster();
+    const [stage, setStage] = useState<'idle' | 'signing' | 'processing'>('idle');
+    const [error, setError] = useState<string | null>(null);
+    const [retry, setRetry] = useState<Readonly<{ buyer: Address; pull: Address; transaction: string }> | null>(null);
+
+    async function process(transaction: string, buyer: Address, pull: Address) {
+        setError(null);
+        setStage('processing');
+        try {
+            await processPull(buyer, transaction);
+            setRetry(null);
+            onOpened(pull);
+        } catch (cause) {
+            if (cause instanceof PullApiError && cause.failure.retryable && cause.failure.buySignature) {
+                setRetry({ buyer, pull, transaction });
+            }
+            setError(cause instanceof PullApiError ? cause.failure.message : 'The pull could not be completed.');
+        } finally {
+            setStage('idle');
+        }
+    }
 
     async function open() {
-        if (!signer || !address) return;
+        if (!signer || !address || cluster !== 'devnet') return;
+        setError(null);
+        setRetry(null);
+        setStage('signing');
         const index = pool.pool.pullsCount;
         const [pull] = await findPullPda({ buyer: address, index, pool: pool.poolAddress });
         const clientSeed = newClientSeed();
@@ -26,8 +71,21 @@ export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: A
             pull,
             vault: pool.vaultAddress,
         });
-        const sig = await run(ix, 'Pack opened');
-        if (sig) onOpened(pull);
+        try {
+            const { value: latestBlockhash } = await client.rpc.getLatestBlockhash().send();
+            const message = pipe(
+                createTransactionMessage({ version: 0 }),
+                message => setTransactionMessageFeePayerSigner(signer, message),
+                message => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
+                message => appendTransactionMessageInstructions([computeUnitPriceInstruction(1_000n), ix], message),
+            );
+            const signed = await signTransactionMessageWithSigners(message);
+            await process(getBase64EncodedWireTransaction(signed), address, pull);
+        } catch (cause) {
+            setError(cause instanceof Error ? cause.message : 'The pull could not be signed.');
+        } finally {
+            if (stage !== 'processing') setStage('idle');
+        }
     }
 
     return (
@@ -48,9 +106,33 @@ export function BuyCard({ pool, onOpened }: { pool: PoolView; onOpened: (pull: A
                         className="aspect-[2/3] h-auto w-full object-cover"
                     />
                 </div>
-                <Button className="w-full" size="lg" onClick={() => void open()} disabled={isSending}>
-                    <Dices /> {isSending ? 'Opening…' : `Open one pack · ${formatSol(pool.pool.entryFee)} SOL`}
+                <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => void open()}
+                    disabled={stage !== 'idle' || cluster !== 'devnet'}
+                >
+                    <Dices />
+                    {stage === 'signing'
+                        ? 'Approve in wallet…'
+                        : stage === 'processing'
+                          ? 'Revealing and minting…'
+                          : `Open one pack · ${formatSol(pool.pool.entryFee)} SOL`}
                 </Button>
+                {cluster !== 'devnet' && (
+                    <p className="text-sm text-muted-foreground">Automated reveal and mint is currently devnet-only.</p>
+                )}
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                {retry && (
+                    <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => void process(retry.transaction, retry.buyer, retry.pull)}
+                        disabled={stage !== 'idle'}
+                    >
+                        Retry reveal and mint
+                    </Button>
+                )}
                 <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                     <ShieldCheck className="size-3.5" /> Provably fair · every pull is independently verifiable
                 </p>

@@ -82,8 +82,9 @@ async function main() {
     console.log(`  entry fee: ${Number(entryFee) / LAMPORTS_PER_SOL} SOL`);
     console.log(`  weights:   ${weights.join('/')}`);
     console.log(`  tx:        ${context.signature}`);
-    console.log('\nSet VITE_POOL_ADMIN in the webapp to feature this pool:');
-    console.log(`  VITE_POOL_ADMIN=${admin.address}`);
+    console.log('\nConfigure the Next.js webapp with:');
+    console.log(`  NEXT_PUBLIC_POOL_ADMIN=${admin.address}`);
+    console.log(`  GACHA_POOL_ADDRESS=${poolAddress}`);
 }
 
 main().catch(err => {
