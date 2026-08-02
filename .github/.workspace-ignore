@@ -14,6 +14,7 @@ oracles/pyth/anchor/programs/pythexample
 tokens/create-token/anchor/programs/create-token
 tokens/escrow/anchor/programs/escrow
 tokens/external-delegate-token-master/anchor/programs/external-delegate-token-master
+tokens/merkle-tree-token-claimer/anchor/programs/merkle-tree-token-claimer
 tokens/nft-operations/anchor/programs/mint-nft
 tokens/pda-mint-authority/anchor/programs/token-minter
 tokens/token-2022/basics/anchor/programs/basics

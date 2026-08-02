@@ -1,0 +1,33 @@
+{
+    "type": "module",
+    "license": "MIT",
+    "pnpm": {
+        "overrides": {
+            "litesvm": "^0.8.0"
+        }
+    },
+    "scripts": {
+        "generate-tree": "tsx scripts/generate-merkle-tree.ts",
+        "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
+        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    },
+    "dependencies": {
+        "@anchor-lang/core": "1.0.0-rc.5",
+        "@solana-developers/helpers": "^2.8.1",
+        "@solana/spl-token": "^0.4.14",
+        "@solana/web3.js": "^1.98.4"
+    },
+    "devDependencies": {
+        "@types/bn.js": "^5.2.0",
+        "@types/chai": "^5.2.3",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^26.1.0",
+        "anchor-litesvm": "^0.2.1",
+        "chai": "^6.2.2",
+        "litesvm": "^0.8.0",
+        "mocha": "^11.7.5",
+        "prettier": "^3.7.4",
+        "tsx": "^4.19.2",
+        "typescript": "^5.9.3"
+    }
+}

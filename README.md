@@ -148,6 +148,12 @@ Create a fundraiser account specifying a target mint and amount, allowing contri
 
 [anchor](./tokens/token-fundraiser/anchor)
 
+### Distributing tokens with Merkle-proof claims
+
+[Fund a vault once, publish a Merkle root of a balance snapshot, and let each holder claim their allocation with a proof](./tokens/merkle-tree-token-claimer/README.md) — the claim pattern behind large airdrops and chain migrations.
+
+[anchor](./tokens/merkle-tree-token-claimer/anchor)
+
 ### Minting a token from inside a program with a PDA as the mint authority
 
 [Mint a Token from inside your own onchain program using the Token program.](./tokens/pda-mint-authority/README.md) Reminder: you don't need your own program just to mint an NFT, see the note at the top of this README.

@@ -1,0 +1,22 @@
+{
+    "snapshot_height": 12345678,
+    "chain_id": "cosmoshub-4",
+    "timestamp": "2024-01-15T00:00:00Z",
+    "entries": [
+        {
+            "source_address": "cosmos1abc123...",
+            "solana_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+            "amount": "1000000000"
+        },
+        {
+            "source_address": "cosmos1def456...",
+            "solana_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+            "amount": "500000000"
+        },
+        {
+            "source_address": "cosmos1ghi789...",
+            "solana_address": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "amount": "250000000"
+        }
+    ]
+}
