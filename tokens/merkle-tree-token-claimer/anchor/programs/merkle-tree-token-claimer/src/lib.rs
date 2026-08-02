@@ -235,6 +235,9 @@ pub enum ClaimError {
     InvalidAmount,
 }
 
+// The tree builder must pad odd levels with a zero hash (see tests/merkle.ts):
+// duplicating the last node instead would make its parent sha256(C || C), which
+// verifies at two indices and therefore two receipt PDAs.
 fn compute_merkle_root(leaf: &[u8], hashes: &[u8], mut index: u64) -> Result<[u8; 32]> {
     require!(hashes.len() % 32 == 0, ClaimError::InvalidProof);
 
@@ -246,6 +249,9 @@ fn compute_merkle_root(leaf: &[u8], hashes: &[u8], mut index: u64) -> Result<[u8
         index /= 2;
     }
 
+    // Index bits beyond the proof depth are never authenticated by the loop
+    // above; without this check the same proof could open receipt PDAs at
+    // index + 2^depth, index + 2^(depth+1), and so on.
     require!(index == 0, ClaimError::InvalidProof);
 
     Ok(current)

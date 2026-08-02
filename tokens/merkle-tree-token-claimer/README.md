@@ -42,7 +42,7 @@ pnpm install
 anchor test
 ```
 
-`anchor test` builds the program and runs the LiteSVM test suite in `tests/litesvm.test.ts`, which covers initialization, pre-claim root updates, successful claims with receipts, duplicate-claim rejection, stolen-proof rejection, and the post-claim root freeze.
+`anchor test` builds the program and runs the LiteSVM test suite in `tests/litesvm.test.ts`, which covers initialization, pre-claim root updates, successful claims with receipts, duplicate-claim rejection, stolen-proof rejection, proof replay under alternate receipt indices, and the post-claim root freeze.
 
 ## Generating a tree from a snapshot
 
@@ -53,7 +53,7 @@ cd anchor
 pnpm generate-tree scripts/sample-snapshot.json merkle-output.json
 ```
 
-The tree uses SHA-256 throughout: leaves are `sha256(leaf_bytes)` and parents are `sha256(left || right)`, with the last node duplicated on odd levels. `tests/merkle.ts` contains the reference implementation, which matches the program's verifier byte for byte.
+The tree uses SHA-256 throughout: leaves are `sha256(leaf_bytes)` and parents are `sha256(left || right)`, with the last node of an odd level paired with a 32-byte zero hash. Padding with a zero hash instead of duplicating the last node matters: a duplicated node produces the symmetric parent `sha256(C || C)`, which lets one proof verify under two indices and open two receipt PDAs for the same leaf. `tests/merkle.ts` contains the reference implementation, which matches the program's verifier byte for byte.
 
 ## Adapting it for a real distribution
 
@@ -65,5 +65,5 @@ The tree uses SHA-256 throughout: leaves are `sha256(leaf_bytes)` and parents ar
 
 - The mint authority is revoked during initialization, so the claimable supply is fixed at launch.
 - Claim proofs stay stable because `update_tree` refuses to run after the first claim. To change a live distribution, deploy a new instance instead of mutating one users already trust.
-- Double-claims are blocked by `claim_receipt` PDAs derived from `(airdrop_state, index)`.
+- Double-claims are blocked by `claim_receipt` PDAs derived from `(airdrop_state, index)`, and the claim `index` is fully authenticated: verification consumes one index bit per proof level, rejects any leftover high bits, and the zero-hash padding keeps every parent asymmetric — so each leaf verifies under exactly one index and one receipt PDA.
 - Claims are bounded twice: each claim checks the proof against the root, and the running `amount_claimed` can never exceed the initialized total.

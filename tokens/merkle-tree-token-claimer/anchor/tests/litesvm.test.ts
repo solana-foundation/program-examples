@@ -9,7 +9,7 @@ import { LiteSVMProvider } from 'anchor-litesvm';
 import { assert } from 'chai';
 import { LiteSVM } from 'litesvm';
 import type { MerkleTreeTokenClaimer } from '../target/types/merkle_tree_token_claimer';
-import { leafBytes, MerkleTree } from './merkle.ts';
+import { leafBytes, MerkleTree, ZERO_HASH } from './merkle.ts';
 
 import IDL from '../target/idl/merkle_tree_token_claimer.json' with { type: 'json' };
 
@@ -219,6 +219,39 @@ describe('Merkle tree token claimer', () => {
         client.airdrop(attacker.publicKey, BigInt(LAMPORTS_PER_SOL));
         const victim = proofFor(2);
         await expectFailureWith(claimAs(attacker, claimants[2].amount, victim.proof, victim.index), 'InvalidProof');
+    });
+
+    it('rejects a valid proof replayed under a different receipt index', async () => {
+        await initializeAirdrop();
+
+        // The tree has three leaves, so the last node of the leaf level is
+        // paired with a zero hash. If it were duplicated instead (the classic
+        // construction bug), the parent would be sha256(C || C) and this proof
+        // would also verify at index 3, minting a second receipt for the same
+        // leaf. Both replays must fail proof verification.
+        const lastLeafIndex = claimants.length - 1;
+        const claimant = claimants[order[lastLeafIndex]];
+        const proof = tree.proof(lastLeafIndex);
+        await claimAs(claimant.wallet, claimant.amount, proof, lastLeafIndex);
+
+        await expectFailureWith(claimAs(claimant.wallet, claimant.amount, proof, lastLeafIndex + 1), 'InvalidProof');
+
+        // Index bits above the proof depth must also be rejected; otherwise the
+        // same proof would open receipt PDAs at index, index + 4, index + 8, ...
+        const depth = Math.ceil(Math.log2(claimants.length));
+        await expectFailureWith(
+            claimAs(claimant.wallet, claimant.amount, proof, lastLeafIndex + 2 ** depth),
+            'InvalidProof',
+        );
+    });
+
+    it('refuses to build an empty tree and pads odd levels with a zero hash', () => {
+        assert.throws(() => new MerkleTree([]), 'cannot build a Merkle tree with no leaves');
+
+        // Three leaves: the lone third node is paired with ZERO_HASH, and its
+        // proof therefore carries that zero sibling.
+        const proof = tree.proof(claimants.length - 1);
+        assert.deepEqual(Uint8Array.from(proof.subarray(0, 32)), Uint8Array.from(ZERO_HASH));
     });
 
     it('rejects root updates after claims begin', async () => {
