@@ -246,6 +246,8 @@ fn compute_merkle_root(leaf: &[u8], hashes: &[u8], mut index: u64) -> Result<[u8
         index /= 2;
     }
 
+    require!(index == 0, ClaimError::InvalidProof);
+
     Ok(current)
 }
 
