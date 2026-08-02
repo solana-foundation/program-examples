@@ -71,6 +71,10 @@ function generateMerkleTree(snapshotPath: string, outputPath: string): void {
         }
     }
 
+    if (validEntries.length === 0) {
+        throw new Error('snapshot must contain at least one valid entry');
+    }
+
     const tree = new MerkleTree(
         validEntries.map(entry => leafBytes(new PublicKey(entry.solana_address).toBytes(), entry.amountParsed)),
     );
