@@ -19,10 +19,11 @@ export function hashPair(left: Uint8Array, right: Uint8Array): Buffer {
 }
 
 // A claim leaf is exactly 40 bytes: [wallet pubkey (32) | amount (u64 LE, 8)].
-export function leafBytes(wallet: Uint8Array, amount: bigint): Buffer {
+// The wallet is any byte array, including the read-only arrays kit encoders return.
+export function leafBytes(wallet: ArrayLike<number>, amount: bigint): Buffer {
     const amountLe = Buffer.alloc(8);
     amountLe.writeBigUInt64LE(amount);
-    return Buffer.concat([Buffer.from(wallet), amountLe]);
+    return Buffer.concat([Uint8Array.from(wallet), amountLe]);
 }
 
 export const ZERO_HASH: Buffer = Buffer.alloc(32);

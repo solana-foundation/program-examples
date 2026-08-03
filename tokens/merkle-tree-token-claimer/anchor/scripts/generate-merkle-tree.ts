@@ -10,7 +10,7 @@
  */
 
 import * as fs from 'node:fs';
-import { PublicKey } from '@solana/web3.js';
+import { address, type Address, getAddressEncoder } from '@solana/kit';
 import { leafBytes, MerkleTree } from '../tests/merkle.ts';
 
 interface SnapshotEntry {
@@ -57,11 +57,14 @@ function generateMerkleTree(snapshotPath: string, outputPath: string): void {
     console.log(`Snapshot height: ${snapshot.snapshot_height}`);
     console.log(`Total entries: ${snapshot.entries.length}`);
 
-    const validEntries: Array<SnapshotEntry & { amountParsed: bigint }> = [];
+    const validEntries: Array<SnapshotEntry & { addressParsed: Address; amountParsed: bigint }> = [];
     for (const entry of snapshot.entries) {
         try {
-            new PublicKey(entry.solana_address);
-            validEntries.push({ ...entry, amountParsed: parseAmount(entry.amount) });
+            validEntries.push({
+                ...entry,
+                addressParsed: address(entry.solana_address),
+                amountParsed: parseAmount(entry.amount),
+            });
         } catch (error) {
             console.warn(
                 `Skipping invalid entry for ${entry.source_address}: ${
@@ -75,8 +78,9 @@ function generateMerkleTree(snapshotPath: string, outputPath: string): void {
         throw new Error('snapshot must contain at least one valid entry');
     }
 
+    const addressEncoder = getAddressEncoder();
     const tree = new MerkleTree(
-        validEntries.map(entry => leafBytes(new PublicKey(entry.solana_address).toBytes(), entry.amountParsed)),
+        validEntries.map(entry => leafBytes(addressEncoder.encode(entry.addressParsed), entry.amountParsed)),
     );
     const merkleRoot = Array.from(tree.root);
     const merkleRootHex = tree.root.toString('hex');

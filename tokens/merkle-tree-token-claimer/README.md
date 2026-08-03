@@ -44,6 +44,8 @@ anchor test
 
 `anchor test` builds the program and runs the LiteSVM test suite in `tests/litesvm.test.ts`, which covers initialization, pre-claim root updates, successful claims with receipts, duplicate-claim rejection, stolen-proof rejection, proof replay under alternate receipt indices, and the post-claim root freeze.
 
+The client side is written with [`@solana/kit`](https://github.com/anza-xyz/kit): each Anchor instruction is built directly from the IDL — the 8-byte instruction discriminator followed by Borsh-encoded arguments via kit's codecs — and program accounts are decoded the same way. For a larger project, [Codama](https://github.com/codama-idl/codama) can generate this client code from the IDL.
+
 ## Generating a tree from a snapshot
 
 `scripts/generate-merkle-tree.ts` turns a snapshot JSON file into the on-chain root plus a proof per claimant:
