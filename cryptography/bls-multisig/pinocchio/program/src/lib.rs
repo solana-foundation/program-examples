@@ -81,6 +81,11 @@ pub fn process_aggregate_verify(input: &[u8]) -> ProgramResult {
 /// Account 0 is the multisig account (writable, owned by this program). Its data
 /// is `[count: u16-le][G2 pubkey; count]`. The instruction data is a chunk of one
 /// or more big-endian G2 public keys (128 bytes each) appended to the account.
+///
+/// This example deliberately omits access control to stay focused on the
+/// pairing syscalls: any caller can append keys to a writable multisig
+/// account. A production multisig needs an authority signer check, or an
+/// immutable signer set fixed at initialization.
 pub fn process_add_signers(program_id: &Address, accounts: &mut [AccountView], input: &[u8]) -> ProgramResult {
     let multisig = accounts.first_mut().ok_or(ProgramError::NotEnoughAccountKeys)?;
     if !multisig.is_writable() || !multisig.owned_by(program_id) {

@@ -52,6 +52,12 @@ fn member_count(data: &[u8]) -> u16 {
 /// Validates account 0 as the registry account (writable, owned by this
 /// program) and the instruction data as exactly one 192-byte G2 public key.
 /// The account stores `[count: u16-le][aggregate: 192]`.
+///
+/// This example deliberately omits access control to stay focused on the
+/// curve syscalls: any caller can mutate a writable registry account, and the
+/// lossy aggregate cannot prove that a removed key was ever a member. A
+/// production registry needs an authority signer check and its own membership
+/// bookkeeping.
 fn registry_account<'a>(
     program_id: &Address,
     accounts: &'a mut [AccountView],

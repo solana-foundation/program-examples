@@ -10,6 +10,8 @@ Verifies aggregate BLS signatures over BN254 with a single pairing check: public
 
 The verify instructions only succeed when every registered signer contributed to the aggregate signature. G2 addition needs the `enable_alt_bn128_g2_syscalls` feature gate on public clusters; LiteSVM has it enabled.
 
+> **Security note:** this example deliberately omits access control to stay focused on the pairing syscalls — any caller can append keys to a writable multisig account. A production multisig needs an authority signer check, or an immutable signer set fixed at initialization.
+
 ## Test
 
 ```sh

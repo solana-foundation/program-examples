@@ -9,6 +9,8 @@ Maintains a running aggregate BLS12-381 G2 public key in an account. Adding a me
 
 The BLS12-381 syscall runs in LiteSVM today but only works on public clusters once the `enable_bls12_381_syscall` feature gate activates.
 
+> **Security note:** this example deliberately omits access control to stay focused on the curve syscalls — any caller can add to or remove from a writable registry account, and the lossy aggregate cannot prove a removed key was ever a member. A production registry needs an authority signer check and its own membership bookkeeping.
+
 ## Test
 
 ```sh
