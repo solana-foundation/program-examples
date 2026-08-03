@@ -11,7 +11,7 @@ Built with **Pinocchio** (`no_std`) and **Codama**-generated TypeScript + Rust c
 
 ## Randomness: RFC 9381 ECVRF, verified off-chain, anchored on-chain
 
-Solana cannot verify an ECVRF proof on-chain, so this example uses the same model
+This example uses the same model
 Collector Crypt ships — and CPIs their deployed registry program:
 
 1. A buyer opens a pull with 32 random bytes of `client_seed`; the VRF input is
@@ -53,6 +53,7 @@ for the full trust model, including cc-vrf trust caveats.
 | `clients/rust/`                  | Codama Rust client (`gacha-client`)                                         |
 | `scripts/`                       | Client generation + off-chain operator demo                                 |
 | `idl/`                           | Committed Codama IDL                                                        |
+| `webapp/`                        | Next.js webapp                                                                |
 
 ## Quick start
 
