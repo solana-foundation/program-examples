@@ -1,0 +1,24 @@
+{
+  "name": "bls12-381-pinocchio",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "mocha --import=tsx -t 1000000 ./tests/bls12-381.test.ts",
+    "build-and-test": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./tests/fixtures && pnpm test",
+    "build": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./program/target/so",
+    "deploy": "solana program deploy ./program/target/so/bls12_381_pinocchio_program.so"
+  },
+  "dependencies": {
+    "@solana/kit": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.1.0",
+    "chai": "^6.2.2",
+    "litesvm": "^1.3.0",
+    "mocha": "^11.7.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}

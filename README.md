@@ -314,6 +314,40 @@ Work with Metaplex compressed NFTs.
 
 [anchor](./compression/cutils/anchor)
 
+## Cryptography
+
+Each example wraps a cryptographic syscall in a small Pinocchio program. The alt_bn128 G2 (SIMD-0302) and BLS12-381 syscalls run in LiteSVM today but only work on public clusters once their feature gates activate.
+
+### Alt-bn128 G2 operations
+
+Add and scalar-multiply BN254 G2 points with the `sol_alt_bn128_group_op` syscall.
+
+[pinocchio](./cryptography/alt-bn128-g2/pinocchio)
+
+### BLS12-381 curve operations
+
+Add, subtract, and scalar-multiply BLS12-381 G1 and G2 points with the `sol_curve_group_op` syscall.
+
+[pinocchio](./cryptography/bls12-381/pinocchio)
+
+### BLS multisig
+
+Verify aggregate BLS signatures over BN254 with a single pairing check — stateless, or against signers stored in a multisig account.
+
+[pinocchio](./cryptography/bls-multisig/pinocchio)
+
+### BLS key registry
+
+Maintain a running aggregate BLS12-381 G2 public key on-chain, adding and removing members with curve syscalls.
+
+[pinocchio](./cryptography/bls-key-registry/pinocchio)
+
+### Encrypted ballot
+
+Fold twisted ElGamal ballot ciphertexts into an encrypted running tally with ristretto255 additions.
+
+[pinocchio](./cryptography/encrypted-ballot/pinocchio)
+
 ## Oracles
 
 ### pyth
