@@ -1,12 +1,16 @@
-import { Buffer } from 'node:buffer';
 import {
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
+    fixCodecSize,
     generateKeyPairSigner,
+    getBase16Codec,
+    getBytesCodec,
+    getStructCodec,
     type KeyPairSigner,
     lamports,
     pipe,
+    type ReadonlyUint8Array,
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
@@ -41,7 +45,20 @@ const IX_AGGREGATE_VERIFY = 2;
 const ERR_INVALID_INPUT_LENGTH = 'InstructionErrorCustom { code: 0 }';
 const ERR_AGGREGATE_VERIFY_FAILED = 'InstructionErrorCustom { code: 3 }';
 
-const hex = (s: string) => Uint8Array.from(Buffer.from(s, 'hex'));
+const base16 = getBase16Codec();
+const hex = (s: string) => base16.encode(s);
+
+const g1 = fixCodecSize(getBytesCodec(), 64);
+const g2 = fixCodecSize(getBytesCodec(), 128);
+
+// Wire layout of the AggregateVerify instruction data (after the discriminator).
+const aggregateVerifyCodec = getStructCodec([
+    ['signature', g1],
+    ['negatedMessageHash', g1],
+    ['pubkey1', g2],
+    ['pubkey2', g2],
+    ['pubkey3', g2],
+]);
 
 describe('bn254', () => {
     const svm = new LiteSVM();
@@ -56,7 +73,7 @@ describe('bn254', () => {
         svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    async function send(discriminator: number, input: Uint8Array) {
+    async function send(discriminator: number, input: ReadonlyUint8Array) {
         const data = new Uint8Array(1 + input.length);
         data[0] = discriminator;
         data.set(input, 1);
@@ -75,19 +92,19 @@ describe('bn254', () => {
     }
 
     const verifyInput = (aggSig: string) =>
-        new Uint8Array([
-            ...hex(aggSig),
-            ...hex(NEGATED_MESSAGE_HASH),
-            ...hex(G2_GENERATOR),
-            ...hex(G2_TWO_GENERATOR),
-            ...hex(G2_THREE_GENERATOR),
-        ]);
+        aggregateVerifyCodec.encode({
+            negatedMessageHash: hex(NEGATED_MESSAGE_HASH),
+            pubkey1: hex(G2_GENERATOR),
+            pubkey2: hex(G2_TWO_GENERATOR),
+            pubkey3: hex(G2_THREE_GENERATOR),
+            signature: hex(aggSig),
+        });
 
     it('adds two G2 points: G + 2G == 3G', async () => {
         const result = await send(IX_G2_ADD, new Uint8Array([...hex(G2_GENERATOR), ...hex(G2_TWO_GENERATOR)]));
 
         assert(result instanceof TransactionMetadata, `transaction failed: ${result.toString()}`);
-        assert.deepEqual(result.returnData().data(), hex(G2_THREE_GENERATOR));
+        assert.deepEqual<ReadonlyUint8Array>(result.returnData().data(), hex(G2_THREE_GENERATOR));
     });
 
     it('multiplies a G2 point by a scalar: G * 3 == 3G', async () => {
@@ -96,7 +113,7 @@ describe('bn254', () => {
         const result = await send(IX_G2_MUL, new Uint8Array([...hex(G2_GENERATOR), ...scalar]));
 
         assert(result instanceof TransactionMetadata, `transaction failed: ${result.toString()}`);
-        assert.deepEqual(result.returnData().data(), hex(G2_THREE_GENERATOR));
+        assert.deepEqual<ReadonlyUint8Array>(result.returnData().data(), hex(G2_THREE_GENERATOR));
     });
 
     it('verifies an aggregate signature from all signers with one pairing check', async () => {

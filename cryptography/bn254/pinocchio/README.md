@@ -1,6 +1,8 @@
 # BN254 (alt_bn128) operations (Pinocchio)
 
-A stateless program that wraps the BN254 (alt_bn128) G2 group operations added by [SIMD-0302](https://github.com/solana-foundation/solana-improvement-documents/pull/302) and the pairing operation, via the `sol_alt_bn128_group_op` syscall. Results come back as transaction return data.
+BN254 is an elliptic curve — a set of points you can "add" and "multiply" using special math. What makes it useful is its _pairing_: an operation that relates points in a way ordinary addition can't, and that's the engine behind things like zero-knowledge proofs and BLS signatures (many signers collapse into one tiny signature that verifies in a single check). This curve math is far too expensive to run in normal program code without blowing past Solana's compute budget, so the runtime provides it as a native building block — the `sol_alt_bn128_group_op` syscall. This example is a thin, stateless wrapper over that syscall: it hands your points and scalars to the runtime and returns the result as transaction return data, so you can see exactly what goes in and comes out before building anything larger on top.
+
+Learn more: [Solana's BN254 G2 syscall spec (SIMD-0302)](https://github.com/solana-foundation/solana-improvement-documents/blob/main/proposals/0302-bn254-g2-syscalls.md) · [the alt_bn128/BN254 pairing encoding these ops follow (Ethereum EIP-197)](https://eips.ethereum.org/EIPS/eip-197)
 
 | Discriminator | Instruction      | Input                                                                          |
 | ------------- | ---------------- | ------------------------------------------------------------------------------ |

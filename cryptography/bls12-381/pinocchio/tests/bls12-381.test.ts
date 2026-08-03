@@ -1,10 +1,11 @@
-import { Buffer } from 'node:buffer';
 import {
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
     generateKeyPairSigner,
+    getBase16Codec,
     type KeyPairSigner,
+    type ReadonlyUint8Array,
     lamports,
     pipe,
     setTransactionMessageFeePayerSigner,
@@ -36,7 +37,8 @@ const IX_G2_ADD = 3;
 const IX_G2_SUB = 4;
 const IX_G2_MUL = 5;
 
-const hex = (s: string) => Uint8Array.from(Buffer.from(s, 'hex'));
+const base16 = getBase16Codec();
+const hex = (s: string) => base16.encode(s);
 
 const scalarThree = () => {
     const scalar = new Uint8Array(32);
@@ -57,7 +59,7 @@ describe('bls12-381', () => {
         svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    async function send(discriminator: number, left: Uint8Array, right: Uint8Array) {
+    async function send(discriminator: number, left: ReadonlyUint8Array, right: ReadonlyUint8Array) {
         const data = new Uint8Array([discriminator, ...left, ...right]);
 
         const transactionMessage = pipe(
@@ -73,10 +75,15 @@ describe('bls12-381', () => {
         return result;
     }
 
-    async function expectReturnData(discriminator: number, left: Uint8Array, right: Uint8Array, expected: Uint8Array) {
+    async function expectReturnData(
+        discriminator: number,
+        left: ReadonlyUint8Array,
+        right: ReadonlyUint8Array,
+        expected: ReadonlyUint8Array,
+    ) {
         const result = await send(discriminator, left, right);
         assert(result instanceof TransactionMetadata, `transaction failed: ${result.toString()}`);
-        assert.deepEqual(result.returnData().data(), expected);
+        assert.deepEqual<ReadonlyUint8Array>(result.returnData().data(), expected);
     }
 
     it('G1 add: G + 2G == 3G', async () => {
