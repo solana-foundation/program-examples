@@ -9,6 +9,11 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
+        },
+        "./reveal-context": {
+            "types": "./dist/reveal-context.d.ts",
+            "import": "./dist/reveal-context.js",
+            "require": "./dist/reveal-context.cjs"
         }
     },
     "files": [
@@ -22,6 +27,7 @@
     },
     "dependencies": {
         "@collectorcrypt/ecvrf": "^0.1.1",
+        "@lightprotocol/stateless.js": "^0.23.3",
         "@noble/hashes": "^2.2.0",
         "@solana/kit-plugin-rpc": "^0.15.0",
         "@solana/kit-plugin-signer": "^0.13.0",

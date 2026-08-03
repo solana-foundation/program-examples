@@ -38,6 +38,17 @@ export default [
         },
     },
     {
+        // The reveal-context module bridges @lightprotocol/stateless.js's
+        // loosely-typed compressed-account/validity-proof results into kit,
+        // matching how scripts/ and webapp/ relax these rules at SDK boundaries.
+        files: ['clients/typescript/src/reveal-context.ts'],
+        rules: {
+            '@typescript-eslint/no-unsafe-argument': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+        },
+    },
+    {
         ignores: [
             '**/.claude/**',
             '**/.remember/**',

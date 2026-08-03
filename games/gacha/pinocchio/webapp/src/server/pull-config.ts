@@ -1,20 +1,32 @@
 import 'server-only';
 
-import { type Address, address } from '@solana/kit';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { gachaProgram } from '@solana/gacha';
+import {
+    type Address,
+    address,
+    createClient,
+    createKeyPairSignerFromBytes,
+    type KeyPairSigner,
+    type MicroLamports,
+} from '@solana/kit';
+import { solanaRpc } from '@solana/kit-plugin-rpc';
+import { signer } from '@solana/kit-plugin-signer';
 
 import { PullProcessError } from './pull-error';
 
+const PRIORITY_FEE_MICRO_LAMPORTS = 1_000n as MicroLamports;
+
 /** Validated private configuration for the pull orchestrator. */
 export interface PullServerConfig {
-    readonly operator: Keypair;
-    readonly pool: PublicKey;
+    readonly operator: KeyPairSigner;
+    /** Raw 64-byte operator secret; its first 32 bytes seed the ECVRF reveal. */
+    readonly operatorSecret: Uint8Array;
     readonly poolAddress: Address;
     readonly rpcUrl: string;
 }
 
 /** Loads and validates the private devnet pull configuration. */
-export function loadPullServerConfig(): PullServerConfig {
+export async function loadPullServerConfig(): Promise<PullServerConfig> {
     const rpcUrl = process.env.SOLANA_RPC_URL?.trim();
     const poolValue = process.env.GACHA_POOL_ADDRESS?.trim();
     const keypairValue = process.env.OPERATOR_KEYPAIR_BASE64?.trim();
@@ -44,8 +56,8 @@ export function loadPullServerConfig(): PullServerConfig {
 
     try {
         return {
-            operator: Keypair.fromSecretKey(secret),
-            pool: new PublicKey(poolValue),
+            operator: await createKeyPairSignerFromBytes(secret),
+            operatorSecret: secret,
             poolAddress: address(poolValue),
             rpcUrl,
         };
@@ -58,3 +70,19 @@ export function loadPullServerConfig(): PullServerConfig {
         );
     }
 }
+
+/** Builds the operator-signed kit client used across the pull pipeline. */
+export function createPullClient(config: PullServerConfig) {
+    return createClient()
+        .use(signer(config.operator))
+        .use(
+            solanaRpc({
+                rpcUrl: config.rpcUrl,
+                transactionConfig: { microLamportsPerComputeUnit: PRIORITY_FEE_MICRO_LAMPORTS },
+            }),
+        )
+        .use(gachaProgram());
+}
+
+/** The operator-signed kit client shared by validation and orchestration. */
+export type PullClient = ReturnType<typeof createPullClient>;

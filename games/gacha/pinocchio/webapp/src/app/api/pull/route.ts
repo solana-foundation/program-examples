@@ -1,8 +1,7 @@
-import { Connection } from '@solana/web3.js';
 import { NextResponse } from 'next/server';
 
 import { orchestratePull } from '@/server/orchestrate-pull';
-import { loadPullServerConfig } from '@/server/pull-config';
+import { createPullClient, loadPullServerConfig } from '@/server/pull-config';
 import { PullProcessError } from '@/server/pull-error';
 import { validateSignedBuy } from '@/server/validate-buy';
 
@@ -33,10 +32,10 @@ export async function POST(request: Request): Promise<NextResponse> {
                 false,
             );
         }
-        const config = loadPullServerConfig();
-        const connection = new Connection(config.rpcUrl, 'confirmed');
-        const buy = await validateSignedBuy(connection, config, body.buyer, body.signedBuyTransaction);
-        return NextResponse.json(await orchestratePull(connection, config, buy));
+        const config = await loadPullServerConfig();
+        const client = createPullClient(config);
+        const buy = await validateSignedBuy(client, config, body.buyer, body.signedBuyTransaction);
+        return NextResponse.json(await orchestratePull(client, config, buy));
     } catch (cause) {
         const error =
             cause instanceof PullProcessError
