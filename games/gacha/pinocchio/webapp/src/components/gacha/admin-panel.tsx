@@ -53,10 +53,15 @@ function InitCard({ onDone }: { onDone: () => void }) {
         }
         const parsed = weights
             .split(',')
-            .map(w => Number(w.trim()))
-            .filter(w => Number.isFinite(w));
-        if (parsed.length === 0 || parsed.length > MAX_TIERS || parsed.some(w => w <= 0)) {
-            toast.error(`Enter 1–${MAX_TIERS} positive tier weights`);
+            .map(w => w.trim())
+            .filter(w => w.length > 0)
+            .map(Number);
+        if (
+            parsed.length === 0 ||
+            parsed.length > MAX_TIERS ||
+            parsed.some(w => !Number.isInteger(w) || w <= 0)
+        ) {
+            toast.error(`Enter 1–${MAX_TIERS} positive whole-number tier weights`);
             return;
         }
         const padded = [...parsed, ...Array(MAX_TIERS - parsed.length).fill(0)];

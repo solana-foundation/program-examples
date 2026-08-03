@@ -73,6 +73,7 @@ export function Home() {
             <RevealDialog open={activePull !== null} onOpenChange={open => !open && setActivePull(null)}>
                 {activePull && (
                     <Reveal
+                        key={activePull}
                         pool={pool}
                         pullAddress={activePull}
                         onChange={() => void refresh()}

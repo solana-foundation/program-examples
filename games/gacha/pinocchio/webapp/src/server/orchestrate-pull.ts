@@ -130,6 +130,7 @@ async function settlePendingPull(
         context.outputQueue === context.authorityQueue
             ? [context.outputQueue]
             : [context.outputQueue, context.authorityQueue];
+    let lastError: unknown;
     for (const outputQueue of candidates) {
         try {
             const { context: txContext } = await client.gacha.instructions
@@ -145,14 +146,15 @@ async function settlePendingPull(
                 })
                 .sendTransaction();
             return txContext.signature;
-        } catch {
-            // Some Light contexts require the authority queue as the output queue.
+        } catch (error) {
+            lastError = error;
         }
     }
+    const detail = lastError instanceof Error ? lastError.message : String(lastError);
     throw new PullProcessError(
         'settle',
         'settle_failed',
-        'The reveal transaction failed. Retry to resume from the pull’s on-chain state.',
+        `The reveal transaction failed: ${detail}. Retry to resume from the pull’s on-chain state.`,
         true,
     );
 }
