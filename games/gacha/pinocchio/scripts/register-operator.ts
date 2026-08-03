@@ -36,8 +36,9 @@ import {
     bn,
     createRpc,
     deriveAddressSeedV2,
-    deriveAddressV2,
     featureFlags,
+    getBatchAddressTreeInfo,
+    hashvToBn254FieldSizeBeU8Array,
     PackedAccounts,
     selectStateTreeInfo,
     SystemAccountMetaConfig,
@@ -50,6 +51,7 @@ import {
     address,
     createClient,
     createKeyPairSignerFromBytes,
+    getAddressDecoder,
     getAddressEncoder,
     getU8Encoder,
     getU16Encoder,
@@ -60,6 +62,11 @@ import {
 } from '@solana/kit';
 import { solanaRpc } from '@solana/kit-plugin-rpc';
 import { signer } from '@solana/kit-plugin-signer';
+// The Light `PackedAccounts` builder for a direct cc-vrf call needs the cc-vrf
+// program as a web3.js `PublicKey` (`SystemAccountMetaConfig.new` calls
+// `.toBuffer()` on it), and `@lightprotocol/stateless.js` exports no `PublicKey`
+// factory. This is the only remaining web3.js use; every address elsewhere is a
+// kit `Address` or a stateless-returned `PublicKey`.
 import { PublicKey } from '@solana/web3.js';
 
 import { loadWebappEnv } from './load-webapp-env.js';
@@ -77,10 +84,11 @@ const FUND_SOL = Number(process.env.FUND_SOL ?? '0.5');
 const MIN_OPERATOR_SOL = 0.3;
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
-const CC_VRF_PROGRAM_ID = new PublicKey('ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ');
 const CC_VRF_PROGRAM_ADDRESS = address('ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ');
+const CC_VRF_PROGRAM_ID = addressToBytes(CC_VRF_PROGRAM_ADDRESS);
+const CC_VRF_PROGRAM_PUBKEY = new PublicKey('ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ');
 const SYSTEM_PROGRAM_ADDRESS = address('11111111111111111111111111111111');
-const ADDRESS_TREE_V2 = new PublicKey(batchAddressTree);
+const ADDRESS_TREE_V2 = addressToBytes(address(batchAddressTree));
 const AUTHORITY_SEED = new TextEncoder().encode('vrf_authority');
 
 /** RFC 9381 §7.5 IANA suite identifier (ECVRF-EDWARDS25519-SHA512-TAI). */
@@ -172,9 +180,10 @@ function loadOrCreateOperatorSecret(): Uint8Array {
     return secretKey;
 }
 
-function deriveAuthorityAddress(ownerBytes: Uint8Array, label: Uint8Array): PublicKey {
+/** V2 compressed address: `keccak256(seed || addressTree || programId)` reduced into BN254. */
+function deriveAuthorityAddress(ownerBytes: Uint8Array, label: Uint8Array): Uint8Array {
     const seed = deriveAddressSeedV2([AUTHORITY_SEED, ownerBytes, label]);
-    return deriveAddressV2(seed, ADDRESS_TREE_V2, CC_VRF_PROGRAM_ID);
+    return hashvToBn254FieldSizeBeU8Array([seed, ADDRESS_TREE_V2, CC_VRF_PROGRAM_ID]);
 }
 
 type StatelessRpc = ReturnType<typeof createRpc>;
@@ -189,18 +198,19 @@ const vrfAuthorityFrozenOffset = 32 /* owner */ + 32 /* pk */ + 1; /* suite */
 async function buildInitAuthorityInstruction(
     rpc: StatelessRpc,
     operator: KeyPairSigner,
-    authorityAddress: PublicKey,
+    authorityBytes: Uint8Array,
     pk: Uint8Array,
     label: Uint8Array,
 ): Promise<Instruction> {
+    const addressTreeInfo = getBatchAddressTreeInfo();
     const proofRes = await rpc.getValidityProofV0(
         [],
-        [{ address: bn(authorityAddress.toBytes()), queue: ADDRESS_TREE_V2, tree: ADDRESS_TREE_V2 }],
+        [{ address: bn(authorityBytes), queue: addressTreeInfo.queue, tree: addressTreeInfo.tree }],
     );
     const stateTreeInfo = selectStateTreeInfo(await rpc.getStateTreeInfos());
 
-    const remaining = PackedAccounts.newWithSystemAccountsV2(SystemAccountMetaConfig.new(CC_VRF_PROGRAM_ID));
-    const addressMtIndex = remaining.insertOrGet(ADDRESS_TREE_V2);
+    const remaining = PackedAccounts.newWithSystemAccountsV2(SystemAccountMetaConfig.new(CC_VRF_PROGRAM_PUBKEY));
+    const addressMtIndex = remaining.insertOrGet(addressTreeInfo.tree);
     const outputStateTreeIndex = remaining.insertOrGet(stateTreeInfo.queue);
     const remainingMetas = remaining.toAccountMetas().remainingAccounts;
 
@@ -249,7 +259,7 @@ async function buildFreezeAuthorityInstruction(
     );
     const stateTreeInfo = selectStateTreeInfo(await rpc.getStateTreeInfos());
 
-    const remaining = PackedAccounts.newWithSystemAccountsV2(SystemAccountMetaConfig.new(CC_VRF_PROGRAM_ID));
+    const remaining = PackedAccounts.newWithSystemAccountsV2(SystemAccountMetaConfig.new(CC_VRF_PROGRAM_PUBKEY));
     const merkleTreePubkeyIndex = remaining.insertOrGet(account.treeInfo.tree);
     const queuePubkeyIndex = remaining.insertOrGet(account.treeInfo.queue);
     const outputStateTreeIndex = remaining.insertOrGet(stateTreeInfo.queue);
@@ -281,8 +291,8 @@ async function buildFreezeAuthorityInstruction(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchAuthorityAccount(rpc: StatelessRpc, authorityAddress: PublicKey): Promise<any> {
-    const account = await rpc.getCompressedAccount(bn(authorityAddress.toBytes()));
+async function fetchAuthorityAccount(rpc: StatelessRpc, authorityBytes: Uint8Array): Promise<any> {
+    const account = await rpc.getCompressedAccount(bn(authorityBytes));
     if (!account?.data) return null;
     return account;
 }
@@ -324,14 +334,14 @@ async function main(): Promise<void> {
     forceLightV2();
     const rpc = createRpc(rpcUrl, rpcUrl, rpcUrl);
 
-    const authorityAddress = deriveAuthorityAddress(addressToBytes(operatorSigner.address), label);
+    const authorityBytes = deriveAuthorityAddress(addressToBytes(operatorSigner.address), label);
 
-    let account = await fetchAuthorityAccount(rpc, authorityAddress);
+    let account = await fetchAuthorityAccount(rpc, authorityBytes);
     if (!account) {
-        const ix = await buildInitAuthorityInstruction(rpc, operatorSigner, authorityAddress, pk, label);
+        const ix = await buildInitAuthorityInstruction(rpc, operatorSigner, authorityBytes, pk, label);
         const { context } = await operatorClient.sendTransaction([ix]);
         console.log(`  init_authority: ${context.signature}`);
-        account = await fetchAuthorityAccount(rpc, authorityAddress);
+        account = await fetchAuthorityAccount(rpc, authorityBytes);
     } else {
         console.log('  authority already registered');
     }
@@ -345,7 +355,7 @@ async function main(): Promise<void> {
         const ix = await buildFreezeAuthorityInstruction(rpc, operatorSigner, account, authorityData);
         const { context } = await operatorClient.sendTransaction([ix]);
         console.log(`  freeze_authority: ${context.signature}`);
-        account = await fetchAuthorityAccount(rpc, authorityAddress);
+        account = await fetchAuthorityAccount(rpc, authorityBytes);
         if (!account) throw new Error('authority not found after freeze_authority');
         frozen = Uint8Array.from(account.data.data)[vrfAuthorityFrozenOffset] === 1;
     } else {
@@ -356,7 +366,7 @@ async function main(): Promise<void> {
 
     console.log('\n✓ Operator registered and frozen in cc-vrf');
     console.log(`  operator:          ${operatorSigner.address}`);
-    console.log(`  authority address: ${authorityAddress.toBase58()}`);
+    console.log(`  authority address: ${getAddressDecoder().decode(authorityBytes)}`);
     console.log(`  label:             ${labelText}`);
     console.log(`  frozen:            ${frozen}`);
     console.log('\nCreate the pool with this operator:');

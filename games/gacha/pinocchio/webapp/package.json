@@ -12,8 +12,6 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@collectorcrypt/vrf-client": "^0.1.5",
-        "@coral-xyz/anchor": "^0.32.1",
         "@lightprotocol/stateless.js": "^0.23.3",
         "@radix-ui/react-dialog": "^1.1.23",
         "@radix-ui/react-dropdown-menu": "^2.1.24",
@@ -25,7 +23,6 @@
         "@solana/kit-plugin-signer": "^0.13.0",
         "@solana/kit-plugin-wallet": "^0.14.0",
         "@solana/react": "^7.0.0",
-        "@solana/web3.js": "^1.98.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-react": "^1.28.0",
