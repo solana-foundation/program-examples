@@ -40,7 +40,7 @@ function InitCard({ onDone }: { onDone: () => void }) {
     const [label, setLabel] = useState('gacha-demo');
     const [feeSol, setFeeSol] = useState('0.05');
     const [deadline, setDeadline] = useState('300');
-    const [weights, setWeights] = useState('70, 25, 5');
+    const [weights, setWeights] = useState('28, 23, 18, 14, 9, 4, 3, 1');
 
     async function submit() {
         if (!signer) return;
@@ -113,7 +113,11 @@ function InitCard({ onDone }: { onDone: () => void }) {
                         <Input value={deadline} onChange={e => setDeadline(e.target.value)} type="number" min="0" />
                     </Labeled>
                     <Labeled label={`Tier weights (max ${MAX_TIERS})`}>
-                        <Input value={weights} onChange={e => setWeights(e.target.value)} placeholder="70, 25, 5" />
+                        <Input
+                            value={weights}
+                            onChange={e => setWeights(e.target.value)}
+                            placeholder="28, 23, 18, 14, 9, 4, 3, 1"
+                        />
                     </Labeled>
                 </div>
                 <Button className="w-full" onClick={() => void submit()} disabled={isSending}>

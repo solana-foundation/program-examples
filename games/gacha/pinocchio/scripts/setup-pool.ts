@@ -15,7 +15,7 @@
  *   LABEL            cc-vrf authority label (default "gacha-demo")
  *   ENTRY_FEE_SOL    entry fee per pull in SOL (default 0.05)
  *   DEADLINE_SLOTS   refund deadline in slots (default 300)
- *   WEIGHTS          comma-separated tier weights (default "70,25,5")
+ *   WEIGHTS          comma-separated tier weights (default "28,23,18,14,9,4,3,1")
  *
  * Run: `RPC_URL=… OPERATOR_PUBKEY=… pnpm exec tsx scripts/setup-pool.ts`
  */
@@ -48,7 +48,7 @@ async function main() {
         .use(gachaProgram());
     const admin = client.payer;
 
-    const weights = (process.env.WEIGHTS ?? '70,25,5')
+    const weights = (process.env.WEIGHTS ?? '28,23,18,14,9,4,3,1')
         .split(',')
         .map(w => Number(w.trim()))
         .filter(w => Number.isFinite(w) && w > 0);
