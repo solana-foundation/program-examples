@@ -56,11 +56,7 @@ function InitCard({ onDone }: { onDone: () => void }) {
             .map(w => w.trim())
             .filter(w => w.length > 0)
             .map(Number);
-        if (
-            parsed.length === 0 ||
-            parsed.length > MAX_TIERS ||
-            parsed.some(w => !Number.isInteger(w) || w <= 0)
-        ) {
+        if (parsed.length === 0 || parsed.length > MAX_TIERS || parsed.some(w => !Number.isInteger(w) || w <= 0)) {
             toast.error(`Enter 1–${MAX_TIERS} positive whole-number tier weights`);
             return;
         }

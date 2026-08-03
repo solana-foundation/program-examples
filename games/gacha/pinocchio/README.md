@@ -53,7 +53,7 @@ for the full trust model, including cc-vrf trust caveats.
 | `clients/rust/`                  | Codama Rust client (`gacha-client`)                                         |
 | `scripts/`                       | Client generation + off-chain operator demo                                 |
 | `idl/`                           | Committed Codama IDL                                                        |
-| `webapp/`                        | Next.js webapp                                                                |
+| `webapp/`                        | Next.js webapp                                                              |
 
 ## Quick start
 

@@ -252,7 +252,8 @@ export function SimdRevealStage({
                                         </Button>
                                     ) : (
                                         <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm text-muted-foreground">
-                                            <CircleCheck className="size-4" aria-hidden="true" /> Reveal settled on-chain
+                                            <CircleCheck className="size-4" aria-hidden="true" /> Reveal settled
+                                            on-chain
                                         </span>
                                     )}
                                     <Button asChild variant="outline">

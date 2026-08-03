@@ -12,8 +12,8 @@ one — including the operator — can predict an outcome before the buy lands, 
 every reveal is publicly verifiable off-chain. Unsettled pulls are refundable after
 a deadline.
 
-| Framework | Path |
-| --- | --- |
+| Framework | Path                         |
+| --------- | ---------------------------- |
 | Pinocchio | [`./pinocchio`](./pinocchio) |
 
 The Pinocchio example is a self-contained nested workspace: it pins its own toolchain
