@@ -22,19 +22,33 @@ const G2_TWO_GENERATOR =
 const G2_THREE_GENERATOR =
     '1014772f57bb9742735191cd5dcfe4ebbc04156b6878a0a7c9824f32ffb66e8506064e784db10e9051e52826e192715e8d7e478cb09a5e0012defa0694fbc7f5021e2335f3354bb7922ffcc2f38d3323dd9453ac49b55441452aeaca147711b2058e1d5681b5b9e0074b0f9c8d2c68a069b920d74521e79765036d57666c5597';
 
+// Aggregate BLS vectors (message "approve proposal #42", secrets 1, 2, 3), from
+// the crypto-primitives reference implementation. The three pubkeys are the
+// generator multiples above.
+const NEGATED_MESSAGE_HASH =
+    '093cccf0e7508f50d86197799d553d23be9a52fecf9fa7d309f3f6a6a0bae1dd25592fd60d368265921cb7232eec3492210e46b4b95682469e7590b0d2df6f28';
+const AGG_SIG_ALL =
+    '06a6497a71f97597f1acf925b1f67eca5b5dd8011f7140e08f484e57dc79bff61b8268216fa30b6505352cdde4fc0d71a005296166f81bfe8edbde2352a6abbf';
+const AGG_SIG_FIRST_TWO =
+    '29da90779ff721fffa657af0a02eb50fcb18cc8176e4d63127827a1767d69c7e227c651364e066d84349de32d97fd6b7f423a1e2b9a162ba061337d5a29e9303';
+
 const IX_G2_ADD = 0;
 const IX_G2_MUL = 1;
+const IX_AGGREGATE_VERIFY = 2;
+
+const ERR_INVALID_INPUT_LENGTH = 'InstructionErrorCustom { code: 0 }';
+const ERR_AGGREGATE_VERIFY_FAILED = 'InstructionErrorCustom { code: 3 }';
 
 const hex = (s: string) => Uint8Array.from(Buffer.from(s, 'hex'));
 
-describe('alt-bn128-g2', () => {
+describe('bn254', () => {
     const svm = new LiteSVM();
     let programId: Address;
     let payer: KeyPairSigner;
 
     before(async () => {
         programId = (await generateKeyPairSigner()).address;
-        svm.addProgramFromFile(programId, 'tests/fixtures/alt_bn128_g2_pinocchio_program.so');
+        svm.addProgramFromFile(programId, 'tests/fixtures/bn254_pinocchio_program.so');
 
         payer = await generateKeyPairSigner();
         svm.airdrop(payer.address, lamports(1_000_000_000n));
@@ -58,6 +72,15 @@ describe('alt-bn128-g2', () => {
         return result;
     }
 
+    const verifyInput = (aggSig: string) =>
+        new Uint8Array([
+            ...hex(aggSig),
+            ...hex(NEGATED_MESSAGE_HASH),
+            ...hex(G2_GENERATOR),
+            ...hex(G2_TWO_GENERATOR),
+            ...hex(G2_THREE_GENERATOR),
+        ]);
+
     it('adds two G2 points: G + 2G == 3G', async () => {
         const result = await send(IX_G2_ADD, new Uint8Array([...hex(G2_GENERATOR), ...hex(G2_TWO_GENERATOR)]));
 
@@ -74,10 +97,23 @@ describe('alt-bn128-g2', () => {
         assert.deepEqual(result.returnData().data(), hex(G2_THREE_GENERATOR));
     });
 
+    it('verifies an aggregate signature from all signers with one pairing check', async () => {
+        const result = await send(IX_AGGREGATE_VERIFY, verifyInput(AGG_SIG_ALL));
+
+        assert(result instanceof TransactionMetadata, `transaction failed: ${result.toString()}`);
+    });
+
+    it('rejects an aggregate signature missing one signer', async () => {
+        const result = await send(IX_AGGREGATE_VERIFY, verifyInput(AGG_SIG_FIRST_TWO));
+
+        assert(result instanceof FailedTransactionMetadata, 'expected the transaction to fail');
+        assert.include(String(result.err()), ERR_AGGREGATE_VERIFY_FAILED);
+    });
+
     it('rejects input that is not two whole G2 points', async () => {
         const result = await send(IX_G2_ADD, new Uint8Array(255));
 
         assert(result instanceof FailedTransactionMetadata, 'expected the transaction to fail');
-        assert.include(String(result.err()), 'InstructionErrorCustom { code: 0 }');
+        assert.include(String(result.err()), ERR_INVALID_INPUT_LENGTH);
     });
 });

@@ -1,12 +1,12 @@
 {
-  "name": "bls-multisig-pinocchio",
+  "name": "bn254-pinocchio",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "mocha --import=tsx -t 1000000 ./tests/bls-multisig.test.ts",
+    "test": "mocha --import=tsx -t 1000000 ./tests/bn254.test.ts",
     "build-and-test": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./tests/fixtures && pnpm test",
     "build": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./program/target/so",
-    "deploy": "solana program deploy ./program/target/so/bls_multisig_pinocchio_program.so"
+    "deploy": "solana program deploy ./program/target/so/bn254_pinocchio_program.so"
   },
   "dependencies": {
     "@solana/kit": "^7.0.0"

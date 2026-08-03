@@ -1,5 +1,5 @@
 [package]
-name = "bls-key-registry-pinocchio-program"
+name = "bn254-pinocchio-program"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,7 +18,6 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"
 
 [dev-dependencies]
 litesvm = "0.15"
-solana-account = "4.3"
 solana-instruction = "3.4"
 solana-keypair = "3.1"
 solana-native-token = "3.0"

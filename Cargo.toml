@@ -47,11 +47,8 @@ members = [
     "basics/transfer-sol/asm",
 
     # cryptography
-    "cryptography/alt-bn128-g2/pinocchio/program",
-    "cryptography/bls-key-registry/pinocchio/program",
-    "cryptography/bls-multisig/pinocchio/program",
     "cryptography/bls12-381/pinocchio/program",
-    "cryptography/encrypted-ballot/pinocchio/program",
+    "cryptography/bn254/pinocchio/program",
 
     # tokens
     "tokens/create-token/native/program",

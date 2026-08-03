@@ -202,20 +202,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
-name = "alt-bn128-g2-pinocchio-program"
-version = "0.1.0"
-dependencies = [
- "litesvm 0.15.0",
- "pinocchio",
- "solana-address 2.6.1",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-signer",
- "solana-transaction 4.1.5",
-]
-
-[[package]]
 name = "anchor-attribute-access-control"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -802,36 +788,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bls-key-registry-pinocchio-program"
-version = "0.1.0"
-dependencies = [
- "litesvm 0.15.0",
- "pinocchio",
- "solana-account 4.3.1",
- "solana-address 2.6.1",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-signer",
- "solana-transaction 4.1.5",
-]
-
-[[package]]
-name = "bls-multisig-pinocchio-program"
-version = "0.1.0"
-dependencies = [
- "litesvm 0.15.0",
- "pinocchio",
- "solana-account 4.3.1",
- "solana-address 2.6.1",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-signer",
- "solana-transaction 4.1.5",
-]
-
-[[package]]
 name = "bls12-381-pinocchio-program"
 version = "0.1.0"
 dependencies = [
@@ -871,6 +827,20 @@ dependencies = [
  "rand_core 0.6.4",
  "serde",
  "subtle",
+]
+
+[[package]]
+name = "bn254-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "litesvm 0.15.0",
+ "pinocchio",
+ "solana-address 2.6.1",
+ "solana-instruction",
+ "solana-keypair",
+ "solana-native-token",
+ "solana-signer",
+ "solana-transaction 4.1.5",
 ]
 
 [[package]]
@@ -1525,21 +1495,6 @@ dependencies = [
  "sec1",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "encrypted-ballot-pinocchio-program"
-version = "0.1.0"
-dependencies = [
- "litesvm 0.15.0",
- "pinocchio",
- "solana-account 4.3.1",
- "solana-address 2.6.1",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-signer",
- "solana-transaction 4.1.5",
 ]
 
 [[package]]
