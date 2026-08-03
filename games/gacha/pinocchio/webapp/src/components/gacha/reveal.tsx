@@ -12,14 +12,14 @@ import type { PoolView } from '@/hooks/use-pool';
 import { useSend } from '@/hooks/use-send';
 import { useWallet } from '@/hooks/use-wallet';
 import { useCluster } from '@/lib/cluster-context';
-import { findBuyerAta, isPullRefundable, pullRefundSlot, PullStatus, rarityColor, rarityLabel } from '@/lib/gacha';
+import { isPullRefundable, pullRefundSlot, PullStatus, rarityColor, rarityLabel } from '@/lib/gacha';
 import { simdCardForTier } from '@/lib/simd-cards';
 import { clusterSupportsReveal } from '@/lib/solana-client';
 
 /**
  * The pack-opening experience: while the pull is pending it plays the "opening"
  * animation and polls on-chain; the operator's settle flips it to a revealed
- * rarity, which anyone can then claim as the prize NFT.
+ * rarity and minted prize without another user action.
  */
 export function Reveal({
     pool,
@@ -32,12 +32,12 @@ export function Reveal({
     onChange?: () => void;
     onRefunded?: () => void;
 }) {
-    const { client, signer } = useWallet();
+    const { signer } = useWallet();
     const { cluster } = useCluster();
     const { run, isSending } = useSend();
     const { mutate } = useSWRConfig();
 
-    const { pull, refresh } = usePull(pullAddress, { watch: true });
+    const { pull } = usePull(pullAddress, { watch: true });
     const status = pull?.status ?? PullStatus.Pending;
     const { slot } = useCurrentSlot(status === PullStatus.Pending ? 5_000 : 0);
 
@@ -58,24 +58,6 @@ export function Reveal({
                 title="Preparing your reveal…"
             />
         );
-    }
-
-    async function claim() {
-        if (!signer || !pull) return;
-        const [mint] = await client.gacha.pdas.prizeMint({ pull: pullAddress });
-        const buyerAta = await findBuyerAta(pull.buyer, mint);
-        const ix = await client.gacha.instructions.claimPrize({
-            payer: signer,
-            pool: pull.pool,
-            pull: pullAddress,
-            buyer: pull.buyer,
-            buyerAta,
-        });
-        const sig = await run(ix, 'Prize claimed');
-        if (sig) {
-            await refresh();
-            onChange?.();
-        }
     }
 
     async function refund() {
@@ -148,8 +130,6 @@ export function Reveal({
             autoReveal
             card={card}
             isClaimed={status === PullStatus.Claimed}
-            isClaiming={isSending}
-            onClaim={() => void claim()}
             rarity={rarity}
         />
     );

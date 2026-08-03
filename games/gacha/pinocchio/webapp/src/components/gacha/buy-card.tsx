@@ -99,54 +99,69 @@ export function BuyCard({ pool, onOpened, onProcessing, onProcessingFailed }: Bu
     }
 
     return (
-        <Card className="overflow-hidden">
-            <CardHeader>
-                <p className="font-mono text-xs tracking-[0.16em] text-muted-foreground uppercase">First edition</p>
-                <CardTitle className="text-xl">SIMD All-Stars</CardTitle>
-                <CardDescription>
-                    One proposal-inspired character per pack. Your wallet mixes fresh entropy into the VRF input, so
-                    nobody knows the rarity before your buy lands.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="mx-auto w-full max-w-[180px] overflow-hidden rounded-xl border bg-secondary shadow-sm">
-                    <img
-                        src="/cards/simd/simd-all-stars-pack.jpg"
-                        alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
-                        className="aspect-[2/3] h-auto w-full object-cover"
-                    />
+        <Card className="gap-0 overflow-hidden py-0">
+            <div className="grid md:grid-cols-[minmax(240px,0.8fr)_minmax(320px,1fr)]">
+                <div className="flex min-h-[390px] items-center justify-center bg-secondary/40 p-8">
+                    <div className="w-full max-w-[220px] overflow-hidden rounded-xl border bg-secondary shadow-xl">
+                        <img
+                            src="/cards/simd/simd-all-stars-pack.jpg"
+                            alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
+                            className="aspect-[2/3] h-auto w-full object-cover"
+                        />
+                    </div>
                 </div>
-                <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={() => void open()}
-                    disabled={stage !== 'idle' || cluster !== 'devnet'}
-                >
-                    <Dices />
-                    {stage === 'signing'
-                        ? 'Approve in wallet…'
-                        : stage === 'processing'
-                          ? 'Revealing and minting…'
-                          : `Open one pack · ${formatSol(pool.pool.entryFee)} SOL`}
-                </Button>
-                {cluster !== 'devnet' && (
-                    <p className="text-sm text-muted-foreground">Automated reveal and mint is currently devnet-only.</p>
-                )}
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                {retry && (
-                    <Button
-                        className="w-full"
-                        variant="outline"
-                        onClick={() => void process(retry.transaction, retry.buyer, retry.pull)}
-                        disabled={stage !== 'idle'}
-                    >
-                        Retry reveal and mint
-                    </Button>
-                )}
-                <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                    <ShieldCheck className="size-3.5" /> Provably fair · every pull is independently verifiable
-                </p>
-            </CardContent>
+                <div className="flex flex-col justify-center">
+                    <CardHeader className="pb-4">
+                        <p className="font-mono text-xs tracking-[0.16em] text-muted-foreground uppercase">
+                            First edition
+                        </p>
+                        <CardTitle className="text-balance text-3xl">SIMD All-Stars</CardTitle>
+                        <CardDescription className="max-w-lg text-pretty leading-relaxed">
+                            One proposal-inspired character per pack. Your wallet mixes fresh entropy into the VRF
+                            input, so nobody knows the rarity before your buy lands.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pb-8">
+                        <Button
+                            className="w-full"
+                            size="lg"
+                            onClick={() => void open()}
+                            disabled={stage !== 'idle' || cluster !== 'devnet'}
+                        >
+                            <Dices />
+                            {stage === 'signing'
+                                ? 'Approve in wallet…'
+                                : stage === 'processing'
+                                  ? 'Revealing and minting…'
+                                  : `Open one pack · ${formatSol(pool.pool.entryFee)} SOL`}
+                        </Button>
+                        {cluster !== 'devnet' && (
+                            <p className="text-sm text-muted-foreground">
+                                Automated reveal and mint is currently devnet-only.
+                            </p>
+                        )}
+                        {error && (
+                            <p className="text-sm text-destructive" role="alert">
+                                {error}
+                            </p>
+                        )}
+                        {retry && (
+                            <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => void process(retry.transaction, retry.buyer, retry.pull)}
+                                disabled={stage !== 'idle'}
+                            >
+                                Retry reveal and mint
+                            </Button>
+                        )}
+                        <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                            <ShieldCheck className="size-3.5" aria-hidden="true" /> Provably fair · every pull is
+                            independently verifiable
+                        </p>
+                    </CardContent>
+                </div>
+            </div>
         </Card>
     );
 }

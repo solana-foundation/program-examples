@@ -77,8 +77,8 @@ type SimdRevealStageProps = {
     claimLabel?: string;
     claimedLabel?: string;
     isClaimed: boolean;
-    isClaiming: boolean;
-    onClaim: () => void;
+    isClaiming?: boolean;
+    onClaim?: () => void;
     rarity: string;
     settledLabel?: string;
 };
@@ -91,7 +91,7 @@ export function SimdRevealStage({
     claimLabel = 'Claim prize NFT',
     claimedLabel = 'Prize NFT minted to the buyer',
     isClaimed,
-    isClaiming,
+    isClaiming = false,
     onClaim,
     rarity,
     settledLabel = 'Settled on-chain',
@@ -239,10 +239,14 @@ export function SimdRevealStage({
                                         <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm text-muted-foreground">
                                             <Gift className="size-4" aria-hidden="true" /> {claimedLabel}
                                         </span>
-                                    ) : (
+                                    ) : onClaim ? (
                                         <Button onClick={onClaim} disabled={isClaiming}>
                                             <Gift aria-hidden="true" /> {isClaiming ? 'Claiming…' : claimLabel}
                                         </Button>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm text-muted-foreground">
+                                            <CircleCheck className="size-4" aria-hidden="true" /> Reveal settled on-chain
+                                        </span>
                                     )}
                                     <Button asChild variant="outline">
                                         <a href={card.href} target="_blank" rel="noreferrer">
