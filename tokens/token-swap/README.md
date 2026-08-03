@@ -238,7 +238,7 @@ TRDR, this code implements the logic to deposit liquidity into the pool, ensurin
 
 https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/swap_exact_tokens_for_tokens.rs#L1-L27
 
-This code defines a function named **`swap_exact_tokens_for_tokens`** that allows swapping tokens A for tokens B (and vice versa) in the AMM pool. It takes five parameters:
+This code defines a function named **`swap_exact_tokens_for_tokens`** that allows swapping tokens A for tokens B (and vice versa) in the AMM pool. It takes four parameters:
 
 1. **`ctx`**: The **`Context<SwapExactTokensForTokens>`** parameter contains the context data required to execute the function.
 2. **`swap_a`**: The **`bool`** parameter indicates whether tokens A should be swapped for tokens B (**`true`**) or tokens B should be swapped for tokens A (**`false`**).
