@@ -1,6 +1,7 @@
-import { Dices, FlaskConical, RotateCcw, WifiOff } from 'lucide-react';
-import { useState } from 'react';
+import { Dices, FlaskConical, Maximize2, RotateCcw, WifiOff } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 
+import { RevealDialog } from '@/components/gacha/reveal-dialog';
 import { PendingPackStage, SimdRevealStage } from '@/components/gacha/simd-reveal-stage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +32,7 @@ export function SimdPreview() {
     const [mode, setMode] = useState<PreviewMode>('settled');
     const [isClaimed, setIsClaimed] = useState(false);
     const [previewKey, setPreviewKey] = useState(0);
+    const [modalOpen, setModalOpen] = useState(false);
     const card = SIMD_CARDS[cardIndex] ?? SIMD_CARDS[0]!;
     const rarity = PREVIEW_RARITIES[cardIndex] ?? PREVIEW_RARITIES[0];
 
@@ -40,6 +42,41 @@ export function SimdPreview() {
         setIsClaimed(false);
         setPreviewKey(value => value + 1);
     }
+
+    const stage: ReactNode =
+        mode === 'pending' ? (
+            <PendingPackStage
+                detail="184 slots until refund is available."
+                eyebrow="Waiting for operator"
+                message="The pull API settles and mints without another wallet approval. This view updates automatically when the transactions confirm."
+            />
+        ) : mode === 'refundable' ? (
+            <PendingPackStage
+                action={
+                    <Button onClick={() => resetPreview(cardIndex, 'pending')}>
+                        <RotateCcw aria-hidden="true" /> Simulate refund
+                    </Button>
+                }
+                detail="Settlement can still win the race until your refund confirms."
+                eyebrow="Operator timeout"
+                message="The operator did not settle within the configured window. You can now reclaim the entry fee and pull-account rent."
+                state="refundable"
+                title="Your pull is refundable."
+            />
+        ) : (
+            <SimdRevealStage
+                key={`${card.number}:${previewKey}:${modalOpen}`}
+                accentColor={rarity.accentColor}
+                card={card}
+                claimLabel="Simulate claim"
+                claimedLabel="Simulated claim complete — no NFT was minted"
+                isClaimed={isClaimed}
+                isClaiming={false}
+                onClaim={() => setIsClaimed(true)}
+                rarity={rarity.label}
+                settledLabel="Settled locally"
+            />
+        );
 
     return (
         <div className="min-h-dvh">
@@ -129,55 +166,28 @@ export function SimdPreview() {
                             >
                                 Refundable
                             </Button>
-                            {mode !== 'settled' && (
-                                <Button
-                                    size="sm"
-                                    className="sm:ml-auto"
-                                    onClick={() => resetPreview(cardIndex, 'settled')}
-                                >
-                                    Settle locally
+                            <div className="flex gap-2 sm:ml-auto">
+                                {mode !== 'settled' && (
+                                    <Button size="sm" onClick={() => resetPreview(cardIndex, 'settled')}>
+                                        Settle locally
+                                    </Button>
+                                )}
+                                <Button size="sm" variant="outline" onClick={() => setModalOpen(true)}>
+                                    <Maximize2 aria-hidden="true" /> Open in modal
                                 </Button>
-                            )}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <section className="mt-6" aria-label="SIMD pack reveal preview">
-                    {mode === 'pending' ? (
-                        <PendingPackStage
-                            detail="184 slots until refund is available."
-                            eyebrow="Waiting for operator"
-                            message="The pull API settles and mints without another wallet approval. This view updates automatically when the transactions confirm."
-                        />
-                    ) : mode === 'refundable' ? (
-                        <PendingPackStage
-                            action={
-                                <Button onClick={() => resetPreview(cardIndex, 'pending')}>
-                                    <RotateCcw aria-hidden="true" /> Simulate refund
-                                </Button>
-                            }
-                            detail="Settlement can still win the race until your refund confirms."
-                            eyebrow="Operator timeout"
-                            message="The operator did not settle within the configured window. You can now reclaim the entry fee and pull-account rent."
-                            state="refundable"
-                            title="Your pull is refundable."
-                        />
-                    ) : (
-                        <SimdRevealStage
-                            key={`${card.number}:${previewKey}`}
-                            accentColor={rarity.accentColor}
-                            card={card}
-                            claimLabel="Simulate claim"
-                            claimedLabel="Simulated claim complete — no NFT was minted"
-                            isClaimed={isClaimed}
-                            isClaiming={false}
-                            onClaim={() => setIsClaimed(true)}
-                            rarity={rarity.label}
-                            settledLabel="Settled locally"
-                        />
-                    )}
+                    {stage}
                 </section>
             </main>
+
+            <RevealDialog open={modalOpen} onOpenChange={setModalOpen}>
+                {modalOpen && stage}
+            </RevealDialog>
         </div>
     );
 }

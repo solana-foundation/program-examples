@@ -1,4 +1,5 @@
 //! Hand-built CPI to Collector Crypt's cc-vrf registry program.
+//! Src: https://github.com/collectorcrypt/cc-vrf
 //!
 //! cc-vrf is an Anchor program, but an Anchor instruction is just accounts plus
 //! borsh-encoded data behind an 8-byte discriminator, so a Pinocchio program can

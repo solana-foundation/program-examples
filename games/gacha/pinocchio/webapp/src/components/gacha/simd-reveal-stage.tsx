@@ -31,15 +31,19 @@ export function PendingPackStage({
     return (
         <Card className="gap-0 overflow-hidden py-0">
             <CardContent className="p-0">
-                <div className="grid md:grid-cols-[minmax(240px,0.8fr)_minmax(280px,1fr)]">
-                    <div className="simd-pending-arena flex min-h-[390px] items-center justify-center overflow-hidden p-8">
-                        <img
-                            src={PACK_IMAGE}
-                            alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
-                            className="simd-pack-arrival h-auto w-full max-w-[220px] select-none shadow-xl"
-                        />
+                <div className="grid md:grid-cols-[minmax(280px,0.9fr)_minmax(300px,1.05fr)]">
+                    <div className="simd-pending-arena simd-charging-arena relative flex min-h-[520px] items-center justify-center overflow-hidden p-8">
+                        <div className="simd-charge-aura" aria-hidden="true" />
+                        <div className="simd-charge-aura simd-charge-aura-delay" aria-hidden="true" />
+                        <div className="simd-charging-pack">
+                            <img
+                                src={PACK_IMAGE}
+                                alt="A sealed SIMD All-Stars trading-card pack with visible crimped edges"
+                                className="simd-charging-pack-image h-auto w-full max-w-[220px] select-none shadow-xl"
+                            />
+                        </div>
                     </div>
-                    <div className="flex flex-col justify-center p-7 sm:p-9">
+                    <div className="flex min-h-[520px] flex-col justify-center p-7 sm:p-9">
                         <span className="mb-5 flex size-10 items-center justify-center rounded-full bg-secondary text-primary">
                             {state === 'refundable' ? (
                                 <RotateCcw className="size-5" aria-hidden="true" />
@@ -100,6 +104,7 @@ export function SimdRevealStage({
     const [imageReady, setImageReady] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
     const revealTimer = useRef<number | undefined>(undefined);
+    const revealStarted = useRef(false);
     const isRevealed = phase === 'revealed';
 
     useEffect(() => {
@@ -112,8 +117,9 @@ export function SimdRevealStage({
         if (isRevealed) headingRef.current?.focus();
     }, [isRevealed]);
 
-    const revealCard = useCallback(() => {
-        if (!imageReady || phase !== 'sealed') return;
+    const beginReveal = useCallback(() => {
+        if (revealStarted.current) return;
+        revealStarted.current = true;
 
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             setPhase('revealed');
@@ -122,21 +128,22 @@ export function SimdRevealStage({
 
         setPhase('revealing');
         revealTimer.current = window.setTimeout(() => setPhase('revealed'), REVEAL_DURATION_MS);
-    }, [imageReady, phase]);
+    }, []);
 
-    useEffect(() => {
-        if (autoReveal) revealCard();
-    }, [autoReveal, revealCard]);
+    const handleImageReady = useCallback(() => {
+        setImageReady(true);
+        if (autoReveal) beginReveal();
+    }, [autoReveal, beginReveal]);
 
     return (
         <Card className="gap-0 overflow-hidden py-0">
             <div className="h-1.5 w-full" style={{ backgroundColor: accentColor }} />
             <CardContent className="p-0">
                 <div
-                    className="simd-reveal-stage grid md:grid-cols-[minmax(300px,0.95fr)_minmax(300px,1.05fr)]"
+                    className="simd-reveal-stage grid md:grid-cols-[minmax(280px,0.9fr)_minmax(300px,1.05fr)]"
                     data-phase={phase}
                 >
-                    <div className="simd-reveal-arena relative flex min-h-[530px] items-center justify-center overflow-hidden p-8">
+                    <div className="simd-reveal-arena relative flex min-h-[520px] items-center justify-center overflow-hidden p-8">
                         <div className="simd-reveal-ring" aria-hidden="true" />
                         <div className="simd-prize-card">
                             <img
@@ -145,8 +152,8 @@ export function SimdRevealStage({
                                 alt={isRevealed ? `${card.character}, the SIMD ${card.number} collectible card` : ''}
                                 aria-hidden={!isRevealed}
                                 className="h-full w-full object-cover"
-                                onLoad={() => setImageReady(true)}
-                                onError={() => setImageReady(true)}
+                                onLoad={handleImageReady}
+                                onError={handleImageReady}
                             />
                         </div>
 
@@ -163,7 +170,7 @@ export function SimdRevealStage({
                             <Button
                                 size="lg"
                                 className="absolute inset-x-auto bottom-7 min-w-44 shadow-lg"
-                                onClick={revealCard}
+                                onClick={beginReveal}
                                 disabled={!imageReady}
                             >
                                 <PackageOpen aria-hidden="true" />
@@ -180,7 +187,7 @@ export function SimdRevealStage({
                         )}
                     </div>
 
-                    <div className="flex min-h-[420px] flex-col justify-center p-7 sm:p-9">
+                    <div className="flex min-h-[520px] flex-col justify-center p-7 sm:p-9">
                         {!isRevealed ? (
                             <div className="simd-anticipation-copy">
                                 <p className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">

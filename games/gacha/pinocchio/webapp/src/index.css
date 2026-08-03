@@ -343,10 +343,103 @@ samp {
     animation: simd-copy-in 0.38s ease-out both;
 }
 
+@keyframes simd-charge-float {
+    0%,
+    100% {
+        transform: translate3d(0, 6px, 0) rotate(-0.6deg);
+    }
+
+    50% {
+        transform: translate3d(0, -10px, 0) rotate(0.6deg);
+    }
+}
+
+@keyframes simd-charge-shake {
+    0%,
+    60%,
+    100% {
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+
+    64% {
+        transform: translate3d(-2px, 0, 0) rotate(-1deg);
+    }
+
+    68% {
+        transform: translate3d(2px, 0, 0) rotate(1deg);
+    }
+
+    72% {
+        transform: translate3d(-3px, 0, 0) rotate(-1.4deg);
+    }
+
+    76% {
+        transform: translate3d(3px, 0, 0) rotate(1.4deg);
+    }
+
+    80% {
+        transform: translate3d(-2px, 0, 0) rotate(-1deg);
+    }
+
+    84% {
+        transform: translate3d(2px, 0, 0) rotate(0.8deg);
+    }
+
+    90% {
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+}
+
+@keyframes simd-charge-pulse {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    24% {
+        opacity: 0.55;
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.32);
+    }
+}
+
+.simd-charge-aura {
+    position: absolute;
+    width: 244px;
+    aspect-ratio: 2 / 3;
+    border: 2px solid oklch(0.8 0.17 165 / 0.55);
+    border-radius: 1rem;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: simd-charge-pulse 2.6s ease-out infinite;
+}
+
+.simd-charge-aura-delay {
+    animation-delay: 1.3s;
+}
+
+.simd-charging-pack {
+    position: relative;
+    will-change: transform;
+    animation: simd-charge-float 3.4s ease-in-out infinite;
+}
+
+.simd-charging-pack-image {
+    display: block;
+    will-change: transform;
+    animation: simd-charge-shake 2.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .hero-entrance,
     .simd-pack-arrival,
     .simd-card-copy,
+    .simd-charge-aura,
+    .simd-charging-pack,
+    .simd-charging-pack-image,
     .simd-reveal-stage[data-phase='revealing'] .simd-pack-top,
     .simd-reveal-stage[data-phase='revealing'] .simd-pack-body,
     .simd-reveal-stage[data-phase='revealing'] .simd-prize-card,
