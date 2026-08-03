@@ -9,14 +9,22 @@ pinocchio::entrypoint!(process_instruction);
 
 nostd_panic_handler!();
 
+/// Uncompressed big-endian G1 point: x ‖ y, 48 bytes each.
 pub const G1_POINT_SIZE: usize = 96;
+/// Uncompressed big-endian G2 point: two Fq2 coordinates, 4 × 48 bytes.
 pub const G2_POINT_SIZE: usize = 192;
+/// Big-endian scalar for point multiplication.
 pub const SCALAR_SIZE: usize = 32;
 
+/// `sol_curve_group_op` curve id for BLS12-381 G1; `0x80` selects big-endian encoding.
 const BLS12_381_G1: u64 = 5 | 0x80;
+/// `sol_curve_group_op` curve id for BLS12-381 G2; `0x80` selects big-endian encoding.
 const BLS12_381_G2: u64 = 6 | 0x80;
+/// `sol_curve_group_op` group op code: point addition.
 const ADD: u64 = 0;
+/// `sol_curve_group_op` group op code: point subtraction.
 const SUB: u64 = 1;
+/// `sol_curve_group_op` group op code: scalar multiplication (scalar ‖ point operands).
 const MUL: u64 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq)]

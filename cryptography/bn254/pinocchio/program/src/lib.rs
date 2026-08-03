@@ -9,17 +9,27 @@ pinocchio::entrypoint!(process_instruction);
 
 nostd_panic_handler!();
 
+/// Uncompressed big-endian G1 point: x ‖ y, 32 bytes each.
 pub const G1_POINT_SIZE: usize = 64;
+/// Uncompressed big-endian G2 point: two Fq2 coordinates, 4 × 32 bytes.
 pub const G2_POINT_SIZE: usize = 128;
+/// Big-endian scalar for point multiplication.
 pub const SCALAR_SIZE: usize = 32;
+/// G2 add input: left point ‖ right point.
 pub const G2_ADD_INPUT_SIZE: usize = G2_POINT_SIZE * 2;
+/// G2 mul input: point ‖ scalar.
 pub const G2_MUL_INPUT_SIZE: usize = G2_POINT_SIZE + SCALAR_SIZE;
 
+/// `sol_alt_bn128_group_op` op code: product-of-pairings check, big-endian.
 const ALT_BN128_PAIRING: u64 = 3;
+/// `sol_alt_bn128_group_op` op code: G2 addition, big-endian (SIMD-0302).
 const ALT_BN128_G2_ADD: u64 = 4;
+/// `sol_alt_bn128_group_op` op code: G2 scalar multiplication, big-endian (SIMD-0302).
 const ALT_BN128_G2_MUL: u64 = 6;
 
+/// Aggregate-verify input prefix: aggregate signature ‖ negated message hash.
 const VERIFY_HEADER: usize = G1_POINT_SIZE * 2;
+/// Pairing input: two (G1, G2) pairs.
 const PAIRING_INPUT: usize = (G1_POINT_SIZE + G2_POINT_SIZE) * 2;
 
 /// Canonical BN254 G2 generator, big-endian (EIP-197 encoding).
