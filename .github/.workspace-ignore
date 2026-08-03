@@ -7,6 +7,10 @@ basics/favorites/anchor/programs/favorites
 compression/cnft-burn/anchor/programs/cnft-burn
 compression/cnft-vault/anchor/programs/cnft-vault
 compression/cutils/anchor/programs/cutils
+games/gacha/pinocchio/clients/rust
+games/gacha/pinocchio/program
+games/gacha/pinocchio/tests/integration-tests
+games/gacha/pinocchio/tests/light-integration-tests
 games/world-cup/pinocchio/clients/rust
 games/world-cup/pinocchio/program
 games/world-cup/pinocchio/tests/integration-tests
