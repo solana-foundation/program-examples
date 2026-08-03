@@ -35,11 +35,7 @@ fn test_account_data() {
         city: "Solana Beach".as_bytes(),
     };
 
-    let ix = Instruction {
-        program_id,
-        accounts,
-        data: to_bytes(&data),
-    };
+    let ix = Instruction { program_id, accounts, data: to_bytes(&data) };
 
     let tx = Transaction::new_signed_with_payer(
         &[ix],
@@ -51,10 +47,7 @@ fn test_account_data() {
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
 
-    let address_info_account_data = &svm
-        .get_account(&address_info_account.pubkey())
-        .unwrap()
-        .data;
+    let address_info_account_data = &svm.get_account(&address_info_account.pubkey()).unwrap().data;
 
     let address_info = AddressInfo {
         name: &address_info_account_data[0..16],

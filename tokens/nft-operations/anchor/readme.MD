@@ -117,7 +117,7 @@ impl<'info> CreateCollection<'info> {
         let spl_metadata_program = &self.token_metadata_program.to_account_info();
 
         let seeds = &[
-            &b"authority"[..], 
+            &b"authority"[..],
             &[bumps.mint_authority]
         ];
         let signer_seeds = &[&seeds[..]];
@@ -139,9 +139,9 @@ impl<'info> CreateCollection<'info> {
                 share: 100,
             },
         ];
-        
+
         let metadata_account = CreateMetadataAccountV3Cpi::new(
-            spl_metadata_program, 
+            spl_metadata_program,
             CreateMetadataAccountV3CpiAccounts {
                 metadata,
                 mint,
@@ -163,8 +163,8 @@ impl<'info> CreateCollection<'info> {
                 },
                 is_mutable: true,
                 collection_details: Some(
-                    CollectionDetails::V1 { 
-                        size: 0 
+                    CollectionDetails::V1 {
+                        size: 0
                     }
                 )
             }
@@ -191,7 +191,7 @@ impl<'info> CreateCollection<'info> {
         );
         master_edition_account.invoke_signed(signer_seeds)?;
         msg!("Master Edition Account created");
-        
+
         Ok(())
     }
 }
@@ -204,7 +204,6 @@ The create collection method consists of 3 steps:
 - Create a metadata account for the mint account to store standardized data that can be understood by apps and marketplaces. This is achieved by performing a CPI to the Token Metadata Program. The mint authority needs to sign that CPI, therefore we use "invoke_signed" and pass in the seeds of our authority PDA
 
 - Create a master edition account for the mint account by performing a CPI to the Token Metadata Program. That will ensure that the special characteristics on Non-Fungible Tokens are met. It will also transfer both the mint authority and the freeze authority to the Master Edition PDA. The mint authority needs to sign that CPI, therefore we use "invoke_signed" and pass in the seeds of our authority PDA
-
 
 More information on Token Metadata can be found at https://developers.metaplex.com/token-metadata
 
@@ -300,7 +299,7 @@ impl<'info> MintNFT<'info> {
         let spl_metadata_program = &self.token_metadata_program.to_account_info();
 
         let seeds = &[
-            &b"authority"[..], 
+            &b"authority"[..],
             &[bumps.mint_authority]
         ];
         let signer_seeds = &[&seeds[..]];
@@ -333,7 +332,7 @@ impl<'info> MintNFT<'info> {
                 update_authority: (authority, true),
                 system_program,
                 rent: None,
-            }, 
+            },
             CreateMetadataAccountV3InstructionArgs {
                 data: DataV2 {
                     name: "Mint Test".to_string(),
@@ -373,7 +372,7 @@ impl<'info> MintNFT<'info> {
         master_edition_account.invoke_signed(signer_seeds)?;
 
         Ok(())
-        
+
     }
 }
 ```
@@ -386,10 +385,10 @@ Since a collection NFT is just a regular NFT with "special" metadata, again you 
 
 - Create a master edition account for the mint account by performing a CPI to the Token Metadata Program. That will ensure that the special characteristics on Non-Fungible Tokens are met. It will also transfer both the mint authority and the freeze authority to the Master Edition PDA. The mint authority needs to sign that CPI, therefore we use "invoke_signed" and pass in the seeds of our authority PDA
 
-
 The difference is in the data of our metadata account.
 
 for our collection NFT, we have
+
 ```rust
 CreateMetadataAccountV3InstructionArgs {
     data: DataV2 {
@@ -403,16 +402,17 @@ CreateMetadataAccountV3InstructionArgs {
     },
     is_mutable: true,
     collection_details: Some(
-        CollectionDetails::V1 { 
-            size: 0 
+        CollectionDetails::V1 {
+            size: 0
         }
     )
 }
 ```
+
 where we set the "collection_details" field
 
-
 for our "regular" NFT we have
+
 ```rust
 CreateMetadataAccountV3InstructionArgs {
     data: DataV2 {
@@ -431,6 +431,7 @@ CreateMetadataAccountV3InstructionArgs {
     collection_details: None,
 }
 ```
+
 where we set the "collection" field with the key of the collection account.
 
 Again, we set the "verified" boolean to false, since this NFT has not yet been verified as part of the desired collection
@@ -485,7 +486,7 @@ pub struct VerifyCollectionMint<'info> {
 - system_program: program resposible for the initialization of any new account
 
 - sysvar_instruction: the instructions sysvar provides access to the serialized instruction data
-for the currently-running transaction
+  for the currently-running transaction
 
 - token_metadata_program: MPL token metadata program that will be used to verify the NFT as part of the desired collection
 
@@ -507,7 +508,7 @@ impl<'info> VerifyCollectionMint<'info> {
         let spl_metadata_program = &self.token_metadata_program.to_account_info();
 
         let seeds = &[
-            &b"authority"[..], 
+            &b"authority"[..],
             &[bumps.mint_authority]
         ];
         let signer_seeds = &[&seeds[..]];
@@ -528,7 +529,7 @@ impl<'info> VerifyCollectionMint<'info> {
         verify_collection.invoke_signed(signer_seeds)?;
 
         msg!("Collection Verified!");
-        
+
         Ok(())
     }
 }

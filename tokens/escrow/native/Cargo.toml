@@ -1,9 +1,0 @@
-[workspace]
-members = ["program"]
-resolver = "2"
-
-# Cargo.lock is committed to pin blake3 to 1.5.5 (and constant_time_eq to 0.3.1).
-# blake3 >= 1.8.3 requires Rust edition 2024, which the Cargo bundled with
-# solana-program 1.18.17's platform-tools (Cargo 1.84.0) doesn't support.
-# When solana-program is upgraded to a version with edition 2024 support,
-# this Cargo.lock pin can be removed and the crate re-resolved freely.

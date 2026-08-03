@@ -1,12 +1,14 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "types": ["jest", "node"],
-    "lib": ["es2020"],
-    "target": "es2020",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
-  }
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "esnext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "skipLibCheck": true
+    }
 }

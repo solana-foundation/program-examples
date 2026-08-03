@@ -10,11 +10,7 @@ pub enum MyInstruction {
     CloseUser,
 }
 
-pub fn process_instruction(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    input: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(program_id: &Pubkey, accounts: &[AccountInfo], input: &[u8]) -> ProgramResult {
     let instruction = MyInstruction::try_from_slice(input)?;
     match instruction {
         MyInstruction::CreateUser(data) => create_user(program_id, accounts, data),

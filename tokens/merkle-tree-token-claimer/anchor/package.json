@@ -1,0 +1,25 @@
+{
+    "type": "module",
+    "license": "MIT",
+    "scripts": {
+        "generate-tree": "tsx scripts/generate-merkle-tree.ts",
+        "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
+        "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    },
+    "dependencies": {
+        "@solana-program/system": "^0.13.0",
+        "@solana-program/token": "^0.15.0",
+        "@solana/kit": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/chai": "^5.2.3",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^26.1.0",
+        "chai": "^6.2.2",
+        "litesvm": "^1.3.0",
+        "mocha": "^11.7.5",
+        "prettier": "^3.7.4",
+        "tsx": "^4.19.2",
+        "typescript": "^5.9.3"
+    }
+}

@@ -28,11 +28,7 @@ pub struct CreateTokenArgs {
 
 entrypoint!(process_instruction);
 
-fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let args = CreateTokenArgs::try_from_slice(instruction_data)?;
 
     let accounts_iter = &mut accounts.iter();
@@ -45,8 +41,7 @@ fn process_instruction(
     let token_program = next_account_info(accounts_iter)?;
 
     // Find the size for the account with the Extension
-    let space =
-        ExtensionType::try_calculate_account_len::<Mint>(&[ExtensionType::TransferFeeConfig])?;
+    let space = ExtensionType::try_calculate_account_len::<Mint>(&[ExtensionType::TransferFeeConfig])?;
 
     // Get the required rent exemption amount for the account
     let rent_required = Rent::get()?.minimum_balance(space);
@@ -61,12 +56,7 @@ fn process_instruction(
             space as u64,
             token_program.key,
         ),
-        &[
-            mint_account.clone(),
-            payer.clone(),
-            system_program.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), payer.clone(), system_program.clone(), token_program.clone()],
     )?;
 
     // The max fee will be 5 tokens, here we adjust it with the tokens decimals
@@ -85,12 +75,7 @@ fn process_instruction(
             max_fee,
         )
         .unwrap(),
-        &[
-            mint_account.clone(),
-            token_program.clone(),
-            payer.clone(),
-            system_program.clone(),
-        ],
+        &[mint_account.clone(), token_program.clone(), payer.clone(), system_program.clone()],
     )?;
 
     // Initialize the Token Mint
@@ -102,12 +87,7 @@ fn process_instruction(
             Some(mint_authority.key),
             args.token_decimals,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            token_program.clone(),
-            rent.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), token_program.clone(), rent.clone()],
     )?;
 
     // Initialize the Transfer Fee config
@@ -122,12 +102,7 @@ fn process_instruction(
             max_fee,
         )
         .unwrap(),
-        &[
-            mint_account.clone(),
-            token_program.clone(),
-            payer.clone(),
-            system_program.clone(),
-        ],
+        &[mint_account.clone(), token_program.clone(), payer.clone(), system_program.clone()],
     )?;
 
     msg!("Mint created!");

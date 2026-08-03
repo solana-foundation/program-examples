@@ -10,11 +10,7 @@ use solana_program::{
 
 use crate::state::AddressInfo;
 
-pub fn create_address_info(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    data: AddressInfo,
-) -> ProgramResult {
+pub fn create_address_info(program_id: &Pubkey, accounts: &[AccountInfo], data: AddressInfo) -> ProgramResult {
     let accounts_iter = &mut accounts.iter();
     let target_account = next_account_info(accounts_iter)?;
     let payer = next_account_info(accounts_iter)?;
@@ -31,11 +27,7 @@ pub fn create_address_info(
             account_span as u64,
             program_id,
         ),
-        &[
-            payer.clone(),
-            target_account.clone(),
-            system_program.clone(),
-        ],
+        &[payer.clone(), target_account.clone(), system_program.clone()],
     )?;
 
     data.serialize(&mut &mut target_account.data.borrow_mut()[..])?;

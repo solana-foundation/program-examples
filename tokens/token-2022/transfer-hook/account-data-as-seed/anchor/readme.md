@@ -140,8 +140,8 @@ like this:
 
 ```js
 const [counterPDA] = PublicKey.findProgramAddressSync(
-  [Buffer.from("counter"), wallet.publicKey.toBuffer()],
-  program.programId,
+    [Buffer.from('counter'), wallet.publicKey.toBuffer()],
+    program.programId,
 );
 ```
 

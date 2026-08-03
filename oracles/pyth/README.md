@@ -9,7 +9,7 @@ For example, the price feed for SOL/USD on mainnet is represented on this accoun
 
 You can find more of these price feeds [here](https://pyth.network/price-feeds?cluster=mainnet-beta).
 
-To use such a price feed, you need to pass its account into your instructions context. 
+To use such a price feed, you need to pass its account into your instructions context.
 
 You can get an asset's information by reading the account's data. The feed will consist of:
 
@@ -18,5 +18,3 @@ You can get an asset's information by reading the account's data. The feed will 
 - An exponent
 
 To read more about Pyth, please navigate to [the Pyth documentation](https://docs.pyth.network/solana-price-feeds).
-
-

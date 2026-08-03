@@ -14,7 +14,7 @@ use crate::instructions::{eat_food, get_on_ride, play_game};
 
 pub fn process_instruction(
     _program_id: &Address,
-    _accounts: &[AccountView],
+    _accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let mut cursor = 0;
@@ -48,29 +48,22 @@ pub fn process_instruction(
 }
 
 fn read_u32(data: &[u8], cursor: &mut usize) -> Result<u32, ProgramError> {
-    let end = cursor
-        .checked_add(4)
-        .ok_or(ProgramError::InvalidInstructionData)?;
+    let end = cursor.checked_add(4).ok_or(ProgramError::InvalidInstructionData)?;
     if end > data.len() {
         return Err(ProgramError::InvalidInstructionData);
     }
-    let bytes: [u8; 4] = data[*cursor..end]
-        .try_into()
-        .map_err(|_| ProgramError::InvalidInstructionData)?;
+    let bytes: [u8; 4] = data[*cursor..end].try_into().map_err(|_| ProgramError::InvalidInstructionData)?;
     *cursor = end;
     Ok(u32::from_le_bytes(bytes))
 }
 
 fn read_str<'a>(data: &'a [u8], cursor: &mut usize) -> Result<&'a str, ProgramError> {
     let len = read_u32(data, cursor)? as usize;
-    let end = cursor
-        .checked_add(len)
-        .ok_or(ProgramError::InvalidInstructionData)?;
+    let end = cursor.checked_add(len).ok_or(ProgramError::InvalidInstructionData)?;
     if end > data.len() {
         return Err(ProgramError::InvalidInstructionData);
     }
-    let s = core::str::from_utf8(&data[*cursor..end])
-        .map_err(|_| ProgramError::InvalidInstructionData)?;
+    let s = core::str::from_utf8(&data[*cursor..end]).map_err(|_| ProgramError::InvalidInstructionData)?;
     *cursor = end;
     Ok(s)
 }

@@ -12,11 +12,7 @@ use pinocchio_system::instructions::CreateAccount;
 entrypoint!(process_instruction);
 nostd_panic_handler!();
 
-fn process_instruction(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     match instruction_data.split_first() {
         Some((0, data)) => process_create(program_id, accounts, data),
         _ => Err(ProgramError::InvalidInstructionData),
@@ -34,11 +30,7 @@ impl<'a> AddressInfo<'a> {
     const LEN: usize = 51;
 }
 
-fn process_create(
-    program_id: &Address,
-    accounts: &[AccountView],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_create(program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     let [address_info, payer, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

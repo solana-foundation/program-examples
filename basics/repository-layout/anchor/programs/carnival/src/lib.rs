@@ -29,12 +29,7 @@ pub mod carnival {
         })
     }
 
-    pub fn play_game(
-        _ctx: Context<CarnivalContext>,
-        name: String,
-        ticket_count: u32,
-        game_name: String,
-    ) -> Result<()> {
+    pub fn play_game(_ctx: Context<CarnivalContext>, name: String, ticket_count: u32, game_name: String) -> Result<()> {
         play_game::play_game(play_game::PlayGameInstructionData {
             gamer_name: name,
             gamer_ticket_count: ticket_count,

@@ -14,8 +14,7 @@ fn test_pda() {
     let mut svm = LiteSVM::new();
 
     let program_id = Pubkey::new_unique();
-    let program_bytes =
-        include_bytes!("../../tests/fixtures/program_derived_addresses_native_program.so");
+    let program_bytes = include_bytes!("../../tests/fixtures/program_derived_addresses_native_program.so");
     svm.add_program(program_id, program_bytes).unwrap();
 
     let payer = Keypair::new();
@@ -42,14 +41,9 @@ fn test_pda() {
 
     assert!(svm.send_transaction(tx).is_ok());
 
-    let (pda, bump) =
-        Pubkey::find_program_address(&[b"page_visits", test_user.pubkey().as_ref()], &program_id);
+    let (pda, bump) = Pubkey::find_program_address(&[b"page_visits", test_user.pubkey().as_ref()], &program_id);
 
-    let data = borsh::to_vec(&PageVisits {
-        page_visits: 0,
-        bump,
-    })
-    .unwrap();
+    let data = borsh::to_vec(&PageVisits { page_visits: 0, bump }).unwrap();
 
     let ix = Instruction {
         program_id,
@@ -62,12 +56,7 @@ fn test_pda() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 
@@ -75,19 +64,11 @@ fn test_pda() {
 
     let ix = Instruction {
         program_id,
-        accounts: vec![
-            AccountMeta::new(pda, false),
-            AccountMeta::new(payer.pubkey(), true),
-        ],
+        accounts: vec![AccountMeta::new(pda, false), AccountMeta::new(payer.pubkey(), true)],
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 

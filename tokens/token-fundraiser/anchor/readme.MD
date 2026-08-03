@@ -36,7 +36,7 @@ pub struct Fundraiser {
 
 - time_started: the time when the account was created
 
-- duration: the timeframe to collect all the contributions (in days) 
+- duration: the timeframe to collect all the contributions (in days)
 
 - bump: since our Fundraiser account will be a PDA (Program Derived Address), we will store the bump of the account
 
@@ -80,7 +80,7 @@ Let´s have a closer look at the accounts that we are passing in this context:
 - mint_to_raise: The mint that the user wants to receive. This will be a Mint Account, that we will use to store the mint address
 
 - fundraiser: will be the state account that we will initialize and the maker will be paying for the initialization of the account.
-We derive the Fundraiser PDA from the byte representation of the word "fundraiser" and the reference of the maker public key. Anchor will calculate the canonical bump (the first bump that throws that address out of the ed25519 eliptic curve) and save it for us in a struct
+  We derive the Fundraiser PDA from the byte representation of the word "fundraiser" and the reference of the maker public key. Anchor will calculate the canonical bump (the first bump that throws that address out of the ed25519 eliptic curve) and save it for us in a struct
 
 - vault: We will initialize a vault (ATA) to receive the contributions. This account will be derived from the mint that the user wants to receive, and the fundraiser account that we are just creating
 
@@ -110,7 +110,7 @@ impl<'info> Initialize<'info> {
             duration,
             bump: bumps.fundraiser
         });
-        
+
         Ok(())
     }
 }
@@ -124,7 +124,7 @@ In here, we basically just set the data of our Fundraiser account if the amount 
 
 A contribution account consists of:
 
-```rust
+````rust
 #[account]
 #[derive(InitSpace)]
 pub struct Contributor {
@@ -169,7 +169,7 @@ pub struct Contribute<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
-```
+````
 
 In this context, we are passing all the accounts needed to contribute to a fundraising campaign:
 
@@ -195,13 +195,13 @@ impl<'info> Contribute<'info> {
 
         // Check if the amount to contribute meets the minimum amount required
         require!(
-            amount > 1_u8.pow(self.mint_to_raise.decimals as u32) as u64, 
+            amount > 1_u8.pow(self.mint_to_raise.decimals as u32) as u64,
             FundraiserError::ContributionTooSmall
         );
 
         // Check if the amount to contribute is less than the maximum allowed contribution
         require!(
-            amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER, 
+            amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER,
             FundraiserError::ContributionTooBig
         );
 
@@ -245,7 +245,9 @@ impl<'info> Contribute<'info> {
     }
 }
 ```
+
 In here, we make some checks:
+
 - We check that the user is depositing at least one token
 
 - We Check that the user is not contributing with more than 10% of the target amount
@@ -306,7 +308,7 @@ In this context, we are passing all the accounts needed for a user to claim the 
 - vault: The ata where we will be transfering tokens from. We make sure that the authority and mint of the ATA are correct (mint_to_raise and fundraiser account), and we mark it as mutable since we will be deducting tokens from that account
 
 - maker_ata: The ata where we will be depositing tokens to. We make sure that the authority and mint of the ATA are correct (mint_to_raise and maker account), and we mark it as mutable since we will be depositing tokens in that account.
-In case we need to initialize this ATA, the maker will be paying for the initialization fees
+  In case we need to initialize this ATA, the maker will be paying for the initialization fees
 
 - system_program and associated_token_program: Since we are initializing new ATAs
 
@@ -317,7 +319,7 @@ In case we need to initialize this ATA, the maker will be paying for the initial
 ```rust
 impl<'info> CheckContributions<'info> {
     pub fn check_contributions(&self) -> Result<()> {
-        
+
         // Check if the target amount has been met
         require!(
             self.vault.amount >= self.fundraiser.amount_to_raise,
@@ -357,7 +359,6 @@ In this implementation, we check if the amount of tokens in the vault is equal o
 If it is, then we perform a CPI to the token program to transfer the funds from the vault to the maker ATA. Since the vault is an ATA, we need to create our CPI context with a signer and use the seeds and bump from the PDA (We are signing with our program on behalf of that PDA).
 
 Finally, we close our Fundraiser account and send the lamports from the rent back to the maker (done with the "close" constraint int the Fundraiser account).
-
 
 ---
 
@@ -427,7 +428,7 @@ impl<'info> Refund<'info> {
 
         // Check if the fundraising duration has been reached
         let current_time = Clock::get()?.unix_timestamp;
- 
+
         require!(
             self.fundraiser.duration <= ((current_time - self.fundraiser.time_started) / SECONDS_TO_DAYS) as u8,
             crate::FundraiserError::FundraiserNotEnded

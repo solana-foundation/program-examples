@@ -1,53 +1,73 @@
-import { Buffer } from "node:buffer";
-import { describe, test } from "node:test";
-import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
-import * as borsh from "borsh";
-import { start } from "solana-bankrun";
+import { Buffer } from 'node:buffer';
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import * as borsh from 'borsh';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe("custom-instruction-data", async () => {
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "processing_instructions_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+describe('custom-instruction-data', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-  const InstructionDataSchema = {
-    struct: {
-      name: "string",
-      height: "u32",
-    },
-  };
-
-  function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-  }
-
-  test("Go to the park!", async () => {
-    const blockhash = context.lastBlockhash;
-
-    const jimmy = borshSerialize(InstructionDataSchema, {
-      name: "Jimmy",
-      height: 3,
-    });
-    const mary = borshSerialize(InstructionDataSchema, {
-      name: "Mary",
-      height: 10,
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/processing_instructions_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    const ix1 = new TransactionInstruction({
-      keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
-      programId: PROGRAM_ID,
-      data: jimmy,
+    const InstructionDataSchema = {
+        struct: {
+            name: 'string',
+            height: 'u32',
+        },
+    };
+
+    function borshSerialize(schema: borsh.Schema, data: object): Buffer {
+        return Buffer.from(borsh.serialize(schema, data));
+    }
+
+    it('Go to the park!', async () => {
+        const jimmy = borshSerialize(InstructionDataSchema, {
+            name: 'Jimmy',
+            height: 3,
+        });
+        const mary = borshSerialize(InstructionDataSchema, {
+            name: 'Mary',
+            height: 10,
+        });
+
+        const ix1 = {
+            programAddress: programId,
+            accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
+            data: new Uint8Array(jimmy),
+        };
+
+        const ix2 = {
+            ...ix1,
+            data: new Uint8Array(mary),
+        };
+
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions([ix1, ix2], m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });
-
-    const ix2 = new TransactionInstruction({
-      ...ix1,
-      data: mary,
-    });
-
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix1).add(ix2).sign(payer);
-
-    await client.processTransaction(tx);
-  });
 });

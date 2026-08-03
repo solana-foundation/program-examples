@@ -21,10 +21,7 @@ pub struct CreatePageVisits<'info> {
 }
 
 pub fn create_page_visits(ctx: Context<CreatePageVisits>) -> Result<()> {
-    *ctx.accounts.page_visits = PageVisits {
-        page_visits: 0,
-        bump: ctx.bumps.page_visits,
-    };
+    *ctx.accounts.page_visits = PageVisits { page_visits: 0, bump: ctx.bumps.page_visits };
 
     Ok(())
 }

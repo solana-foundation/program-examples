@@ -1,0 +1,36 @@
+name: Stale PRs
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # PRs only — issues are often long-lived example requests.
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: 45
+          days-before-pr-close: 14
+          stale-pr-label: stale
+          exempt-pr-labels: keep-open
+          exempt-draft-pr: true
+          stale-pr-message: >
+            This PR has had no activity for 45 days. If it's still relevant,
+            rebase it onto current main and make sure it follows the repo
+            conventions (see AGENTS.md and CONTRIBUTING.md) — any push or
+            comment resets this timer. Ask a maintainer to add the `keep-open`
+            label to opt out.
+            Otherwise it will be closed in 14 days.
+          close-pr-message: >
+            Closed for inactivity. Feel free to reopen or resubmit against
+            current main if you pick this back up.

@@ -25,13 +25,8 @@ mod tests {
 
         svm.add_program(program_id, program_bytes).unwrap();
 
-        let create_account_ix = create_account(
-            &payer.pubkey(),
-            &account_to_change.pubkey(),
-            LAMPORTS_PER_SOL,
-            0,
-            &program_id,
-        );
+        let create_account_ix =
+            create_account(&payer.pubkey(), &account_to_change.pubkey(), LAMPORTS_PER_SOL, 0, &program_id);
 
         let tx = Transaction::new_signed_with_payer(
             &[create_account_ix],
@@ -86,18 +81,10 @@ mod tests {
             data: vec![0],
         };
 
-        let tx = Transaction::new_signed_with_payer(
-            &[ix],
-            Some(&payer.pubkey()),
-            &[&payer],
-            svm.latest_blockhash(),
-        );
+        let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
         let err = svm.send_transaction(tx).unwrap_err();
-        assert_eq!(
-            err.err,
-            TransactionError::InstructionError(0, InstructionError::Custom(1))
-        );
+        assert_eq!(err.err, TransactionError::InstructionError(0, InstructionError::Custom(1)));
     }
 
     #[test]
@@ -108,10 +95,8 @@ mod tests {
         let account_to_create = Keypair::new();
         let account_to_change = Keypair::new();
 
-        svm.airdrop(&fee_payer.pubkey(), LAMPORTS_PER_SOL * 10)
-            .unwrap();
-        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL)
-            .unwrap();
+        svm.airdrop(&fee_payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
+        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL).unwrap();
 
         let ix = Instruction {
             program_id,
@@ -132,10 +117,7 @@ mod tests {
         );
 
         let err = svm.send_transaction(tx).unwrap_err();
-        assert_eq!(
-            err.err,
-            TransactionError::InstructionError(0, InstructionError::Custom(2))
-        );
+        assert_eq!(err.err, TransactionError::InstructionError(0, InstructionError::Custom(2)));
     }
 
     #[test]
@@ -146,11 +128,9 @@ mod tests {
         let account_to_change = Keypair::new();
 
         svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
-        svm.airdrop(&account_to_create.pubkey(), LAMPORTS_PER_SOL)
-            .unwrap(); // already initialized
+        svm.airdrop(&account_to_create.pubkey(), LAMPORTS_PER_SOL).unwrap(); // already initialized
 
-        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL)
-            .unwrap();
+        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL).unwrap();
 
         let ix = Instruction {
             program_id,
@@ -171,10 +151,7 @@ mod tests {
         );
 
         let err = svm.send_transaction(tx).unwrap_err();
-        assert_eq!(
-            err.err,
-            TransactionError::InstructionError(0, InstructionError::Custom(3))
-        );
+        assert_eq!(err.err, TransactionError::InstructionError(0, InstructionError::Custom(3)));
     }
 
     #[test]
@@ -206,10 +183,7 @@ mod tests {
         );
 
         let err = svm.send_transaction(tx).unwrap_err();
-        assert_eq!(
-            err.err,
-            TransactionError::InstructionError(0, InstructionError::Custom(4))
-        );
+        assert_eq!(err.err, TransactionError::InstructionError(0, InstructionError::Custom(4)));
     }
 
     #[test]
@@ -220,8 +194,7 @@ mod tests {
         let account_to_change = Keypair::new();
 
         svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
-        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL)
-            .unwrap(); // initialized, but still owned by the system program
+        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL).unwrap(); // initialized, but still owned by the system program
 
         let ix = Instruction {
             program_id,
@@ -242,10 +215,7 @@ mod tests {
         );
 
         let err = svm.send_transaction(tx).unwrap_err();
-        assert_eq!(
-            err.err,
-            TransactionError::InstructionError(0, InstructionError::Custom(6))
-        );
+        assert_eq!(err.err, TransactionError::InstructionError(0, InstructionError::Custom(6)));
     }
 
     #[test]
@@ -257,8 +227,7 @@ mod tests {
         let fake_system_program = Pubkey::new_unique(); // not the real system program
 
         svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
-        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL)
-            .unwrap();
+        svm.airdrop(&account_to_change.pubkey(), LAMPORTS_PER_SOL).unwrap();
 
         let ix = Instruction {
             program_id,
@@ -279,9 +248,6 @@ mod tests {
         );
 
         let err = svm.send_transaction(tx).unwrap_err();
-        assert_eq!(
-            err.err,
-            TransactionError::InstructionError(0, InstructionError::Custom(5))
-        );
+        assert_eq!(err.err, TransactionError::InstructionError(0, InstructionError::Custom(5)));
     }
 }

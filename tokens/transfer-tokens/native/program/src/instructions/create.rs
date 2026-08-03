@@ -1,6 +1,5 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
-    mpl_token_metadata::instruction as mpl_instruction,
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint::ProgramResult,
@@ -8,10 +7,10 @@ use {
         program::invoke,
         program_pack::Pack,
         rent::Rent,
-        system_instruction,
         sysvar::Sysvar,
     },
-    spl_token::{instruction as token_instruction, state::Mint},
+    solana_system_interface::instruction as system_instruction,
+    spl_token_interface::{instruction as token_instruction, state::Mint},
 };
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -46,12 +45,7 @@ pub fn create_token(accounts: &[AccountInfo], args: CreateTokenArgs) -> ProgramR
             Mint::LEN as u64,
             token_program.key,
         ),
-        &[
-            mint_account.clone(),
-            payer.clone(),
-            system_program.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), payer.clone(), system_program.clone(), token_program.clone()],
     )?;
 
     // Now initialize that account as a Mint (standard Mint)
@@ -66,12 +60,7 @@ pub fn create_token(accounts: &[AccountInfo], args: CreateTokenArgs) -> ProgramR
             Some(mint_authority.key),
             args.decimals,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            token_program.clone(),
-            rent.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), token_program.clone(), rent.clone()],
     )?;
 
     // Now create the account for that Mint's metadata
@@ -79,31 +68,25 @@ pub fn create_token(accounts: &[AccountInfo], args: CreateTokenArgs) -> ProgramR
     msg!("Creating metadata account...");
     msg!("Metadata account address: {}", metadata_account.key);
     invoke(
-        &mpl_instruction::create_metadata_accounts_v3(
-            *token_metadata_program.key,
-            *metadata_account.key,
-            *mint_account.key,
-            *mint_authority.key,
-            *payer.key,
-            *mint_authority.key,
+        &crate::mpl_util::create_metadata_account_v3(
+            metadata_account.key,
+            mint_account.key,
+            mint_authority.key,
+            payer.key,
+            mint_authority.key,
+            system_program.key,
             args.token_title,
             args.token_symbol,
             args.token_uri,
-            None,
-            0,
-            true,
-            false,
-            None,
-            None,
-            None,
         ),
         &[
             metadata_account.clone(),
             mint_account.clone(),
             mint_authority.clone(),
             payer.clone(),
+            mint_authority.clone(),
+            system_program.clone(),
             token_metadata_program.clone(),
-            rent.clone(),
         ],
     )?;
 

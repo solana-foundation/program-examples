@@ -1,9 +1,15 @@
 {
-  "compilerOptions": {
-    "types": ["mocha", "chai"],
-    "typeRoots": ["./node_modules/@types"],
-    "module": "commonjs",
-    "target": "esnext",
-    "esModuleInterop": true
-  }
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "typeRoots": ["./node_modules/@types"],
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "esnext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "skipLibCheck": true
+    }
 }

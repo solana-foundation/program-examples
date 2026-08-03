@@ -10,22 +10,7 @@ pub struct Game {
 const DEFAULT_TICKETS_TO_PLAY: u32 = 3;
 
 pub const GAMES: &[Game] = &[
-    Game {
-        name: "Ring Toss",
-        tickets: DEFAULT_TICKETS_TO_PLAY,
-        tries: 5,
-        prize: "teddy bear",
-    },
-    Game {
-        name: "I Got It!",
-        tickets: DEFAULT_TICKETS_TO_PLAY,
-        tries: 12,
-        prize: "goldfish",
-    },
-    Game {
-        name: "Ladder Climb",
-        tickets: DEFAULT_TICKETS_TO_PLAY,
-        tries: 1,
-        prize: "popcorn bucket",
-    },
+    Game { name: "Ring Toss", tickets: DEFAULT_TICKETS_TO_PLAY, tries: 5, prize: "teddy bear" },
+    Game { name: "I Got It!", tickets: DEFAULT_TICKETS_TO_PLAY, tries: 12, prize: "goldfish" },
+    Game { name: "Ladder Climb", tickets: DEFAULT_TICKETS_TO_PLAY, tries: 1, prize: "popcorn bucket" },
 ];

@@ -21,10 +21,6 @@ pub struct CreateUserContext<'info> {
 }
 
 pub fn create_user(ctx: Context<CreateUserContext>, name: String) -> Result<()> {
-    *ctx.accounts.user_account = UserState {
-        bump: ctx.bumps.user_account,
-        user: ctx.accounts.user.key(),
-        name,
-    };
+    *ctx.accounts.user_account = UserState { bump: ctx.bumps.user_account, user: ctx.accounts.user.key(), name };
     Ok(())
 }

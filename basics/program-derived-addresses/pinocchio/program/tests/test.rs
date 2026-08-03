@@ -12,8 +12,7 @@ fn test_pda() {
     let mut svm = LiteSVM::new();
 
     let program_id = Pubkey::new_unique();
-    let program_bytes =
-        include_bytes!("../../tests/fixtures/program_derived_addresses_pinocchio_program.so");
+    let program_bytes = include_bytes!("../../tests/fixtures/program_derived_addresses_pinocchio_program.so");
     svm.add_program(program_id, program_bytes).unwrap();
 
     let payer = Keypair::new();
@@ -40,8 +39,7 @@ fn test_pda() {
 
     assert!(svm.send_transaction(tx).is_ok());
 
-    let (pda, bump) =
-        Pubkey::find_program_address(&[b"page_visits", test_user.pubkey().as_ref()], &program_id);
+    let (pda, bump) = Pubkey::find_program_address(&[b"page_visits", test_user.pubkey().as_ref()], &program_id);
 
     let mut data = Vec::new();
 
@@ -62,12 +60,7 @@ fn test_pda() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
@@ -84,12 +77,7 @@ fn test_pda() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());

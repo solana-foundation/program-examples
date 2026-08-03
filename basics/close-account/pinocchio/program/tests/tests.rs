@@ -22,11 +22,7 @@ fn test_close_account() {
     let test_account_pubkey =
         Pubkey::find_program_address(&[b"USER".as_ref(), &payer.pubkey().as_ref()], &program_id).0;
 
-    let bump = Pubkey::find_program_address(
-        &[User::SEED_PREFIX.as_bytes(), payer.pubkey().as_ref()],
-        &program_id,
-    )
-    .1;
+    let bump = Pubkey::find_program_address(&[User::SEED_PREFIX.as_bytes(), payer.pubkey().as_ref()], &program_id).1;
 
     // process_user
     let mut data = Vec::new();
@@ -47,12 +43,7 @@ fn test_close_account() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
@@ -76,12 +67,7 @@ fn test_close_account() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());

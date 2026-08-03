@@ -1,22 +1,22 @@
-import { Buffer } from "node:buffer";
-import { type PublicKey, SystemProgram, TransactionInstruction } from "@solana/web3.js";
+import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 
 export function createTransferInstruction(
-  senderPubkey: PublicKey,
-  recipientPubkey: PublicKey,
-  programId: PublicKey,
-  lamports: number,
-): TransactionInstruction {
-  const data = Buffer.alloc(8);
-  data.writeBigUInt64LE(BigInt(lamports));
+    sender: TransactionSigner,
+    recipientAddress: Address,
+    programAddress: Address,
+    lamports: bigint,
+) {
+    const data = new Uint8Array(8);
+    new DataView(data.buffer).setBigUint64(0, lamports, true);
 
-  return new TransactionInstruction({
-    keys: [
-      { pubkey: senderPubkey, isSigner: true, isWritable: true },
-      { pubkey: recipientPubkey, isSigner: false, isWritable: true },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-    ],
-    programId,
-    data,
-  });
+    return {
+        programAddress,
+        accounts: [
+            { address: sender.address, role: AccountRole.WRITABLE_SIGNER, signer: sender },
+            { address: recipientAddress, role: AccountRole.WRITABLE },
+            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+        ],
+        data,
+    };
 }

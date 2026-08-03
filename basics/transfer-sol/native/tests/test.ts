@@ -1,88 +1,106 @@
-import { describe, test } from "node:test";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import { start } from "solana-bankrun";
-import { createTransferInstruction, InstructionType } from "./instruction";
+import {
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction } from '@solana-program/system';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import { createTransferInstruction, InstructionType } from './instruction';
 
-describe("transfer-sol", async () => {
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "transfer_sol_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+const LAMPORTS_PER_SOL = 1_000_000_000;
 
-  const transferAmount = 1 * LAMPORTS_PER_SOL;
-  const test1Recipient = Keypair.generate();
-  const test2Recipient1 = Keypair.generate();
-  const test2Recipient2 = Keypair.generate();
+describe('transfer-sol', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let test1Recipient: KeyPairSigner;
+    let test2Recipient1: KeyPairSigner;
+    let test2Recipient2: KeyPairSigner;
 
-  test("Transfer between accounts using the system program", async () => {
-    await getBalances(payer.publicKey, test1Recipient.publicKey, "Beginning");
+    const transferAmount = 1 * LAMPORTS_PER_SOL;
 
-    const ix = createTransferInstruction(
-      payer.publicKey,
-      test1Recipient.publicKey,
-      PROGRAM_ID,
-      InstructionType.CpiTransfer,
-      transferAmount,
-    );
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/transfer_sol_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(BigInt(10 * LAMPORTS_PER_SOL)));
+        test1Recipient = await generateKeyPairSigner();
+        test2Recipient1 = await generateKeyPairSigner();
+        test2Recipient2 = await generateKeyPairSigner();
+    });
 
-    const tx = new Transaction();
-    const [blockhash, _] = await client.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer);
+    async function sendTransaction(instructions: Instruction[]) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions(instructions, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    }
 
-    await client.processTransaction(tx);
+    it('Transfer between accounts using the system program', async () => {
+        getBalances(payer.address, test1Recipient.address, 'Beginning');
 
-    await getBalances(payer.publicKey, test1Recipient.publicKey, "Resulting");
-  });
+        const ix = createTransferInstruction(
+            payer,
+            test1Recipient.address,
+            programId,
+            InstructionType.CpiTransfer,
+            transferAmount,
+        );
 
-  test("Create two accounts for the following test", async () => {
-    const ix = (pubkey: PublicKey) => {
-      return SystemProgram.createAccount({
-        fromPubkey: payer.publicKey,
-        newAccountPubkey: pubkey,
-        space: 0,
-        lamports: 2 * LAMPORTS_PER_SOL,
-        programId: PROGRAM_ID,
-      });
-    };
+        await sendTransaction([ix]);
 
-    const tx = new Transaction();
-    const [blockhash, _] = await client.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix(test2Recipient1.publicKey))
-      .add(ix(test2Recipient2.publicKey))
-      .sign(payer, test2Recipient1, test2Recipient2);
+        getBalances(payer.address, test1Recipient.address, 'Resulting');
+    });
 
-    await client.processTransaction(tx);
-  });
+    it('Create two accounts for the following test', async () => {
+        const ix = (newAccount: KeyPairSigner) => {
+            return getCreateAccountInstruction({
+                payer,
+                newAccount,
+                space: 0,
+                lamports: 2 * LAMPORTS_PER_SOL,
+                programAddress: programId,
+            });
+        };
 
-  test("Transfer between accounts using our program", async () => {
-    await getBalances(test2Recipient1.publicKey, test2Recipient2.publicKey, "Beginning");
+        await sendTransaction([ix(test2Recipient1), ix(test2Recipient2)]);
+    });
 
-    const ix = createTransferInstruction(
-      test2Recipient1.publicKey,
-      test2Recipient2.publicKey,
-      PROGRAM_ID,
-      InstructionType.ProgramTransfer,
-      transferAmount,
-    );
+    it('Transfer between accounts using our program', async () => {
+        getBalances(test2Recipient1.address, test2Recipient2.address, 'Beginning');
 
-    const tx = new Transaction();
-    const [blockhash, _] = await client.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer, test2Recipient1);
+        const ix = createTransferInstruction(
+            test2Recipient1,
+            test2Recipient2.address,
+            programId,
+            InstructionType.ProgramTransfer,
+            transferAmount,
+        );
 
-    await client.processTransaction(tx);
+        await sendTransaction([ix]);
 
-    await getBalances(test2Recipient1.publicKey, test2Recipient2.publicKey, "Resulting");
-  });
+        getBalances(test2Recipient1.address, test2Recipient2.address, 'Resulting');
+    });
 
-  async function getBalances(payerPubkey: PublicKey, recipientPubkey: PublicKey, timeframe: string) {
-    const payerBalance = await client.getBalance(payerPubkey);
-    const recipientBalance = await client.getBalance(recipientPubkey);
+    function getBalances(payerAddress: Address, recipientAddress: Address, timeframe: string) {
+        const payerBalance = svm.getBalance(payerAddress);
+        const recipientBalance = svm.getBalance(recipientAddress);
 
-    console.log(`${timeframe} balances:`);
-    console.log(`   Payer: ${payerBalance}`);
-    console.log(`   Recipient: ${recipientBalance}`);
-  }
+        console.log(`${timeframe} balances:`);
+        console.log(`   Payer: ${payerBalance}`);
+        console.log(`   Recipient: ${recipientBalance}`);
+    }
 });

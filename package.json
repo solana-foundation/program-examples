@@ -4,35 +4,19 @@
   "description": "Solana program (smart contract) examples for Anchor, Pinocchio, and Native Rust.",
   "scripts": {
     "sync-package-json": "ts-node scripts/sync-package-json.ts",
-    "format:fix": "pnpx @biomejs/biome format --write ./",
-    "lint:fix": "pnpx @biomejs/biome lint --write ./",
-    "lint": "pnpx @biomejs/biome lint ./",
-    "fix": "pnpx @biomejs/biome check --write ./",
-    "check": "pnpx @biomejs/biome check ./",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*": [
-      "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
-    ]
+    "format": "prettier --write .",
+    "check": "prettier --check ."
   },
   "packageManager": "pnpm@10.33.0",
   "keywords": [],
   "author": "Solana Foundation",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "2.4.10",
+    "@solana/prettier-config-solana": "^0.0.7",
     "@types/node": "^20.9.0",
-    "husky": "^9.0.11",
     "picocolors": "^1.0.0",
+    "prettier": "^3.9.6",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
-  },
-  "dependencies": {
-    "@anchor-lang/core": "1.0.0-rc.5",
-    "@solana/web3.js": "^1.98.4",
-    "anchor-bankrun": "^0.4.0",
-    "chai": "^5.1.1",
-    "solana-bankrun": "^0.3.0"
   }
 }

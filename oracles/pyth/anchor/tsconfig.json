@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "typeRoots": ["./node_modules/@types"],
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "esnext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true
+    }
+}

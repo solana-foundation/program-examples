@@ -1,161 +1,200 @@
-import { Buffer } from "node:buffer";
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
-  Connection,
-  Keypair,
-  PublicKey,
-  SYSVAR_RENT_PUBKEY,
-  SystemProgram,
-  sendAndConfirmTransaction,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
+    AccountRole,
+    address,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+    unwrapOption,
+} from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import {
-  borshSerialize,
-  CreateTokenArgsSchema,
-  InitArgsSchema,
-  MintToArgsSchema,
-  NftMinterInstruction,
-} from "./instructions";
+    ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+    findAssociatedTokenPda,
+    getMintDecoder,
+    getTokenDecoder,
+    TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import {
+    borshSerialize,
+    CreateTokenArgsSchema,
+    InitArgsSchema,
+    MintToArgsSchema,
+    NftMinterInstruction,
+} from './instructions';
 
-function createKeypairFromFile(path: string): Keypair {
-  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(require("node:fs").readFileSync(path, "utf-8"))));
-}
+const TOKEN_METADATA_PROGRAM_ID = address('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
+const SYSVAR_RENT_ADDRESS = address('SysvarRent111111111111111111111111111111111');
 
-describe("NFT Minter", async () => {
-  // const connection = new Connection(`http://localhost:8899`, 'confirmed');
-  const connection = new Connection("https://api.devnet.solana.com/", "confirmed");
-  const payer = createKeypairFromFile(`${require("node:os").homedir()}/.config/solana/id.json`);
-  const program = createKeypairFromFile("./program/target/deploy/program-keypair.json");
+const addressEncoder = getAddressEncoder();
 
-  const mintAuthorityPublicKey = PublicKey.findProgramAddressSync(
-    [Buffer.from("mint_authority")],
-    program.publicKey,
-  )[0];
+describe('NFT Minter', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let mintKeypair: KeyPairSigner;
+    let mintAuthorityAddress: Address;
+    let mintAuthorityBump: number;
+    let metadataAddress: Address;
+    let editionAddress: Address;
 
-  const mintKeypair: Keypair = Keypair.generate();
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/pda_mint_authority_native_program.so');
+        svm.addProgramFromFile(TOKEN_METADATA_PROGRAM_ID, 'tests/fixtures/token_metadata.so');
 
-  it("Init Mint Authority PDA", async () => {
-    const instructionData = borshSerialize(InitArgsSchema, {
-      instruction: NftMinterInstruction.Init,
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(10_000_000_000n));
+
+        [mintAuthorityAddress, mintAuthorityBump] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['mint_authority'],
+        });
+
+        mintKeypair = await generateKeyPairSigner();
+
+        [metadataAddress] = await getProgramDerivedAddress({
+            programAddress: TOKEN_METADATA_PROGRAM_ID,
+            seeds: [
+                'metadata',
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID),
+                addressEncoder.encode(mintKeypair.address),
+            ],
+        });
+
+        [editionAddress] = await getProgramDerivedAddress({
+            programAddress: TOKEN_METADATA_PROGRAM_ID,
+            seeds: [
+                'metadata',
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID),
+                addressEncoder.encode(mintKeypair.address),
+                'edition',
+            ],
+        });
     });
 
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: mintAuthorityPublicKey, isSigner: false, isWritable: true },
-        { pubkey: payer.publicKey, isSigner: false, isWritable: true },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ],
-      programId: program.publicKey,
-      data: instructionData,
+    async function sendTransaction(ix: Instruction) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    }
+
+    it('Init Mint Authority PDA', async () => {
+        const instructionData = borshSerialize(InitArgsSchema, {
+            instruction: NftMinterInstruction.Init,
+        });
+
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: mintAuthorityAddress, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(instructionData),
+        };
+
+        await sendTransaction(ix);
+
+        const mintAuthorityInfo = svm.getAccount(mintAuthorityAddress);
+        assert(mintAuthorityInfo.exists, 'mint authority PDA not created');
+        assert(mintAuthorityInfo.programAddress === programId, 'mint authority PDA not owned by the program');
+        assert.equal(mintAuthorityInfo.data[0], mintAuthorityBump, 'unexpected bump stored in the PDA');
     });
 
-    const sx = await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer], { skipPreflight: true });
+    it('Create an NFT!', async () => {
+        const instructionData = borshSerialize(CreateTokenArgsSchema, {
+            instruction: NftMinterInstruction.Create,
+            nft_title: 'Homer NFT',
+            nft_symbol: 'HOMR',
+            nft_uri:
+                'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
+        });
 
-    console.log("Success!");
-    console.log(`   Mint Address: ${mintKeypair.publicKey}`);
-    console.log(`   Tx Signature: ${sx}`);
-  });
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: mintKeypair.address, role: AccountRole.WRITABLE_SIGNER, signer: mintKeypair }, // Mint account
+                { address: mintAuthorityAddress, role: AccountRole.WRITABLE }, // Mint authority account
+                { address: metadataAddress, role: AccountRole.WRITABLE }, // Metadata account
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
+                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
+                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
+                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
+            ],
+            data: new Uint8Array(instructionData),
+        };
 
-  it("Create an NFT!", async () => {
-    const metadataAddress = PublicKey.findProgramAddressSync(
-      [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
-      TOKEN_METADATA_PROGRAM_ID,
-    )[0];
+        await sendTransaction(ix);
 
-    const instructionData = borshSerialize(CreateTokenArgsSchema, {
-      instruction: NftMinterInstruction.Create,
-      nft_title: "Homer NFT",
-      nft_symbol: "HOMR",
-      nft_uri:
-        "https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json",
+        const mintInfo = svm.getAccount(mintKeypair.address);
+        assert(mintInfo.exists, 'mint account not created');
+        assert(mintInfo.programAddress === TOKEN_PROGRAM_ADDRESS, 'mint account not owned by the token program');
+
+        const mint = getMintDecoder().decode(mintInfo.data);
+        assert.equal(mint.decimals, 0, 'unexpected decimals');
+        assert(unwrapOption(mint.mintAuthority) === mintAuthorityAddress, 'mint authority is not the PDA');
+
+        const metadataInfo = svm.getAccount(metadataAddress);
+        assert(metadataInfo.exists, 'metadata account not created');
+        assert(metadataInfo.programAddress === TOKEN_METADATA_PROGRAM_ID, 'metadata account has wrong owner');
     });
 
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: mintKeypair.publicKey, isSigner: true, isWritable: true }, // Mint account
-        { pubkey: mintAuthorityPublicKey, isSigner: false, isWritable: true }, // Mint authority account
-        { pubkey: metadataAddress, isSigner: false, isWritable: true }, // Metadata account
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true }, // Payer
-        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }, // Rent account
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // System program
-        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // Token program
-        {
-          pubkey: TOKEN_METADATA_PROGRAM_ID,
-          isSigner: false,
-          isWritable: false,
-        }, // Token metadata program
-      ],
-      programId: program.publicKey,
-      data: instructionData,
+    it('Mint the NFT to your wallet!', async () => {
+        const [associatedTokenAccountAddress] = await findAssociatedTokenPda({
+            mint: mintKeypair.address,
+            owner: payer.address,
+            tokenProgram: TOKEN_PROGRAM_ADDRESS,
+        });
+
+        const instructionData = borshSerialize(MintToArgsSchema, {
+            instruction: NftMinterInstruction.Mint,
+        });
+
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: mintKeypair.address, role: AccountRole.WRITABLE }, // Mint account
+                { address: metadataAddress, role: AccountRole.WRITABLE }, // Metadata account
+                { address: editionAddress, role: AccountRole.WRITABLE }, // Edition account
+                { address: mintAuthorityAddress, role: AccountRole.WRITABLE }, // Mint authority account
+                { address: associatedTokenAccountAddress, role: AccountRole.WRITABLE }, // ATA
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
+                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
+                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
+                { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Associated token program
+                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
+            ],
+            data: new Uint8Array(instructionData),
+        };
+
+        await sendTransaction(ix);
+
+        const tokenInfo = svm.getAccount(associatedTokenAccountAddress);
+        assert(tokenInfo.exists, 'associated token account not created');
+        const tokenAccount = getTokenDecoder().decode(tokenInfo.data);
+        assert.equal(tokenAccount.amount.toString(), '1', 'unexpected NFT balance');
+
+        const editionInfo = svm.getAccount(editionAddress);
+        assert(editionInfo.exists, 'edition account not created');
+        assert(editionInfo.programAddress === TOKEN_METADATA_PROGRAM_ID, 'edition account has wrong owner');
     });
-
-    const sx = await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer, mintKeypair], {
-      skipPreflight: true,
-    });
-
-    console.log("Success!");
-    console.log(`   Mint Address: ${mintKeypair.publicKey}`);
-    console.log(`   Tx Signature: ${sx}`);
-  });
-
-  it("Mint the NFT to your wallet!", async () => {
-    const metadataAddress = PublicKey.findProgramAddressSync(
-      [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
-      TOKEN_METADATA_PROGRAM_ID,
-    )[0];
-
-    const editionAddress = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("metadata"),
-        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-        mintKeypair.publicKey.toBuffer(),
-        Buffer.from("edition"),
-      ],
-      TOKEN_METADATA_PROGRAM_ID,
-    )[0];
-
-    const associatedTokenAccountAddress = await getAssociatedTokenAddress(mintKeypair.publicKey, payer.publicKey);
-
-    const instructionData = borshSerialize(MintToArgsSchema, {
-      instruction: NftMinterInstruction.Mint,
-    });
-
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: mintKeypair.publicKey, isSigner: false, isWritable: true }, // Mint account
-        { pubkey: metadataAddress, isSigner: false, isWritable: true }, // Metadata account
-        { pubkey: editionAddress, isSigner: false, isWritable: true }, // Edition account
-        { pubkey: mintAuthorityPublicKey, isSigner: false, isWritable: true }, // Mint authority account
-        {
-          pubkey: associatedTokenAccountAddress,
-          isSigner: false,
-          isWritable: true,
-        }, // ATA
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true }, // Payer
-        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }, // Rent account
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // System program
-        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }, // Token program
-        {
-          pubkey: ASSOCIATED_TOKEN_PROGRAM_ID,
-          isSigner: false,
-          isWritable: false,
-        }, // Associated token program
-        {
-          pubkey: TOKEN_METADATA_PROGRAM_ID,
-          isSigner: false,
-          isWritable: false,
-        }, // Token metadata program
-      ],
-      programId: program.publicKey,
-      data: instructionData,
-    });
-
-    const sx = await sendAndConfirmTransaction(connection, new Transaction().add(ix), [payer]);
-
-    console.log("Success!");
-    console.log(`   ATA Address: ${associatedTokenAccountAddress}`);
-    console.log(`   Tx Signature: ${sx}`);
-  });
 });

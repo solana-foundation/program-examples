@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "1.0.2"
+solana_version = "3.1.8"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+merkle_tree_token_claimer = "GTCPuHiGookQVSAgGc7CzBiFYPytjVAq6vdCV3NnZoHa"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.test.ts"
+
+[hooks]

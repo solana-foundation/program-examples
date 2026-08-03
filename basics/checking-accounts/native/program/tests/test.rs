@@ -20,13 +20,8 @@ fn test_checking_accounts() {
 
     svm.add_program(program_id, program_bytes).unwrap();
 
-    let create_account_ix = create_account(
-        &payer.pubkey(),
-        &account_to_change.pubkey(),
-        LAMPORTS_PER_SOL,
-        0,
-        &program_id,
-    );
+    let create_account_ix =
+        create_account(&payer.pubkey(), &account_to_change.pubkey(), LAMPORTS_PER_SOL, 0, &program_id);
 
     let tx = Transaction::new_signed_with_payer(
         &[create_account_ix],

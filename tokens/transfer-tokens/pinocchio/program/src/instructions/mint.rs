@@ -19,7 +19,7 @@ use crate::instructions::parse_u64;
 ///   7. `[]`                 associated token program
 ///
 /// Instruction data: `[amount: u64 (LE)]`
-pub fn mint_tokens(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
+pub fn mint_tokens(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     let [mint_account, token_account, mint_authority, payer, wallet, system_program, token_program, _associated_token_program] =
         accounts
     else {
@@ -41,6 +41,7 @@ pub fn mint_tokens(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
 
     log!("Minting tokens");
     MintTo {
+        multisig_signers: &[] as &[&AccountView],
         mint: mint_account,
         account: token_account,
         mint_authority,

@@ -6,8 +6,8 @@ use {
         msg,
         program::invoke,
     },
-    spl_associated_token_account::instruction as associated_token_account_instruction,
-    spl_token::instruction as token_instruction,
+    spl_associated_token_account_interface::instruction as associated_token_account_instruction,
+    spl_token_interface::instruction as token_instruction,
 };
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -50,18 +50,12 @@ pub fn transfer_tokens(accounts: &[AccountInfo], args: TransferTokensArgs) -> Pr
     } else {
         msg!("Associated token account exists.");
     }
-    msg!(
-        "Recipient Associated Token Address: {}",
-        to_associated_token_account.key
-    );
+    msg!("Recipient Associated Token Address: {}", to_associated_token_account.key);
 
     msg!("Transferring {} tokens...", args.quantity);
     msg!("Mint: {}", mint_account.key);
     msg!("Owner Token Address: {}", from_associated_token_account.key);
-    msg!(
-        "Recipient Token Address: {}",
-        to_associated_token_account.key
-    );
+    msg!("Recipient Token Address: {}", to_associated_token_account.key);
     invoke(
         &token_instruction::transfer(
             token_program.key,

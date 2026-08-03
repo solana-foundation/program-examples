@@ -12,7 +12,7 @@ fn test_realloc() {
     let mut svm = LiteSVM::new();
 
     let program_id = Pubkey::new_unique();
-    let program_bytes = include_bytes!("../../../../../target/deploy/realloc_program.so");
+    let program_bytes = include_bytes!("../../tests/fixtures/realloc_program.so");
 
     svm.add_program(program_id, program_bytes).unwrap();
 
@@ -49,12 +49,10 @@ fn test_realloc() {
 
     assert!(svm.send_transaction(tx).is_ok());
 
-    let data = borsh::to_vec(&ReallocInstruction::ReallocateWithoutZeroInit(
-        EnhancedAddressInfoExtender {
-            state: "Illinois".to_string(),
-            zip: 12345,
-        },
-    ))
+    let data = borsh::to_vec(&ReallocInstruction::ReallocateWithoutZeroInit(EnhancedAddressInfoExtender {
+        state: "Illinois".to_string(),
+        zip: 12345,
+    }))
     .unwrap();
 
     let ix = Instruction {
@@ -67,12 +65,7 @@ fn test_realloc() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 
@@ -84,18 +77,9 @@ fn test_realloc() {
     }))
     .unwrap();
 
-    let ix = Instruction {
-        program_id,
-        accounts: vec![AccountMeta::new(test_account.pubkey(), false)],
-        data,
-    };
+    let ix = Instruction { program_id, accounts: vec![AccountMeta::new(test_account.pubkey(), false)], data };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 }

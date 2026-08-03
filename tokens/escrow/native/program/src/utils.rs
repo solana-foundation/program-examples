@@ -7,7 +7,7 @@ pub fn assert_is_associated_token_account(
     mint: &Pubkey,
 ) -> Result<(), ProgramError> {
     let associated_token_account_address =
-        &spl_associated_token_account::get_associated_token_address(owner, mint);
+        &spl_associated_token_account_interface::address::get_associated_token_address(owner, mint);
 
     if token_address != associated_token_account_address {
         return Err(EscrowError::TokenAccountMismatch.into());

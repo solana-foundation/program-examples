@@ -41,18 +41,10 @@ fn test_counter() {
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
 
-    let ix = Instruction {
-        program_id,
-        accounts: vec![AccountMeta::new(counter_account.pubkey(), false)],
-        data: vec![0],
-    };
+    let ix =
+        Instruction { program_id, accounts: vec![AccountMeta::new(counter_account.pubkey(), false)], data: vec![0] };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());

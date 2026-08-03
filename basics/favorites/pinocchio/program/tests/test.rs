@@ -62,12 +62,7 @@ fn test_favorites() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
@@ -78,19 +73,11 @@ fn test_favorites() {
 
     let ix = Instruction {
         program_id,
-        accounts: vec![
-            AccountMeta::new(payer.pubkey(), true),
-            AccountMeta::new(favorites_pda, false),
-        ],
+        accounts: vec![AccountMeta::new(payer.pubkey(), true), AccountMeta::new(favorites_pda, false)],
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());

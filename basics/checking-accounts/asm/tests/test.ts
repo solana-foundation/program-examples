@@ -1,247 +1,241 @@
-import assert from "node:assert";
-import { describe, test } from "node:test";
-import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { start } from "solana-bankrun";
+import assert from 'node:assert';
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type Instruction,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+    type TransactionSigner,
+} from '@solana/kit';
+import { getCreateAccountInstruction, getTransferSolInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe("Checking accounts", async () => {
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "checking-account-asm-program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
-  const rent = await client.getRent();
+const LAMPORTS_PER_SOL = 1_000_000_000n;
 
-  // We'll create this ahead of time.
-  // Our program will try to modify it.
-  const accountToChange = Keypair.generate();
-  // Our program will create this.
-  const accountToCreate = Keypair.generate();
+describe('Checking accounts', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let rentExemptBalance: bigint;
 
-  test("Create an account owned by our program", async () => {
-    const blockhash = context.lastBlockhash;
-    const ix = SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: accountToChange.publicKey,
-      lamports: Number(rent.minimumBalance(BigInt(0))),
-      space: 0,
-      programId: PROGRAM_ID, // Our program
+    // We'll create this ahead of time.
+    // Our program will try to modify it.
+    let accountToChange: KeyPairSigner;
+    // Our program will create this.
+    let accountToCreate: KeyPairSigner;
+
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/checking-account-asm-program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(LAMPORTS_PER_SOL));
+        rentExemptBalance = svm.minimumBalanceForRentExemption(0n);
+        accountToChange = await generateKeyPairSigner();
+        accountToCreate = await generateKeyPairSigner();
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer, accountToChange);
+    async function signTransaction(instructions: Instruction[], feePayer: TransactionSigner) {
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(feePayer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions(instructions, m),
+        );
+        return await signTransactionMessageWithSigners(transactionMessage);
+    }
 
-    await client.processTransaction(tx);
-  });
+    async function sendExpectSuccess(instructions: Instruction[], feePayer: TransactionSigner = payer) {
+        const result = svm.sendTransaction(await signTransaction(instructions, feePayer));
+        assert.ok(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    }
 
-  test("Check accounts", async () => {
-    const blockhash = context.lastBlockhash;
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-        { pubkey: accountToCreate.publicKey, isSigner: true, isWritable: true },
-        { pubkey: accountToChange.publicKey, isSigner: true, isWritable: true },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+    async function sendExpectCustomError(
+        instructions: Instruction[],
+        code: number,
+        feePayer: TransactionSigner = payer,
+    ) {
+        const result = svm.sendTransaction(await signTransaction(instructions, feePayer));
+        assert.ok(result instanceof FailedTransactionMetadata, 'expected transaction to fail');
+        assert.equal(
+            result.err().toString(),
+            `TransactionErrorInstructionError { index: 0, error: InstructionErrorCustom { code: ${code} } }`,
+        );
+    }
+
+    it('Create an account owned by our program', async () => {
+        const ix = getCreateAccountInstruction({
+            payer,
+            newAccount: accountToChange,
+            lamports: rentExemptBalance,
+            space: 0,
+            programAddress: programId, // Our program
+        });
+
+        await sendExpectSuccess([ix]);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer, accountToChange, accountToCreate);
+    it('Check accounts', async () => {
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: accountToCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: accountToCreate },
+                { address: accountToChange.address, role: AccountRole.WRITABLE_SIGNER, signer: accountToChange },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
 
-    await client.processTransaction(tx);
-  });
-
-  test("Invalid number of accounts (error 1)", async () => {
-    const blockhash = context.lastBlockhash;
-    const ix = new TransactionInstruction({
-      keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+        await sendExpectSuccess([ix]);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer);
+    it('Invalid number of accounts (error 1)', async () => {
+        const ix = {
+            programAddress: programId,
+            accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
+            data: new Uint8Array(0),
+        };
 
-    const res = await client.tryProcessTransaction(tx);
-    assert.equal(res.result, "Error processing Instruction 0: custom program error: 0x1");
-  });
-
-  test("Payer not signer (error 2)", async () => {
-    const blockhash = context.lastBlockhash;
-    const feePayer = Keypair.generate();
-    const fakePayer = Keypair.generate();
-    const acCreate = Keypair.generate();
-    const acChange = Keypair.generate();
-
-    const fund = SystemProgram.transfer({
-      fromPubkey: payer.publicKey,
-      toPubkey: feePayer.publicKey,
-      lamports: 10_000_000,
-    });
-    const fundTx = new Transaction();
-    fundTx.recentBlockhash = blockhash;
-    fundTx.add(fund).sign(payer);
-    await client.processTransaction(fundTx);
-
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: fakePayer.publicKey, isSigner: false, isWritable: true }, // not a signer
-        { pubkey: acCreate.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acChange.publicKey, isSigner: true, isWritable: true },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+        await sendExpectCustomError([ix], 1);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = context.lastBlockhash;
-    tx.add(ix).sign(feePayer, acCreate, acChange);
+    it('Payer not signer (error 2)', async () => {
+        const feePayer = await generateKeyPairSigner();
+        const fakePayer = await generateKeyPairSigner();
+        const acCreate = await generateKeyPairSigner();
+        const acChange = await generateKeyPairSigner();
 
-    const res = await client.tryProcessTransaction(tx);
-    assert.equal(res.result, "Error processing Instruction 0: custom program error: 0x2");
-  });
+        const fund = getTransferSolInstruction({
+            source: payer,
+            destination: feePayer.address,
+            amount: 10_000_000,
+        });
+        await sendExpectSuccess([fund]);
 
-  test("Account to create already initialized (error 3)", async () => {
-    const blockhash = context.lastBlockhash;
-    const acCreate = Keypair.generate();
-    const acChange = Keypair.generate();
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: fakePayer.address, role: AccountRole.WRITABLE }, // not a signer
+                { address: acCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: acCreate },
+                { address: acChange.address, role: AccountRole.WRITABLE_SIGNER, signer: acChange },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
 
-    // Fund acCreate so it appears initialized
-    const fund = SystemProgram.transfer({
-      fromPubkey: payer.publicKey,
-      toPubkey: acCreate.publicKey,
-      lamports: 1_000_000,
-    });
-    // Fund acChange so it is initialized and owned by our program
-    const fundChange = SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: acChange.publicKey,
-      lamports: Number(rent.minimumBalance(BigInt(0))),
-      space: 0,
-      programId: PROGRAM_ID,
-    });
-
-    const setupTx = new Transaction();
-    setupTx.recentBlockhash = blockhash;
-    setupTx.add(fund, fundChange).sign(payer, acChange);
-    await client.processTransaction(setupTx);
-
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acCreate.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acChange.publicKey, isSigner: true, isWritable: true },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+        await sendExpectCustomError([ix], 2, feePayer);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = context.lastBlockhash;
-    tx.add(ix).sign(payer, acCreate, acChange);
+    it('Account to create already initialized (error 3)', async () => {
+        const acCreate = await generateKeyPairSigner();
+        const acChange = await generateKeyPairSigner();
 
-    const res = await client.tryProcessTransaction(tx);
-    assert.equal(res.result, "Error processing Instruction 0: custom program error: 0x3");
-  });
+        // Fund acCreate so it appears initialized
+        const fund = getTransferSolInstruction({
+            source: payer,
+            destination: acCreate.address,
+            amount: 1_000_000,
+        });
+        // Fund acChange so it is initialized and owned by our program
+        const fundChange = getCreateAccountInstruction({
+            payer,
+            newAccount: acChange,
+            lamports: rentExemptBalance,
+            space: 0,
+            programAddress: programId,
+        });
 
-  test("Account to change not initialized (error 4)", async () => {
-    const blockhash = context.lastBlockhash;
-    const acCreate = Keypair.generate();
-    const acChange = Keypair.generate(); // no lamports
+        await sendExpectSuccess([fund, fundChange]);
 
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acCreate.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acChange.publicKey, isSigner: true, isWritable: true },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: acCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: acCreate },
+                { address: acChange.address, role: AccountRole.WRITABLE_SIGNER, signer: acChange },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
+
+        await sendExpectCustomError([ix], 3);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer, acCreate, acChange);
+    it('Account to change not initialized (error 4)', async () => {
+        const acCreate = await generateKeyPairSigner();
+        const acChange = await generateKeyPairSigner(); // no lamports
 
-    const res = await client.tryProcessTransaction(tx);
-    assert.equal(res.result, "Error processing Instruction 0: custom program error: 0x4");
-  });
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: acCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: acCreate },
+                { address: acChange.address, role: AccountRole.WRITABLE_SIGNER, signer: acChange },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
 
-  test("Invalid system program (error 5)", async () => {
-    const blockhash = context.lastBlockhash;
-    const acCreate = Keypair.generate();
-    const acChange = Keypair.generate();
-    const fakeSystemProgram = PublicKey.unique();
-
-    const fund = SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: acChange.publicKey,
-      lamports: Number(rent.minimumBalance(BigInt(0))),
-      space: 0,
-      programId: PROGRAM_ID,
-    });
-    const setupTx = new Transaction();
-    setupTx.recentBlockhash = blockhash;
-    setupTx.add(fund).sign(payer, acChange);
-    await client.processTransaction(setupTx);
-
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acCreate.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acChange.publicKey, isSigner: true, isWritable: true },
-        { pubkey: fakeSystemProgram, isSigner: false, isWritable: false },
-      ],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+        await sendExpectCustomError([ix], 4);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = context.lastBlockhash;
-    tx.add(ix).sign(payer, acCreate, acChange);
+    it('Invalid system program (error 5)', async () => {
+        const acCreate = await generateKeyPairSigner();
+        const acChange = await generateKeyPairSigner();
+        const fakeSystemProgram = (await generateKeyPairSigner()).address;
 
-    const res = await client.tryProcessTransaction(tx);
-    assert.equal(res.result, "Error processing Instruction 0: custom program error: 0x5");
-  });
+        const fund = getCreateAccountInstruction({
+            payer,
+            newAccount: acChange,
+            lamports: rentExemptBalance,
+            space: 0,
+            programAddress: programId,
+        });
+        await sendExpectSuccess([fund]);
 
-  test("Account to change wrong owner (error 6)", async () => {
-    const blockhash = context.lastBlockhash;
-    const acCreate = Keypair.generate();
-    const acChange = Keypair.generate();
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: acCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: acCreate },
+                { address: acChange.address, role: AccountRole.WRITABLE_SIGNER, signer: acChange },
+                { address: fakeSystemProgram, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
 
-    // Fund acChange but keep it owned by the system program (no createAccount with PROGRAM_ID)
-    const fund = SystemProgram.transfer({
-      fromPubkey: payer.publicKey,
-      toPubkey: acChange.publicKey,
-      lamports: 1_000_000,
-    });
-    const setupTx = new Transaction();
-    setupTx.recentBlockhash = blockhash;
-    setupTx.add(fund).sign(payer);
-    await client.processTransaction(setupTx);
-
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acCreate.publicKey, isSigner: true, isWritable: true },
-        { pubkey: acChange.publicKey, isSigner: true, isWritable: true },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0),
+        await sendExpectCustomError([ix], 5);
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = context.lastBlockhash;
-    tx.add(ix).sign(payer, acCreate, acChange);
+    it('Account to change wrong owner (error 6)', async () => {
+        const acCreate = await generateKeyPairSigner();
+        const acChange = await generateKeyPairSigner();
 
-    const res = await client.tryProcessTransaction(tx);
-    assert.equal(res.result, "Error processing Instruction 0: custom program error: 0x6");
-  });
+        // Fund acChange but keep it owned by the system program (no createAccount with programId)
+        const fund = getTransferSolInstruction({
+            source: payer,
+            destination: acChange.address,
+            amount: 1_000_000,
+        });
+        await sendExpectSuccess([fund]);
+
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: acCreate.address, role: AccountRole.WRITABLE_SIGNER, signer: acCreate },
+                { address: acChange.address, role: AccountRole.WRITABLE_SIGNER, signer: acChange },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(0),
+        };
+
+        await sendExpectCustomError([ix], 6);
+    });
 });

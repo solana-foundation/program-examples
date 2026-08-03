@@ -10,16 +10,10 @@ pub enum TransferInstruction {
     ProgramTransfer(u64),
 }
 
-pub fn process_instruction(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    input: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(program_id: &Pubkey, accounts: &[AccountInfo], input: &[u8]) -> ProgramResult {
     let instruction = TransferInstruction::try_from_slice(input)?;
     match instruction {
         TransferInstruction::CpiTransfer(args) => transfer_sol_with_cpi(accounts, args),
-        TransferInstruction::ProgramTransfer(args) => {
-            transfer_sol_with_program(program_id, accounts, args)
-        }
+        TransferInstruction::ProgramTransfer(args) => transfer_sol_with_program(program_id, accounts, args),
     }
 }

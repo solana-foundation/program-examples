@@ -19,17 +19,12 @@ fn test_favorites() {
 
     svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
 
-    let favorites_pda =
-        Pubkey::find_program_address(&[b"favorite", payer.pubkey().as_ref()], &program_id).0;
+    let favorites_pda = Pubkey::find_program_address(&[b"favorite", payer.pubkey().as_ref()], &program_id).0;
 
     let favorites = Favorites {
         number: 42,
         color: "blue".to_string(),
-        hobbies: vec![
-            "coding".to_string(),
-            "reading".to_string(),
-            "travelling".to_string(),
-        ],
+        hobbies: vec!["coding".to_string(), "reading".to_string(), "travelling".to_string()],
     };
 
     let data = borsh::to_vec(&FavoritesInstruction::CreatePda(favorites.clone())).unwrap();
@@ -44,12 +39,7 @@ fn test_favorites() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 
@@ -65,19 +55,11 @@ fn test_favorites() {
 
     let ix = Instruction {
         program_id,
-        accounts: vec![
-            AccountMeta::new(payer.pubkey(), true),
-            AccountMeta::new(favorites_pda, false),
-        ],
+        accounts: vec![AccountMeta::new(payer.pubkey(), true), AccountMeta::new(favorites_pda, false)],
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 }

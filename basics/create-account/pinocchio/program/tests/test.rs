@@ -24,7 +24,7 @@ fn test_create_account() {
             AccountMeta::new(new_keypair.pubkey(), true),
             AccountMeta::new(solana_system_interface::program::ID, false),
         ],
-        data: vec![0],
+        data: vec![0_u8; 1000],
     };
 
     let tx = Transaction::new_signed_with_payer(
@@ -36,4 +36,7 @@ fn test_create_account() {
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
+
+    let new_account = svm.get_account(&new_keypair.pubkey()).unwrap();
+    assert_eq!(new_account.data.len(), 1000);
 }

@@ -6,8 +6,8 @@ use {
         msg,
         program::invoke,
     },
-    spl_associated_token_account::instruction as associated_token_account_instruction,
-    spl_token::instruction as token_instruction,
+    spl_associated_token_account_interface::instruction as associated_token_account_instruction,
+    spl_token_interface::instruction as token_instruction,
 };
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -49,10 +49,7 @@ pub fn mint_spl(accounts: &[AccountInfo], args: MintSplArgs) -> ProgramResult {
     }
     msg!("Associated Token Address: {}", associated_token_account.key);
 
-    msg!(
-        "Minting {} tokens to associated token account...",
-        args.quantity
-    );
+    msg!("Minting {} tokens to associated token account...", args.quantity);
     invoke(
         &token_instruction::mint_to(
             token_program.key,
@@ -62,12 +59,7 @@ pub fn mint_spl(accounts: &[AccountInfo], args: MintSplArgs) -> ProgramResult {
             &[mint_authority.key],
             args.quantity,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            associated_token_account.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), associated_token_account.clone(), token_program.clone()],
     )?;
 
     msg!("Tokens minted to wallet successfully.");

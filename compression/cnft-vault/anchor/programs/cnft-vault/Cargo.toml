@@ -26,6 +26,7 @@ anchor-lang = "1.0.2"
 # using raw invoke_signed() with hardcoded program IDs and discriminators.
 borsh = "1"
 ahash = "=0.8.7"
+getrandom = { version = "0.2", features = ["custom"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

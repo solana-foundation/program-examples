@@ -11,9 +11,7 @@ use {
         sysvar::Sysvar,
     },
     solana_system_interface::instruction as system_instruction,
-    spl_token_2022_interface::{
-        extension::ExtensionType, instruction as token_instruction, state::Mint,
-    },
+    spl_token_2022_interface::{extension::ExtensionType, instruction as token_instruction, state::Mint},
 };
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -23,11 +21,7 @@ pub struct CreateTokenArgs {
 
 entrypoint!(process_instruction);
 
-fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let args = CreateTokenArgs::try_from_slice(instruction_data)?;
 
     let accounts_iter = &mut accounts.iter();
@@ -59,12 +53,7 @@ fn process_instruction(
             space as u64,
             token_program.key,
         ),
-        &[
-            mint_account.clone(),
-            payer.clone(),
-            system_program.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), payer.clone(), system_program.clone(), token_program.clone()],
     )?;
 
     // Here, let's enable two extensions for the Mint. This needs to be done before the Mint is initialized
@@ -77,23 +66,13 @@ fn process_instruction(
             Some(close_authority.key),
         )
         .unwrap(),
-        &[
-            mint_account.clone(),
-            close_authority.clone(),
-            token_program.clone(),
-            system_program.clone(),
-        ],
+        &[mint_account.clone(), close_authority.clone(), token_program.clone(), system_program.clone()],
     )?;
 
     // Initialize the Non Transferable Mint Extension
     invoke(
-        &token_instruction::initialize_non_transferable_mint(token_program.key, mint_account.key)
-            .unwrap(),
-        &[
-            mint_account.clone(),
-            token_program.clone(),
-            system_program.clone(),
-        ],
+        &token_instruction::initialize_non_transferable_mint(token_program.key, mint_account.key).unwrap(),
+        &[mint_account.clone(), token_program.clone(), system_program.clone()],
     )?;
 
     // Initialize the Token Mint
@@ -105,12 +84,7 @@ fn process_instruction(
             Some(mint_authority.key),
             args.token_decimals,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            token_program.clone(),
-            rent.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), token_program.clone(), rent.clone()],
     )?;
 
     msg!("Mint created!");

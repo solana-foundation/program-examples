@@ -2,7 +2,7 @@ name: Native
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
@@ -24,7 +24,7 @@ env:
   MIN_PROJECTS_FOR_MATRIX: 4
   # Harden cargo against transient crates.io index fetch failures that flake
   # cargo build-sbf ("failed to get <crate> as a dependency").
-  CARGO_NET_RETRY: "10"
+  CARGO_NET_RETRY: '10'
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
   # See https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -171,7 +171,7 @@ jobs:
             fi
 
           # Run Rust unit tests
-            if [ -d "program" ]; then
+            if [ -f "program/Cargo.toml" ]; then
               echo "Running Rust unit tests for $project"
               if ! cargo test --manifest-path=./program/Cargo.toml; then
                 echo "::error::Rust unit tests failed for $project"

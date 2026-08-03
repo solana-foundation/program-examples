@@ -1,148 +1,169 @@
-import { Buffer } from "node:buffer";
-import { describe, test } from "node:test";
-import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
-import * as borsh from "borsh";
-import { start } from "solana-bankrun";
+import { Buffer } from 'node:buffer';
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import * as borsh from 'borsh';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe("Carnival", async () => {
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "repository_layout_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+describe('Carnival', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-  const CarnivalInstructionSchema = {
-    struct: {
-      name: "string",
-      height: "u32",
-      ticket_count: "u32",
-      attraction: "string",
-      attraction_name: "string",
-    },
-  };
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/repository_layout_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
+    });
 
-  type CarnivalInstruction = {
-    name: string;
-    height: number;
-    ticket_count: number;
-    attraction: string;
-    attraction_name: string;
-  };
+    const CarnivalInstructionSchema = {
+        struct: {
+            name: 'string',
+            height: 'u32',
+            ticket_count: 'u32',
+            attraction: 'string',
+            attraction_name: 'string',
+        },
+    };
 
-  function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-  }
+    type CarnivalInstruction = {
+        name: string;
+        height: number;
+        ticket_count: number;
+        attraction: string;
+        attraction_name: string;
+    };
 
-  async function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
-    const tx = new Transaction();
-    for (const ix of instructionsList) {
-      tx.recentBlockhash = context.lastBlockhash;
-      tx.add(
-        new TransactionInstruction({
-          keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
-          programId: PROGRAM_ID,
-          data: borshSerialize(CarnivalInstructionSchema, ix),
-        }),
-      ).sign(payer);
+    function borshSerialize(schema: borsh.Schema, data: object): Buffer {
+        return Buffer.from(borsh.serialize(schema, data));
     }
-    await client.processTransaction(tx);
-  }
 
-  test("Go on some rides!", async () => {
-    await sendCarnivalInstructions([
-      {
-        name: "Jimmy",
-        height: 36,
-        ticket_count: 15,
-        attraction: "ride",
-        attraction_name: "Scrambler",
-      },
-      {
-        name: "Mary",
-        height: 52,
-        ticket_count: 1,
-        attraction: "ride",
-        attraction_name: "Ferris Wheel",
-      },
-      {
-        name: "Alice",
-        height: 56,
-        ticket_count: 15,
-        attraction: "ride",
-        attraction_name: "Scrambler",
-      },
-      {
-        name: "Bob",
-        height: 49,
-        ticket_count: 6,
-        attraction: "ride",
-        attraction_name: "Tilt-a-Whirl",
-      },
-    ]);
-  });
+    async function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
+        const instructions = instructionsList.map(ix => ({
+            programAddress: programId,
+            accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
+            data: new Uint8Array(borshSerialize(CarnivalInstructionSchema, ix)),
+        }));
 
-  test("Play some games!", async () => {
-    await sendCarnivalInstructions([
-      {
-        name: "Jimmy",
-        height: 36,
-        ticket_count: 15,
-        attraction: "game",
-        attraction_name: "I Got It!",
-      },
-      {
-        name: "Mary",
-        height: 52,
-        ticket_count: 1,
-        attraction: "game",
-        attraction_name: "Ring Toss",
-      },
-      {
-        name: "Alice",
-        height: 56,
-        ticket_count: 15,
-        attraction: "game",
-        attraction_name: "Ladder Climb",
-      },
-      {
-        name: "Bob",
-        height: 49,
-        ticket_count: 6,
-        attraction: "game",
-        attraction_name: "Ring Toss",
-      },
-    ]);
-  });
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions(instructions, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-  test("Eat some food!", async () => {
-    await sendCarnivalInstructions([
-      {
-        name: "Jimmy",
-        height: 36,
-        ticket_count: 15,
-        attraction: "food",
-        attraction_name: "Taco Shack",
-      },
-      {
-        name: "Mary",
-        height: 52,
-        ticket_count: 1,
-        attraction: "food",
-        attraction_name: "Larry's Pizza",
-      },
-      {
-        name: "Alice",
-        height: 56,
-        ticket_count: 15,
-        attraction: "food",
-        attraction_name: "Dough Boy's",
-      },
-      {
-        name: "Bob",
-        height: 49,
-        ticket_count: 6,
-        attraction: "food",
-        attraction_name: "Dough Boy's",
-      },
-    ]);
-  });
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    }
+
+    it('Go on some rides!', async () => {
+        await sendCarnivalInstructions([
+            {
+                name: 'Jimmy',
+                height: 36,
+                ticket_count: 15,
+                attraction: 'ride',
+                attraction_name: 'Scrambler',
+            },
+            {
+                name: 'Mary',
+                height: 52,
+                ticket_count: 1,
+                attraction: 'ride',
+                attraction_name: 'Ferris Wheel',
+            },
+            {
+                name: 'Alice',
+                height: 56,
+                ticket_count: 15,
+                attraction: 'ride',
+                attraction_name: 'Scrambler',
+            },
+            {
+                name: 'Bob',
+                height: 49,
+                ticket_count: 6,
+                attraction: 'ride',
+                attraction_name: 'Tilt-a-Whirl',
+            },
+        ]);
+    });
+
+    it('Play some games!', async () => {
+        await sendCarnivalInstructions([
+            {
+                name: 'Jimmy',
+                height: 36,
+                ticket_count: 15,
+                attraction: 'game',
+                attraction_name: 'I Got It!',
+            },
+            {
+                name: 'Mary',
+                height: 52,
+                ticket_count: 1,
+                attraction: 'game',
+                attraction_name: 'Ring Toss',
+            },
+            {
+                name: 'Alice',
+                height: 56,
+                ticket_count: 15,
+                attraction: 'game',
+                attraction_name: 'Ladder Climb',
+            },
+            {
+                name: 'Bob',
+                height: 49,
+                ticket_count: 6,
+                attraction: 'game',
+                attraction_name: 'Ring Toss',
+            },
+        ]);
+    });
+
+    it('Eat some food!', async () => {
+        await sendCarnivalInstructions([
+            {
+                name: 'Jimmy',
+                height: 36,
+                ticket_count: 15,
+                attraction: 'food',
+                attraction_name: 'Taco Shack',
+            },
+            {
+                name: 'Mary',
+                height: 52,
+                ticket_count: 1,
+                attraction: 'food',
+                attraction_name: "Larry's Pizza",
+            },
+            {
+                name: 'Alice',
+                height: 56,
+                ticket_count: 15,
+                attraction: 'food',
+                attraction_name: "Dough Boy's",
+            },
+            {
+                name: 'Bob',
+                height: 49,
+                ticket_count: 6,
+                attraction: 'food',
+                attraction_name: "Dough Boy's",
+            },
+        ]);
+    });
 });

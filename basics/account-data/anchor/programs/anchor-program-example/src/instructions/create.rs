@@ -22,11 +22,6 @@ pub fn create_address_info(
     street: String,
     city: String,
 ) -> Result<()> {
-    *ctx.accounts.address_info = AddressInfo {
-        name,
-        house_number,
-        street,
-        city,
-    };
+    *ctx.accounts.address_info = AddressInfo { name, house_number, street, city };
     Ok(())
 }

@@ -11,12 +11,7 @@ const DEFAULT_TICKETS_TO_PLAY: u32 = 3;
 
 impl Game {
     pub fn new(name: String, tries: u32, prize: String) -> Game {
-        Game {
-            name,
-            tickets: DEFAULT_TICKETS_TO_PLAY,
-            tries,
-            prize,
-        }
+        Game { name, tickets: DEFAULT_TICKETS_TO_PLAY, tries, prize }
     }
 }
 

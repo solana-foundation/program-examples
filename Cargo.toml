@@ -14,7 +14,6 @@ members = [
     "basics/counter/native/program",
     "basics/counter/pinocchio/program",
     "basics/counter/anchor/programs/counter_anchor",
-    "basics/counter/mpl-stack",
     "basics/create-account/native/program",
     "basics/create-account/pinocchio/program",
     "basics/create-account/anchor/programs/create-system-account",
@@ -37,9 +36,6 @@ members = [
     "basics/realloc/native/program",
     "basics/realloc/pinocchio/program",
     "basics/realloc/anchor/programs/*",
-    "basics/rent/native/program",
-    "basics/rent/pinocchio/program",
-    "basics/rent/anchor/programs/*",
     "basics/favorites/native/program",
     "basics/favorites/pinocchio/program",
     "basics/repository-layout/native/program",
@@ -51,8 +47,12 @@ members = [
     "basics/transfer-sol/asm",
 
     # tokens
+    "tokens/create-token/native/program",
     "tokens/create-token/pinocchio/program",
+    "tokens/escrow/native/program",
     "tokens/escrow/pinocchio/program",
+    "tokens/pda-mint-authority/native/program",
+    "tokens/transfer-tokens/native/program",
     "tokens/transfer-tokens/pinocchio/program",
     "tokens/token-2022/mint-close-authority/native/program",
     "tokens/token-2022/mint-close-authority/pinocchio/program",
@@ -72,14 +72,11 @@ overflow-checks = true
 # misc
 borsh = "1.6.1"
 borsh-derive = "1.6.1"
-mpl-token-metadata = { version = "5.1.1", features = [ "no-entrypoint" ] }
 
 
 # spl
 solana-program = "4.0"
-spl-token = { version = "8.0.0", features = [ "no-entrypoint" ] }
 spl-token-2022 = {version = "9.0.0" , features = [ "no-entrypoint" ] }
-spl-associated-token-account = { version = "7.0.0", features = [ "no-entrypoint" ] }
 
 # interface
 solana-system-interface = {version = "2.0.0", features = ["bincode"]}
@@ -88,18 +85,22 @@ spl-associated-token-account-interface = "2.0.0"
 spl-token-2022-interface = "2.1.0"
 
 # pinocchio
-pinocchio = { version = "0.10.2", features = ["cpi"] }
+pinocchio = { version = "0.11.1", features = ["cpi", "copy", "account-resize"] }
 pinocchio-log = "0.5.1"
-pinocchio-system = "0.5.0"
-pinocchio-pubkey = "0.3.0"
-pinocchio-token = "0.5.0"
-pinocchio-associated-token-account = "0.3.0"
+pinocchio-system = "0.6.1"
+pinocchio-token = "0.6.0"
+pinocchio-token-2022 = "0.3.1"
+pinocchio-associated-token-account = "0.4.0"
 
 # testing
 litesvm = "0.11.0"
 solana-instruction = "3.0.0"
 solana-keypair = "3.0.1"
-solana-pubkey = "3.0.0"
-solana-transaction = "3.0.1"
+solana-message = "4.0.0"
 solana-native-token = "3.0.0"
-solana-address = "2.6.0"
+solana-pubkey = "3.0.0"
+solana-rent = "4.1.0"
+solana-signer = "3.0.0"
+solana-transaction = "3.0.1"
+solana-transaction-error = "3.2.0"
+solana-address = { version = "2.6.0", features = ["curve25519", "decode"] }

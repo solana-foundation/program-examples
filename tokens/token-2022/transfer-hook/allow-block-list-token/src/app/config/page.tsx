@@ -1,5 +1,5 @@
-import AblTokenConfig from "@/components/abl-token/abl-token-config";
+import AblTokenConfig from '@/components/abl-token/abl-token-config';
 
 export default function Page() {
-  return <AblTokenConfig />;
+    return <AblTokenConfig />;
 }

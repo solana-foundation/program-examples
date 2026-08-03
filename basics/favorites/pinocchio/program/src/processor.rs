@@ -5,7 +5,7 @@ pub use crate::state::Favorites;
 
 pub fn process_instruction(
     program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let (discriminator, ix_data) = instruction_data.split_first().unwrap();

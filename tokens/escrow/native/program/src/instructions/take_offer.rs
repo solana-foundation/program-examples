@@ -9,8 +9,8 @@ use {
         program_pack::Pack,
         pubkey::Pubkey,
     },
-    spl_associated_token_account::instruction as associated_token_account_instruction,
-    spl_token::{instruction as token_instruction, state::Account as TokenAccount},
+    spl_associated_token_account_interface::instruction as associated_token_account_instruction,
+    spl_token_interface::{instruction as token_instruction, state::Account as TokenAccount},
 };
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
@@ -55,12 +55,7 @@ impl TakeOffer {
         assert_eq!(&offer.token_mint_b, token_mint_b.key);
 
         // validate the offer accout with signer seeds
-        let offer_signer_seeds = &[
-            Offer::SEED_PREFIX,
-            maker.key.as_ref(),
-            &offer.id.to_le_bytes(),
-            &[offer.bump],
-        ];
+        let offer_signer_seeds = &[Offer::SEED_PREFIX, maker.key.as_ref(), &offer.id.to_le_bytes(), &[offer.bump]];
 
         let offer_key = Pubkey::create_program_address(offer_signer_seeds, program_id)?;
 
@@ -124,21 +119,13 @@ impl TakeOffer {
         // read token accounts
         //
         let vault_amount_a = TokenAccount::unpack(&vault.data.borrow())?.amount;
-        let taker_amount_a_before_transfer =
-            TokenAccount::unpack(&taker_token_account_a.data.borrow())?.amount;
-        let maker_amount_b_before_transfer =
-            TokenAccount::unpack(&maker_token_account_b.data.borrow())?.amount;
+        let taker_amount_a_before_transfer = TokenAccount::unpack(&taker_token_account_a.data.borrow())?.amount;
+        let maker_amount_b_before_transfer = TokenAccount::unpack(&maker_token_account_b.data.borrow())?.amount;
         let taker_amount_b = TokenAccount::unpack(&taker_token_account_b.data.borrow())?.amount;
 
         solana_program::msg!("Vault A Balance Before Transfer: {}", vault_amount_a);
-        solana_program::msg!(
-            "Taker A Balance Before Transfer: {}",
-            taker_amount_a_before_transfer
-        );
-        solana_program::msg!(
-            "Maker B Balance Before Transfer: {}",
-            maker_amount_b_before_transfer
-        );
+        solana_program::msg!("Taker A Balance Before Transfer: {}", taker_amount_a_before_transfer);
+        solana_program::msg!("Maker B Balance Before Transfer: {}", maker_amount_b_before_transfer);
         solana_program::msg!("Taker B Balance Before Transfer: {}", taker_amount_b);
 
         // taker transfer mint a tokens to vault
@@ -152,12 +139,7 @@ impl TakeOffer {
                 &[taker.key],
                 offer.token_b_wanted_amount,
             )?,
-            &[
-                token_program.clone(),
-                taker_token_account_b.clone(),
-                maker_token_account_b.clone(),
-                taker.clone(),
-            ],
+            &[token_program.clone(), taker_token_account_b.clone(), maker_token_account_b.clone(), taker.clone()],
         )?;
 
         // transfer from vault to taker
@@ -185,14 +167,8 @@ impl TakeOffer {
         let taker_amount_a = TokenAccount::unpack(&taker_token_account_a.data.borrow())?.amount;
         let maker_amount_b = TokenAccount::unpack(&maker_token_account_b.data.borrow())?.amount;
 
-        assert_eq!(
-            taker_amount_a,
-            taker_amount_a_before_transfer + vault_amount_a
-        );
-        assert_eq!(
-            maker_amount_b,
-            taker_amount_a_before_transfer + offer.token_b_wanted_amount
-        );
+        assert_eq!(taker_amount_a, taker_amount_a_before_transfer + vault_amount_a);
+        assert_eq!(maker_amount_b, taker_amount_a_before_transfer + offer.token_b_wanted_amount);
 
         let taker_amount_b = TokenAccount::unpack(&taker_token_account_b.data.borrow())?.amount;
         let vault_amount_a = TokenAccount::unpack(&vault.data.borrow())?.amount;
@@ -205,7 +181,7 @@ impl TakeOffer {
         // close the vault account
         //
         invoke_signed(
-            &spl_token::instruction::close_account(
+            &spl_token_interface::instruction::close_account(
                 token_program.key,
                 vault.key,
                 taker.key,
@@ -224,7 +200,7 @@ impl TakeOffer {
 
         // Realloc the account to zero
         //
-        offer_info.realloc(0, true)?;
+        offer_info.resize(0)?;
 
         // Assign the account to the System Program
         //

@@ -20,7 +20,7 @@ use crate::instructions::parse_u64;
 ///   8. `[]`                 associated token program
 ///
 /// Instruction data: `[amount: u64 (LE)]`
-pub fn transfer_tokens(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
+pub fn transfer_tokens(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     let [mint_account, source_token_account, destination_token_account, authority, recipient, payer, system_program, token_program, _associated_token_program] =
         accounts
     else {
@@ -42,6 +42,7 @@ pub fn transfer_tokens(accounts: &[AccountView], data: &[u8]) -> ProgramResult {
 
     log!("Transferring tokens");
     Transfer {
+        multisig_signers: &[] as &[&AccountView],
         from: source_token_account,
         to: destination_token_account,
         authority,

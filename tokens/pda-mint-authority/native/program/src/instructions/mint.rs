@@ -1,5 +1,4 @@
 use {
-    mpl_token_metadata::instruction as mpl_instruction,
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint::ProgramResult,
@@ -7,8 +6,8 @@ use {
         program::{invoke, invoke_signed},
         pubkey::Pubkey,
     },
-    spl_associated_token_account::instruction as associated_token_account_instruction,
-    spl_token::instruction as token_instruction,
+    spl_associated_token_account_interface::instruction as associated_token_account_instruction,
+    spl_token_interface::instruction as token_instruction,
 };
 
 use crate::state::MintAuthorityPda;
@@ -22,8 +21,8 @@ pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let mint_authority = next_account_info(accounts_iter)?;
     let associated_token_account = next_account_info(accounts_iter)?;
     let payer = next_account_info(accounts_iter)?;
-    let rent = next_account_info(accounts_iter)?;
-    let _system_program = next_account_info(accounts_iter)?;
+    let _rent = next_account_info(accounts_iter)?;
+    let system_program = next_account_info(accounts_iter)?;
     let token_program = next_account_info(accounts_iter)?;
     let associated_token_program = next_account_info(accounts_iter)?;
     let token_metadata_program = next_account_info(accounts_iter)?;
@@ -66,12 +65,7 @@ pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
             &[mint_authority.key],
             1,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            associated_token_account.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), associated_token_account.clone(), token_program.clone()],
         &[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]],
     )?;
 
@@ -82,24 +76,27 @@ pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     msg!("Creating edition account...");
     msg!("Edition account address: {}", edition_account.key);
     invoke_signed(
-        &mpl_instruction::create_master_edition_v3(
-            *token_metadata_program.key, // Program ID
-            *edition_account.key,        // Edition
-            *mint_account.key,           // Mint
-            *mint_authority.key,         // Update Authority
-            *mint_authority.key,         // Mint Authority
-            *metadata_account.key,       // Metadata
-            *payer.key,                  // Payer
-            Some(1),                     // Max Supply
+        &crate::mpl_util::create_master_edition_v3(
+            edition_account.key,
+            mint_account.key,
+            mint_authority.key,
+            mint_authority.key,
+            payer.key,
+            metadata_account.key,
+            token_program.key,
+            system_program.key,
+            1,
         ),
         &[
             edition_account.clone(),
-            metadata_account.clone(),
             mint_account.clone(),
             mint_authority.clone(),
+            mint_authority.clone(),
             payer.clone(),
+            metadata_account.clone(),
+            token_program.clone(),
+            system_program.clone(),
             token_metadata_program.clone(),
-            rent.clone(),
         ],
         &[&[MintAuthorityPda::SEED_PREFIX.as_bytes(), &[bump]]],
     )?;

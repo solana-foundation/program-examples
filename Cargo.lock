@@ -31,7 +31,7 @@ name = "account-data-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
  "solana-keypair",
@@ -920,7 +920,7 @@ name = "checking-accounts-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
  "solana-keypair",
@@ -962,9 +962,8 @@ name = "close-account-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
- "pinocchio-pubkey",
  "pinocchio-system",
  "solana-instruction",
  "solana-keypair",
@@ -1019,15 +1018,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
-name = "counter-mpl-stack"
-version = "0.1.0"
-dependencies = [
- "borsh",
- "shank",
- "solana-program",
-]
-
-[[package]]
 name = "counter-solana-native"
 version = "0.1.0"
 dependencies = [
@@ -1049,9 +1039,9 @@ name = "counter-solana-pinocchio"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
- "pinocchio-pubkey",
+ "solana-address 2.6.1",
  "solana-instruction",
  "solana-keypair",
  "solana-native-token",
@@ -1095,9 +1085,8 @@ name = "create-account-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
- "pinocchio-pubkey",
  "pinocchio-system",
  "solana-instruction",
  "solana-keypair",
@@ -1132,24 +1121,35 @@ dependencies = [
 name = "create-token-pinocchio-program"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
  "pinocchio-token",
 ]
 
 [[package]]
+name = "create-token-program"
+version = "0.1.0"
+dependencies = [
+ "borsh",
+ "borsh-derive",
+ "solana-program",
+ "solana-system-interface 2.0.0",
+ "spl-token-interface",
+]
+
+[[package]]
 name = "cross-program-invocation-pinocchio-hand"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
 ]
 
 [[package]]
 name = "cross-program-invocation-pinocchio-lever"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
 ]
@@ -1479,15 +1479,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
+name = "escrow-native-program"
+version = "0.1.0"
+dependencies = [
+ "borsh",
+ "solana-program",
+ "solana-system-interface 2.0.0",
+ "spl-associated-token-account-interface",
+ "spl-token-interface",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "escrow-pinocchio-program"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-associated-token-account",
  "pinocchio-log",
- "pinocchio-pubkey",
  "pinocchio-system",
  "pinocchio-token",
+ "solana-address 2.6.1",
 ]
 
 [[package]]
@@ -1511,10 +1523,10 @@ name = "favorites-pinocchio"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
- "pinocchio-pubkey",
  "pinocchio-system",
+ "solana-address 2.6.1",
  "solana-instruction",
  "solana-keypair",
  "solana-native-token",
@@ -1557,16 +1569,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f76610e969fa1784327ded240f1e28a3fd9520c9cec93b636fcf62dd37f772"
 dependencies = [
- "five8_core 1.0.0",
-]
-
-[[package]]
-name = "five8_const"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26dec3da8bc3ef08f2c04f61eab298c3ab334523e55f076354d6d6f613799a7b"
-dependencies = [
- "five8_core 0.1.2",
+ "five8_core",
 ]
 
 [[package]]
@@ -1575,14 +1578,8 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a0f1728185f277989ca573a402716ae0beaaea3f76a8ff87ef9dd8fb19436c5"
 dependencies = [
- "five8_core 1.0.0",
+ "five8_core",
 ]
-
-[[package]]
-name = "five8_core"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2551bf44bc5f776c15044b9b94153a00198be06743e262afaaa61f11ac7523a5"
 
 [[package]]
 name = "five8_core"
@@ -1740,7 +1737,7 @@ dependencies = [
 name = "hello-solana-program-pinocchio"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
 ]
 
@@ -2230,6 +2227,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "pda-mint-authority-native-program"
+version = "0.1.0"
+dependencies = [
+ "borsh",
+ "borsh-derive",
+ "solana-program",
+ "solana-system-interface 2.0.0",
+ "spl-associated-token-account-interface",
+ "spl-token-interface",
+]
+
+[[package]]
 name = "pda-rent-payer"
 version = "0.1.0"
 dependencies = [
@@ -2241,10 +2250,10 @@ name = "pda-rent-payer-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
- "pinocchio-pubkey",
  "pinocchio-system",
+ "solana-address 2.6.1",
  "solana-instruction",
  "solana-keypair",
  "solana-native-token",
@@ -2286,28 +2295,22 @@ dependencies = [
 
 [[package]]
 name = "pinocchio"
-version = "0.9.3"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8afe4f39c0e25cc471b35b89963312791a5162d45a86578cbeaad9e5e7d1b3b"
-
-[[package]]
-name = "pinocchio"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06810dac15a4ef83d3dabdb4f2f22fb39c9adff669cd2781da4f716510a647c"
+checksum = "a6cababcb62a2e739c7078ae16eda02789a6e3edd21bbdded864e85c38a7914d"
 dependencies = [
  "solana-account-view",
  "solana-address 2.6.1",
- "solana-define-syscall 4.0.1",
+ "solana-define-syscall 5.1.0",
  "solana-instruction-view",
  "solana-program-error",
 ]
 
 [[package]]
 name = "pinocchio-associated-token-account"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bd92823a97fb327d7509dfd7cbfa3ead56e9fc0e131972bc0e28ab7036be31a"
+checksum = "c552da2a965b33511ac54494e434e69be0ae12da1619a72594b76703c3dca211"
 dependencies = [
  "solana-account-view",
  "solana-address 2.6.1",
@@ -2336,31 +2339,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "pinocchio-pubkey"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb0225638cadcbebae8932cb7f49cb5da7c15c21beb19f048f05a5ca7d93f065"
-dependencies = [
- "five8_const 0.1.4",
- "pinocchio 0.9.3",
- "sha2-const-stable",
-]
-
-[[package]]
 name = "pinocchio-system"
-version = "0.5.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24044a0815753862b558e179e78f03f7344cb755de48617a09d7d23b50883b6c"
+checksum = "f3ae2ee67b42e2ac797dd88312da473c895660e270d8093e0ba2749b885b5778"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "solana-address 2.6.1",
 ]
 
 [[package]]
 name = "pinocchio-token"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "febf3bbe37f4e2723b9b41a1768c6542a1ae1b1d7bcac27f892f30cabcf70ec4"
+checksum = "825f59c8348e5c2d3fd56432ef927f5819542b3b05fae4f5b6869801113e775e"
 dependencies = [
  "solana-account-view",
  "solana-address 2.6.1",
@@ -2429,7 +2421,7 @@ name = "processing-instructions-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "solana-instruction",
  "solana-keypair",
@@ -2450,23 +2442,6 @@ dependencies = [
  "solana-native-token",
  "solana-program",
  "solana-pubkey 3.0.0",
- "solana-transaction 3.1.0",
-]
-
-[[package]]
-name = "program"
-version = "0.1.0"
-dependencies = [
- "borsh",
- "borsh-derive",
- "litesvm",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-program",
- "solana-pubkey 3.0.0",
- "solana-rent 4.2.1",
- "solana-system-interface 2.0.0",
  "solana-transaction 3.1.0",
 ]
 
@@ -2492,7 +2467,7 @@ name = "program-derived-addresses-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-system",
  "solana-instruction",
  "solana-keypair",
@@ -2650,7 +2625,7 @@ name = "realloc-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
  "solana-instruction",
@@ -2716,35 +2691,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
-name = "rent-example"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
-]
-
-[[package]]
-name = "rent_pinocchio_program"
-version = "0.1.0"
-dependencies = [
- "litesvm",
- "pinocchio 0.10.2",
- "pinocchio-log",
- "pinocchio-system",
- "solana-instruction",
- "solana-keypair",
- "solana-native-token",
- "solana-pubkey 3.0.0",
- "solana-rent 4.2.1",
- "solana-system-interface 2.0.0",
- "solana-transaction 3.1.0",
-]
-
-[[package]]
 name = "repository-layout-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "solana-instruction",
  "solana-keypair",
@@ -2959,52 +2910,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shank"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a1dc1d3af4ba5f02190110598b2abac0d13ce9dc58408aba4549e1c0f91a24c"
-dependencies = [
- "shank_macro",
-]
-
-[[package]]
-name = "shank_macro"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63dbf105335507ad339dccacf3b1ea20e4c0b70d992b4de7cc11d5c0b91b0747"
-dependencies = [
- "proc-macro2",
- "quote",
- "shank_macro_impl",
- "shank_render",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "shank_macro_impl"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "346563412da6d1a53bc53c81f9d8b102f177952b95fd8de00e5d2203a4685635"
-dependencies = [
- "anyhow",
- "proc-macro2",
- "quote",
- "serde",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "shank_render"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8358067ec1787814d2577e76d9ddcc980559ad821e6bd04584f4847f4d1d955c"
-dependencies = [
- "proc-macro2",
- "quote",
- "shank_macro_impl",
-]
-
-[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3083,9 +2988,9 @@ dependencies = [
 
 [[package]]
 name = "solana-account-view"
-version = "1.0.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f37ca34c37f92ee341b73d5ce7c8ef5bb38e9a87955b4bd343c63fa18b149215"
+checksum = "fc141b940560430425ebaadb7645496c45f6a10fad9911d719bd03eab7f4d422"
 dependencies = [
  "solana-address 2.6.1",
  "solana-program-error",
@@ -3111,7 +3016,7 @@ dependencies = [
  "bytemuck_derive",
  "curve25519-dalek",
  "five8",
- "five8_const 1.0.0",
+ "five8_const",
  "rand 0.9.2",
  "serde",
  "serde_derive",
@@ -3594,13 +3499,13 @@ dependencies = [
 
 [[package]]
 name = "solana-instruction-view"
-version = "1.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60147e4d0a4620013df40bf30a86dd299203ff12fcb8b593cd51014fce0875d8"
+checksum = "6ab7a27d0c4214b9f7389c3dd00b68c93093a67f1dcc5b7893aebe299bbcbb47"
 dependencies = [
  "solana-account-view",
  "solana-address 2.6.1",
- "solana-define-syscall 4.0.1",
+ "solana-define-syscall 5.1.0",
  "solana-program-error",
 ]
 
@@ -3655,7 +3560,7 @@ dependencies = [
  "ed25519-dalek",
  "ed25519-dalek-bip32",
  "five8",
- "five8_core 1.0.0",
+ "five8_core",
  "rand 0.9.2",
  "solana-address 2.6.1",
  "solana-derivation-path",
@@ -5086,7 +4991,7 @@ dependencies = [
 name = "token-2022-mint-close-authority-pinocchio-program"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
 ]
@@ -5117,7 +5022,7 @@ dependencies = [
 name = "token-2022-non-transferable-pinocchio-program"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-log",
  "pinocchio-system",
 ]
@@ -5227,7 +5132,7 @@ name = "transfer-sol-pinocchio-program"
 version = "0.1.0"
 dependencies = [
  "litesvm",
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-system",
  "solana-instruction",
  "solana-keypair",
@@ -5257,11 +5162,23 @@ dependencies = [
 name = "transfer-tokens-pinocchio-program"
 version = "0.1.0"
 dependencies = [
- "pinocchio 0.10.2",
+ "pinocchio",
  "pinocchio-associated-token-account",
  "pinocchio-log",
  "pinocchio-system",
  "pinocchio-token",
+]
+
+[[package]]
+name = "transfer-tokens-program"
+version = "0.1.0"
+dependencies = [
+ "borsh",
+ "borsh-derive",
+ "solana-program",
+ "solana-system-interface 2.0.0",
+ "spl-associated-token-account-interface",
+ "spl-token-interface",
 ]
 
 [[package]]

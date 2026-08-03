@@ -18,15 +18,9 @@ fn test_processing_ixs() {
     let payer = Keypair::new();
     svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
 
-    let jimmy = InstructionData {
-        name: "Jimmy".to_string(),
-        height: 3,
-    };
+    let jimmy = InstructionData { name: "Jimmy".to_string(), height: 3 };
 
-    let mary = InstructionData {
-        name: "Mary".to_string(),
-        height: 3,
-    };
+    let mary = InstructionData { name: "Mary".to_string(), height: 3 };
 
     let ix1 = Instruction {
         program_id,
@@ -40,12 +34,7 @@ fn test_processing_ixs() {
         data: borsh::to_vec(&mary).unwrap(),
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix1, ix2],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix1, ix2], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 }

@@ -7,9 +7,8 @@ edition = "2021"
 borsh.workspace = true
 borsh-derive.workspace = true
 solana-program.workspace = true
-spl-token = { version = "8.0.0", features = [ "no-entrypoint" ] }
-spl-associated-token-account = { version = "7.0.0", features = [ "no-entrypoint" ] }
-mpl-token-metadata = { version = "5.1.1", features = [ "no-entrypoint" ] }
+solana-system-interface.workspace = true
+spl-token-interface.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]

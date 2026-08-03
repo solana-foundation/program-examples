@@ -1,4 +1,5 @@
 [toolchain]
+anchor_version = "1.0.2"
 solana_version = "3.1.8"
 
 [features]
@@ -13,11 +14,11 @@ anchor = "6qNqxkRF791FXFeQwqYQLEzAbGiqDULC5SSHVsfRoG89"
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
-# This project has both bankrun and validator tests. No [test.validator]
+# This project has both litesvm and validator tests. No [test.validator]
 # section needed because Token-2022 is built into the local validator
 # and doesn't require cloning from mainnet.
 [test]
 startup_wait = 25000
 
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"

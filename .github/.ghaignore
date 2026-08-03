@@ -1,73 +1,7 @@
-# build and test error
-basics/realloc/native
-basics/cross-program-invocation/native
-
-# bankrun runtime rejects an instruction the current build-sbf toolchain emits
-basics/favorites/native
-
-# uses generated client from shank, can't rewrite to solana-bankrun
-tools/shank-and-solita/native
-
-# can't test on localnet
-tokens/pda-mint-authority/native
-tokens/nft-minter/native
-tokens/transfer-tokens/native
-tokens/spl-token-minter/native
-tokens/create-token/native
-
-tokens/token-swap/anchor
-
-# not building
-oracles/pyth/anchor
-
-# not building
+# programs build; tests need the DAS API, unavailable on localnet
 compression/cutils/anchor
 compression/cnft-vault/anchor
-# builds but need to test on localhost
 compression/cnft-burn/anchor
-
-# test failing
-# https://github.com/solana-developers/helpers/issues/40
-tokens/escrow/anchor
-
-# not live
-tokens/token-2022/group/anchor
-
-# error in tests
-tokens/external-delegate-token-master/anchor
-
-# build failed - program outdated
-tokens/token-2022/metadata/anchor
-
-# dependency issues
-tokens/token-2022/nft-meta-data-pointer/anchor-example/anchor
-
-tokens/token-2022/mint-close-authority/native
-tokens/token-2022/transfer-fee/native
-tokens/token-2022/non-transferable/native
-
-# all steel projects
-
-basics/account-data/steel
-basics/checking-accounts/steel
-basics/close-account/steel
-basics/counter/steel
-basics/create-account/steel
-basics/cross-program-invocation/steel
-basics/favorites/steel
-basics/pda-rent-payer/steel
-basics/processing-instructions/steel
-basics/program-derived-addresses/steel
-basics/realloc/steel
-basics/rent/steel
-basics/transfer-sol/steel
-
-tokens/escrow/steel
-
-tokens/pda-mint-authority/steel
-tokens/spl-token-minter/steel
-tokens/token-swap/steel
-tokens/transfer-tokens/steel
 
 # justfile-driven example: built and tested by .github/workflows/just.yml,
 # not the legacy pinocchio CI (it has no build-and-test script)

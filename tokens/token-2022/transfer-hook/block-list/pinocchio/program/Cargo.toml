@@ -1,0 +1,24 @@
+[package]
+name = "block-list"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+name = "block_list"
+
+[dependencies]
+bytemuck = "1.23.0"
+pinocchio = { version = "0.11.1", features = ["cpi", "copy", "account-resize"] }
+pinocchio-system = "0.6.1"
+pinocchio-log = "0.5.1"
+solana-address = { version = "2", features = ["curve25519", "copy"] }
+
+[dev-dependencies]
+litesvm = "0.11.0"
+solana-instruction = "3.0.0"
+solana-keypair = "3.0.1"
+solana-native-token = "3.0.0"
+solana-pubkey = "3.0.0"
+solana-transaction = "3.0.1"
+solana-system-interface = { version = "2.0.0", features = ["bincode"] }

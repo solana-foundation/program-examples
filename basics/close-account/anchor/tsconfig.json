@@ -1,13 +1,15 @@
 {
-  "compilerOptions": {
-    "typeRoots": ["./node_modules/@types"],
-    "lib": ["es2020"],
-    "module": "nodenext",
-    "target": "es2020",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true
-  }
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "typeRoots": ["./node_modules/@types"],
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "esnext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "skipLibCheck": true
+    }
 }

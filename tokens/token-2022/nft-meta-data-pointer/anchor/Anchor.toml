@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "1.0.2"
+solana_version = "3.1.8"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+extension_nft = "4nSA2i5bEiBWLLDuZfqTYKwTAwakLEbW2KJXH9cZtDU3"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"
+
+[hooks]

@@ -1,99 +1,124 @@
-import { describe, test } from "node:test";
-import { Keypair, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
-import { assert } from "chai";
-import { start } from "solana-bankrun";
-import { COUNTER_ACCOUNT_SIZE, createIncrementInstruction, deserializeCounterAccount, PROGRAM_ID } from "../ts";
+import { Buffer } from 'node:buffer';
+import {
+    appendTransactionMessageInstruction,
+    appendTransactionMessageInstructions,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { getCreateAccountInstruction } from '@solana-program/system';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import { COUNTER_ACCOUNT_SIZE, createIncrementInstruction, deserializeCounterAccount, PROGRAM_ID } from '../ts';
 
-describe("Counter Solana Native", async () => {
-  // Randomly generate the program keypair and load the program to solana-bankrun
-  const context = await start([{ name: "counter_solana_native", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  // Get the payer keypair from the context, this will be used to sign transactions with enough lamports
-  const payer = context.payer;
-  // Get the rent object to calculate rent for the accounts
-  const rent = await client.getRent();
+describe('Counter Solana Native', () => {
+    // Load the program to litesvm
+    const svm = new LiteSVM();
+    svm.addProgramFromFile(PROGRAM_ID, 'tests/fixtures/counter_solana_native.so');
+    // Get the rent object to calculate rent for the accounts
+    const rent = svm.getRent();
+    // Generate a payer keypair and fund it, this will be used to sign transactions with enough lamports
+    let payer: KeyPairSigner;
 
-  test("Test allocate counter + increment tx", async () => {
-    // Randomly generate the account key
-    // to sign for setting up the Counter state
-    const counterKeypair = Keypair.generate();
-    const counter = counterKeypair.publicKey;
-
-    // Create a TransactionInstruction to interact with our counter program
-    const allocIx: TransactionInstruction = SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: counter,
-      lamports: Number(rent.minimumBalance(BigInt(COUNTER_ACCOUNT_SIZE))),
-      space: COUNTER_ACCOUNT_SIZE,
-      programId: PROGRAM_ID,
+    before(async () => {
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
-    const incrementIx: TransactionInstruction = createIncrementInstruction({ counter });
-    const tx = new Transaction().add(allocIx).add(incrementIx);
 
-    // Explicitly set the feePayer to be our wallet (this is set to first signer by default)
-    tx.feePayer = payer.publicKey;
+    it('Test allocate counter + increment tx', async () => {
+        // Randomly generate the account key
+        // to sign for setting up the Counter state
+        const counterKeypair = await generateKeyPairSigner();
+        const counter = counterKeypair.address;
 
-    // Fetch a "timestamp" so validators know this is a recent transaction
-    const blockhash = context.lastBlockhash;
-    tx.recentBlockhash = blockhash;
+        // Create an instruction to interact with our counter program
+        const allocIx = getCreateAccountInstruction({
+            payer,
+            newAccount: counterKeypair,
+            lamports: rent.minimumBalance(BigInt(COUNTER_ACCOUNT_SIZE)),
+            space: COUNTER_ACCOUNT_SIZE,
+            programAddress: PROGRAM_ID,
+        });
+        const incrementIx = createIncrementInstruction({ counter });
 
-    // Sign the transaction with the payer's keypair
-    tx.sign(payer, counterKeypair);
+        // Build the transaction message with our wallet as fee payer
+        // and a recent blockhash so validators know this is a recent transaction
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions([allocIx, incrementIx], m),
+        );
 
-    // Send transaction to bankrun
-    await client.processTransaction(tx);
+        // Sign the transaction with all required signers
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-    // Get the counter account info from network
-    const counterAccountInfo = await client.getAccount(counter);
-    assert(counterAccountInfo, "Expected counter account to have been created");
+        // Send transaction to litesvm
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-    // Deserialize the counter & check count has been incremented
-    const counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
-    assert(counterAccount.count.toNumber() === 1, "Expected count to have been 1");
-    console.log(`[alloc+increment] count is: ${counterAccount.count.toNumber()}`);
-  });
+        // Get the counter account info from network
+        const counterAccountInfo = svm.getAccount(counter);
+        assert(counterAccountInfo.exists, 'Expected counter account to have been created');
 
-  test("Test allocate tx and increment tx", async () => {
-    const counterKeypair = Keypair.generate();
-    const counter = counterKeypair.publicKey;
-
-    // Check allocate tx
-    const allocIx: TransactionInstruction = SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: counter,
-      lamports: Number(rent.minimumBalance(BigInt(COUNTER_ACCOUNT_SIZE))),
-      space: COUNTER_ACCOUNT_SIZE,
-      programId: PROGRAM_ID,
+        // Deserialize the counter & check count has been incremented
+        const counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
+        assert(counterAccount.count.toNumber() === 1, 'Expected count to have been 1');
+        console.log(`[alloc+increment] count is: ${counterAccount.count.toNumber()}`);
     });
-    let tx = new Transaction().add(allocIx);
-    const blockhash = context.lastBlockhash;
-    tx.feePayer = payer.publicKey;
-    tx.recentBlockhash = blockhash;
-    tx.sign(payer, counterKeypair);
 
-    await client.processTransaction(tx);
+    it('Test allocate tx and increment tx', async () => {
+        const counterKeypair = await generateKeyPairSigner();
+        const counter = counterKeypair.address;
 
-    let counterAccountInfo = await client.getAccount(counter);
-    assert(counterAccountInfo, "Expected counter account to have been created");
+        // Check allocate tx
+        const allocIx = getCreateAccountInstruction({
+            payer,
+            newAccount: counterKeypair,
+            lamports: rent.minimumBalance(BigInt(COUNTER_ACCOUNT_SIZE)),
+            space: COUNTER_ACCOUNT_SIZE,
+            programAddress: PROGRAM_ID,
+        });
+        const allocTransactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(allocIx, m),
+        );
+        const signedAllocTx = await signTransactionMessageWithSigners(allocTransactionMessage);
 
-    let counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
-    assert(counterAccount.count.toNumber() === 0, "Expected count to have been 0");
-    console.log(`[allocate] count is: ${counterAccount.count.toNumber()}`);
+        let result = svm.sendTransaction(signedAllocTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
 
-    // Check increment tx
-    const incrementIx: TransactionInstruction = createIncrementInstruction({ counter });
-    tx = new Transaction().add(incrementIx);
-    tx.feePayer = payer.publicKey;
-    tx.recentBlockhash = blockhash;
-    tx.sign(payer);
+        let counterAccountInfo = svm.getAccount(counter);
+        assert(counterAccountInfo.exists, 'Expected counter account to have been created');
 
-    await client.processTransaction(tx);
+        let counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
+        assert(counterAccount.count.toNumber() === 0, 'Expected count to have been 0');
+        console.log(`[allocate] count is: ${counterAccount.count.toNumber()}`);
 
-    counterAccountInfo = await client.getAccount(counter);
-    assert(counterAccountInfo, "Expected counter account to have been created");
+        // Check increment tx
+        const incrementIx = createIncrementInstruction({ counter });
+        const incrementTransactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(incrementIx, m),
+        );
+        const signedIncrementTx = await signTransactionMessageWithSigners(incrementTransactionMessage);
 
-    counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
-    assert(counterAccount.count.toNumber() === 1, "Expected count to have been 1");
-    console.log(`[increment] count is: ${counterAccount.count.toNumber()}`);
-  });
+        result = svm.sendTransaction(signedIncrementTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+
+        counterAccountInfo = svm.getAccount(counter);
+        assert(counterAccountInfo.exists, 'Expected counter account to have been created');
+
+        counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
+        assert(counterAccount.count.toNumber() === 1, 'Expected count to have been 1');
+        console.log(`[increment] count is: ${counterAccount.count.toNumber()}`);
+    });
 });

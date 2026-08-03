@@ -1,4 +1,5 @@
 [toolchain]
+anchor_version = "1.0.2"
 solana_version = "3.1.8"
 
 [features]
@@ -13,3 +14,5 @@ pythexample = "GUkjQmrLPFXXNK1bFLKt8XQi6g3TjxcHVspbjDoHvMG2"
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
+[scripts]
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"

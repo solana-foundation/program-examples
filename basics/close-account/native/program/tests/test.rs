@@ -24,10 +24,7 @@ fn test_close_account() {
         Pubkey::find_program_address(&[b"USER".as_ref(), &payer.pubkey().as_ref()], &program_id).0;
 
     // create user ix
-    let data = borsh::to_vec(&MyInstruction::CreateUser(User {
-        name: "Jacob".to_string(),
-    }))
-    .unwrap();
+    let data = borsh::to_vec(&MyInstruction::CreateUser(User { name: "Jacob".to_string() })).unwrap();
 
     let ix = Instruction {
         program_id,
@@ -39,12 +36,7 @@ fn test_close_account() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 
@@ -61,12 +53,7 @@ fn test_close_account() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     assert!(svm.send_transaction(tx).is_ok());
 }

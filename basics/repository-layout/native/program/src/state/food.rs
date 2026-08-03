@@ -8,11 +8,7 @@ pub struct FoodStand {
 
 impl FoodStand {
     pub fn new(name: String, food_type: String, tickets: u32) -> FoodStand {
-        FoodStand {
-            name,
-            food_type,
-            tickets,
-        }
+        FoodStand { name, food_type, tickets }
     }
 }
 

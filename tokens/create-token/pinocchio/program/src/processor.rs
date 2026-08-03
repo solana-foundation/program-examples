@@ -13,7 +13,7 @@ use crate::instructions::create_token;
 /// `[name: string, symbol: string, uri: string, decimals: u8]`
 pub fn process_instruction(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     log!("Instruction: CreateToken");

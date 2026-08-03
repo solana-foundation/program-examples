@@ -80,12 +80,7 @@ fn test_realloc() {
         data,
     };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());
@@ -96,8 +91,7 @@ fn test_realloc() {
     assert_eq!("Illinois".to_string(), state);
     assert_eq!(12345, zip);
 
-    svm.airdrop(&test_account.pubkey(), LAMPORTS_PER_SOL)
-        .unwrap();
+    svm.airdrop(&test_account.pubkey(), LAMPORTS_PER_SOL).unwrap();
 
     let mut data = Vec::new();
 
@@ -120,18 +114,9 @@ fn test_realloc() {
 
     data.extend_from_slice(&u8::to_le_bytes(2));
 
-    let ix = Instruction {
-        program_id,
-        accounts: vec![AccountMeta::new(test_account.pubkey(), false)],
-        data,
-    };
+    let ix = Instruction { program_id, accounts: vec![AccountMeta::new(test_account.pubkey(), false)], data };
 
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_ok());

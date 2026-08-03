@@ -9,11 +9,7 @@ use solana_program::{
 
 use crate::state::PageVisits;
 
-pub fn create_page_visits(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    page_visits: PageVisits,
-) -> ProgramResult {
+pub fn create_page_visits(program_id: &Pubkey, accounts: &[AccountInfo], page_visits: PageVisits) -> ProgramResult {
     let accounts_iter = &mut accounts.iter();
     let page_visits_account = next_account_info(accounts_iter)?;
     let user = next_account_info(accounts_iter)?;
@@ -31,16 +27,8 @@ pub fn create_page_visits(
             account_span as u64,
             program_id,
         ),
-        &[
-            payer.clone(),
-            page_visits_account.clone(),
-            system_program.clone(),
-        ],
-        &[&[
-            PageVisits::SEED_PREFIX.as_bytes(),
-            user.key.as_ref(),
-            &[page_visits.bump],
-        ]],
+        &[payer.clone(), page_visits_account.clone(), system_program.clone()],
+        &[&[PageVisits::SEED_PREFIX.as_bytes(), user.key.as_ref(), &[page_visits.bump]]],
     )?;
 
     Ok(())

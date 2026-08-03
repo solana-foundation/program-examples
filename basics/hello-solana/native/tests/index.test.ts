@@ -1,36 +1,58 @@
-import { describe, test } from "node:test";
-import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { assert } from "chai";
-import { start } from "solana-bankrun";
+import {
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-describe("hello-solana", async () => {
-  // load program in solana-bankrun
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "hello_solana_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+describe('hello-solana', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-  test("Say hello!", async () => {
-    const blockhash = context.lastBlockhash;
-    // We set up our instruction first.
-    const ix = new TransactionInstruction({
-      keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0), // No data
+    before(async () => {
+        // load program in litesvm
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/hello_solana_program.so');
+
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer);
+    it('Say hello!', async () => {
+        // We set up our instruction first.
+        const ix = {
+            programAddress: programId,
+            accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
+            data: new Uint8Array(0), // No data
+        };
 
-    // Now we process the transaction
-    const transaction = await client.processTransaction(tx);
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-    assert(transaction.logMessages[0].startsWith(`Program ${PROGRAM_ID}`));
-    assert(transaction.logMessages[1] === "Program log: Hello, Solana!");
-    assert(transaction.logMessages[2] === `Program log: Our program's Program ID: ${PROGRAM_ID}`);
-    assert(transaction.logMessages[3].startsWith(`Program ${PROGRAM_ID} consumed`));
-    assert(transaction.logMessages[4] === `Program ${PROGRAM_ID} success`);
-    assert(transaction.logMessages.length === 5);
-  });
+        // Now we process the transaction
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+
+        const logs = result.logs();
+        assert(logs[0].startsWith(`Program ${programId}`));
+        assert(logs[1] === 'Program log: Hello, Solana!');
+        assert(logs[2] === `Program log: Our program's Program ID: ${programId}`);
+        assert(logs[3].startsWith(`Program ${programId} consumed`));
+        assert(logs[4] === `Program ${programId} success`);
+        assert(logs.length === 5);
+    });
 });

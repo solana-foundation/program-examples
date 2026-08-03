@@ -1,28 +1,15 @@
 {
-  "compilerOptions": {
-    "types": ["jest", "node"],
-    "typeRoots": ["./node_modules/@types"],
-    "lib": ["es2015", "dom", "es6", "es2017", "esnext.asynciterable"],
-    "module": "commonjs",
-    "target": "es6",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "sourceMap": true,
-    "moduleResolution": "node",
-    "declaration": true,
-    "declarationMap": true,
-    "allowJs": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "noImplicitAny": false,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "outDir": "dist"
-  },
-  "include": ["tests/**/*", "programs/**/*", "jest.setup.js", "jest.config.js"],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "typeRoots": ["./node_modules/@types"],
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "esnext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "skipLibCheck": true
+    }
 }

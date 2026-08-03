@@ -18,11 +18,7 @@ enum MyInstruction {
     TransferTokens(TransferTokensArgs),
 }
 
-pub fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+pub fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let instruction = MyInstruction::try_from_slice(instruction_data)?;
 
     match instruction {

@@ -10,17 +10,17 @@ This program can be used as an inspiration on how to work with cNFTs in Solana p
 
 ## Components
 
-The Anchor program can be found in the *programs* folder and *tests* some clientside tests. There are also some typescript node scripts in *tests/scripts* to run them individually (plus there is one called *withdrawWithLookup.ts* which demonstrates the use of the program with account lookup tables). 
+The Anchor program can be found in the _programs_ folder and _tests_ some clientside tests. There are also some typescript node scripts in _tests/scripts_ to run them individually (plus there is one called _withdrawWithLookup.ts_ which demonstrates the use of the program with account lookup tables).
 
 ## Deployment
 
-The program is deployed on devnet at `CNftyK7T8udPwYRzZUMWzbh79rKrz9a5GwV2wv7iEHpk`. 
+The program is deployed on devnet at `CNftyK7T8udPwYRzZUMWzbh79rKrz9a5GwV2wv7iEHpk`.
 You can deploy it yourself by changing the respective values in lib.rs and Anchor.toml.
 
 ## Limitations
 
-This is just an example implementation. It is missing all logic wheter a transfer should be performed or not (everyone can withdraw any cNFT in the vault). 
-Furthermore it is not optimized for using lowest possible compute. It is intended as a proof of concept and reference implemention only. 
+This is just an example implementation. It is missing all logic wheter a transfer should be performed or not (everyone can withdraw any cNFT in the vault).
+Furthermore it is not optimized for using lowest possible compute. It is intended as a proof of concept and reference implemention only.
 
 ## Further resources
 

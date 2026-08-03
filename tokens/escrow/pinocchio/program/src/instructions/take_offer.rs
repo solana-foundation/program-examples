@@ -5,8 +5,7 @@ use pinocchio::{
 };
 use pinocchio_associated_token_account::instructions::CreateIdempotent;
 use pinocchio_log::log;
-use pinocchio_pubkey::derive_address;
-use pinocchio_token::{instructions::CloseAccount, instructions::Transfer, state::TokenAccount};
+use pinocchio_token::{instructions::CloseAccount, instructions::Transfer, state::Account as TokenAccount};
 
 use crate::state::Offer;
 
@@ -30,7 +29,7 @@ use crate::state::Offer;
 ///  12. `[]`                 system program
 ///
 /// Instruction data: none.
-pub fn take_offer(program_id: &Address, accounts: &[AccountView], _data: &[u8]) -> ProgramResult {
+pub fn take_offer(program_id: &Address, accounts: &mut [AccountView], _data: &[u8]) -> ProgramResult {
     let [offer_account, token_mint_a, token_mint_b, maker_token_account_b, taker_token_account_a, taker_token_account_b, vault, maker, taker, payer, token_program, _associated_token_program, system_program] =
         accounts
     else {
@@ -58,12 +57,12 @@ pub fn take_offer(program_id: &Address, accounts: &[AccountView], _data: &[u8]) 
     // Re-derive the offer PDA from the stored bump and confirm it is genuine.
     let id_bytes = offer.id.to_le_bytes();
     let bump_bytes = [offer.bump];
-    let offer_pda = derive_address(
-        &[Offer::SEED_PREFIX, maker.address().as_ref(), &id_bytes],
-        Some(offer.bump),
-        program_id.as_array(),
-    );
-    if offer_account.address().as_array() != &offer_pda {
+    let offer_pda = Address::create_program_address(
+        &[Offer::SEED_PREFIX, maker.address().as_ref(), &id_bytes, &bump_bytes],
+        program_id,
+    )
+    .map_err(|_| ProgramError::InvalidSeeds)?;
+    if offer_account.address() != &offer_pda {
         return Err(ProgramError::InvalidSeeds);
     }
 
@@ -98,6 +97,7 @@ pub fn take_offer(program_id: &Address, accounts: &[AccountView], _data: &[u8]) 
         from: taker_token_account_b,
         to: maker_token_account_b,
         authority: taker,
+        multisig_signers: &[] as &[&AccountView],
         amount: offer.token_b_wanted_amount,
     }
     .invoke()?;
@@ -116,6 +116,7 @@ pub fn take_offer(program_id: &Address, accounts: &[AccountView], _data: &[u8]) 
         from: vault,
         to: taker_token_account_a,
         authority: offer_account,
+        multisig_signers: &[] as &[&AccountView],
         amount: vault_amount,
     }
     .invoke_signed(&signers)?;
@@ -126,18 +127,15 @@ pub fn take_offer(program_id: &Address, accounts: &[AccountView], _data: &[u8]) 
         account: vault,
         destination: taker,
         authority: offer_account,
+        multisig_signers: &[] as &[&AccountView],
     }
     .invoke_signed(&signers)?;
 
     // Close the offer account, returning its rent to the payer that funded it.
     log!("Closing offer account");
-    let offer_lamports = offer_account.lamports();
-    offer_account.set_lamports(0);
-    payer.set_lamports(payer.lamports() + offer_lamports);
-    offer_account.resize(0)?;
-    unsafe {
-        offer_account.assign(system_program.address());
-    }
+    let new_payer_lamports = payer.lamports() + offer_account.lamports();
+    payer.set_lamports(new_payer_lamports);
+    offer_account.close()?;
 
     log!("Offer taken successfully");
     Ok(())

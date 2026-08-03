@@ -23,10 +23,7 @@ pub mod transfer_sol {
     }
 
     // Directly modifying lamports is only possible if the program is the owner of the account
-    pub fn transfer_sol_with_program(
-        ctx: Context<TransferSolWithProgram>,
-        amount: u64,
-    ) -> Result<()> {
+    pub fn transfer_sol_with_program(ctx: Context<TransferSolWithProgram>, amount: u64) -> Result<()> {
         **ctx.accounts.payer.try_borrow_mut_lamports()? -= amount;
         **ctx.accounts.recipient.try_borrow_mut_lamports()? += amount;
         Ok(())

@@ -1,67 +1,73 @@
-import { Buffer } from "node:buffer";
-import { describe, test } from "node:test";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import * as path from 'node:path';
 import {
-  Keypair,
-  PublicKey,
-  SYSVAR_RENT_PUBKEY,
-  SystemProgram,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
-import * as borsh from "borsh";
-import { assert } from "chai";
-import { start } from "solana-bankrun";
+    AccountRole,
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { SYSVAR_RENT_ADDRESS } from '@solana/sysvars';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
+import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
+import * as borsh from 'borsh';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-const CreateTokenArgsSchema = { struct: { token_decimals: "u8" } };
+const CreateTokenArgsSchema: borsh.Schema = { struct: { token_decimals: 'u8' } };
 
-function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-  return Buffer.from(borsh.serialize(schema, data));
-}
+const PROGRAM_SO = path.join(process.cwd(), 'tests', 'fixtures', 'token_2022_mint_close_authority_program.so');
 
-describe("Create Token", async () => {
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start(
-    [
-      {
-        name: "token_2022_mint_close_authority_program",
-        programId: PROGRAM_ID,
-      },
-    ],
-    [],
-  );
-  const client = context.banksClient;
-  const payer = context.payer;
+describe('Create Token', () => {
+    let svm: LiteSVM;
+    let programId: Address;
+    let payer: KeyPairSigner;
 
-  test("Create a Token-22 SPL-Token !", async () => {
-    const mintKeypair: Keypair = Keypair.generate();
+    before(async () => {
+        svm = new LiteSVM();
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, PROGRAM_SO);
 
-    const instructionData = borshSerialize(CreateTokenArgsSchema, {
-      token_decimals: 9,
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    const ix = new TransactionInstruction({
-      keys: [
-        { pubkey: mintKeypair.publicKey, isSigner: true, isWritable: true }, // Mint account
-        { pubkey: payer.publicKey, isSigner: false, isWritable: true }, // Mint authority account
-        { pubkey: payer.publicKey, isSigner: false, isWritable: true }, // Mint close authority account
-        { pubkey: payer.publicKey, isSigner: true, isWritable: true }, // Transaction Payer
-        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }, // Rent account
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }, // System program
-        { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false }, // Token program
-      ],
-      programId: PROGRAM_ID,
-      data: instructionData,
+    it('Create a Token-22 SPL-Token !', async () => {
+        const mint = await generateKeyPairSigner();
+
+        const data = borsh.serialize(CreateTokenArgsSchema, { token_decimals: 9 });
+
+        const ix = {
+            programAddress: programId,
+            accounts: [
+                { address: mint.address, role: AccountRole.WRITABLE_SIGNER, signer: mint }, // Mint account
+                { address: payer.address, role: AccountRole.WRITABLE }, // Mint authority account
+                { address: payer.address, role: AccountRole.WRITABLE }, // Mint close authority account
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Transaction Payer
+                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
+                { address: TOKEN_2022_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
+            ],
+            data,
+        };
+
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        if (result instanceof FailedTransactionMetadata) {
+            throw new Error(`transaction failed: ${result.toString()}`);
+        }
+
+        assert(result.logs()[0].startsWith(`Program ${programId}`));
+        console.log('Token Mint Address: ', mint.address);
     });
-    const blockhash = context.lastBlockhash;
-
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer, mintKeypair);
-
-    const transaction = await client.processTransaction(tx);
-
-    assert(transaction.logMessages[0].startsWith(`Program ${PROGRAM_ID}`));
-    console.log("Token Mint Address: ", mintKeypair.publicKey.toBase58());
-  });
 });

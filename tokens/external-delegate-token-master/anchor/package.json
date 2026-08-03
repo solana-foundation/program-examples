@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "test": "jest --detectOpenHandles --forceExit",
-    "test:watch": "jest --watch",
+    "test": "mocha --import=tsx -t 1000000 tests/litesvm.test.ts",
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
     "build": "anchor build"
@@ -14,22 +13,25 @@
     "@anchor-lang/core": "1.0.0-rc.5",
     "@solana/spl-token": "^0.3.9",
     "@solana/web3.js": "^1.98.4",
+    "bn.js": "^5.2.1",
     "ethers": "^5.7.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.23.7",
-    "@babel/preset-env": "^7.23.7",
-    "@babel/preset-typescript": "^7.23.7",
-    "@testing-library/jest-dom": "^6.1.6",
-    "@types/chai": "^4.3.0",
-    "@types/jest": "^29.5.11",
-    "@types/node": "^18.0.0",
-    "babel-jest": "^29.7.0",
-    "chai": "^4.3.4",
-    "jest": "^29.7.0",
+    "@types/bn.js": "^5.1.0",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.1.0",
+    "anchor-litesvm": "^0.2.1",
+    "chai": "^6.2.2",
+    "litesvm": "^0.8.0",
+    "mocha": "^11.7.5",
     "prettier": "^2.6.2",
-    "solana-bankrun": "^0.2.0",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3"
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "litesvm": "^0.8.0"
+    }
   }
 }

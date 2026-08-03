@@ -1,18 +1,12 @@
 #![no_std]
 
-use pinocchio::{
-    entrypoint, error::ProgramError, nostd_panic_handler, AccountView, Address, ProgramResult,
-};
+use pinocchio::{entrypoint, error::ProgramError, nostd_panic_handler, AccountView, Address, ProgramResult};
 use pinocchio_log::log;
 
 entrypoint!(process_instruction);
 nostd_panic_handler!();
 
-fn process_instruction(
-    program_id: &Address,
-    accounts: &[AccountView],
-    _instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(program_id: &Address, accounts: &mut [AccountView], _instruction_data: &[u8]) -> ProgramResult {
     // You can verify the list has the correct number of accounts.
     // This error will get thrown by default if you
     //      try to reach past the end of the iter.
@@ -39,10 +33,7 @@ fn process_instruction(
     // (Create account...)
 
     // You can also make sure an account has been initialized.
-    log!(
-        "Account to change: {}",
-        account_to_change.address().as_array()
-    );
+    log!("Account to change: {}", account_to_change.address().as_array());
     if account_to_change.lamports() == 0 {
         log!("The program expected the account to change to be initialized.");
         return Err(ProgramError::UninitializedAccount);

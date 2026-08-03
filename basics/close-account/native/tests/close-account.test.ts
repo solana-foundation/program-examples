@@ -1,38 +1,65 @@
-import { describe, test } from "node:test";
-import { PublicKey, Transaction } from "@solana/web3.js";
-import { start } from "solana-bankrun";
-import { createCloseUserInstruction, createCreateUserInstruction } from "../ts";
+import {
+    type Address,
+    appendTransactionMessageInstruction,
+    createTransactionMessage,
+    generateKeyPairSigner,
+    getAddressEncoder,
+    getProgramDerivedAddress,
+    type KeyPairSigner,
+    lamports,
+    pipe,
+    setTransactionMessageFeePayerSigner,
+    signTransactionMessageWithSigners,
+} from '@solana/kit';
+import { assert } from 'chai';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import { createCloseUserInstruction, createCreateUserInstruction } from '../ts';
 
-describe("Close Account!", async () => {
-  const PROGRAM_ID = PublicKey.unique();
-  const context = await start([{ name: "close_account_native_program", programId: PROGRAM_ID }], []);
-  const client = context.banksClient;
-  const payer = context.payer;
+describe('Close Account!', () => {
+    const svm = new LiteSVM();
+    let programId: Address;
+    let payer: KeyPairSigner;
+    let testAccountAddress: Address;
 
-  const testAccountPublicKey = PublicKey.findProgramAddressSync(
-    [Buffer.from("USER"), payer.publicKey.toBuffer()],
-    PROGRAM_ID,
-  )[0];
+    before(async () => {
+        programId = (await generateKeyPairSigner()).address;
+        svm.addProgramFromFile(programId, 'tests/fixtures/close_account_native_program.so');
+        payer = await generateKeyPairSigner();
+        svm.airdrop(payer.address, lamports(1_000_000_000n));
 
-  test("Create the account", async () => {
-    const blockhash = context.lastBlockhash;
-    const ix = createCreateUserInstruction(testAccountPublicKey, payer.publicKey, PROGRAM_ID, "Jacob");
+        [testAccountAddress] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['USER', getAddressEncoder().encode(payer.address)],
+        });
+    });
 
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer);
+    it('Create the account', async () => {
+        const ix = createCreateUserInstruction(testAccountAddress, payer, programId, 'Jacob');
 
-    await client.processTransaction(tx);
-  });
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-  test("Close the account", async () => {
-    const blockhash = context.lastBlockhash;
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    });
 
-    const ix = createCloseUserInstruction(testAccountPublicKey, payer.publicKey, PROGRAM_ID);
-    const tx = new Transaction();
-    tx.recentBlockhash = blockhash;
-    tx.add(ix).sign(payer);
+    it('Close the account', async () => {
+        const ix = createCloseUserInstruction(testAccountAddress, payer, programId);
 
-    await client.processTransaction(tx);
-  });
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+
+        const result = svm.sendTransaction(signedTx);
+        assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+    });
 });

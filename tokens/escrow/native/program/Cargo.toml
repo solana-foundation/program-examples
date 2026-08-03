@@ -4,11 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-borsh = "1.5.1"
-solana-program = "=1.18.17"
-spl-token = { version = "4.0.0", features = [ "no-entrypoint" ] }
-spl-associated-token-account = { version = "3.0.4", features = [ "no-entrypoint" ] }
-thiserror = "1.0.0"
+borsh.workspace = true
+solana-program.workspace = true
+solana-system-interface.workspace = true
+spl-token-interface.workspace = true
+spl-associated-token-account-interface.workspace = true
+thiserror = "2"
 
 [lib]
 crate-type = ["cdylib", "lib"]

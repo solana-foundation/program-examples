@@ -26,11 +26,12 @@ Each folder includes examples for one or more of the following:
   Build and test commands are defined via pnpm scripts and use `litesvm` for testing.
   Run `pnpm test` to execute tests.
 
-
 **If a given example is missing, please send us a PR to add it!** Our aim is to have every example available in every option. We'd also love to see more programs involving staking, wrapped tokens, oracles, compression and VRF. Follow the [contributing guidelines](./CONTRIBUTING.md) to keep things consistent.
 
 ## The example programs
+
 ## Basics
+
 ### Hello world
 
 [Hello World on Solana! A minimal program that logs a greeting.](./basics/hello-solana/README.md)
@@ -45,7 +46,7 @@ Store and retrieve data using Solana accounts.
 
 ### Storing global state - Counter
 
-[Use a PDA to store global state, making a counter that increments when called.](./basics/counter/README.md)
+[Store global state in an account, making a counter that increments when called.](./basics/counter/README.md)
 
 [anchor](./basics/counter/anchor) [pinocchio](./basics/counter/pinocchio) [native](./basics/counter/native)
 
@@ -69,7 +70,7 @@ Close an account and get the Lamports back.
 
 ### Creating Accounts
 
-[Make new accounts on the blockchain.](./basics/create-account/README.md)
+[Make new accounts on the blockchain, calculating the necessary minimum rent from the account's size.](./basics/create-account/README.md)
 
 [anchor](./basics/create-account/anchor) [pinocchio](./basics/create-account/pinocchio) [native](./basics/create-account/native)
 
@@ -103,12 +104,6 @@ How to store state that changes size in Solana.
 
 [anchor](./basics/realloc/anchor) [pinocchio](./basics/realloc/pinocchio) [native](./basics/realloc/native)
 
-### Calculating account size to determine rent
-
-[Determine the necessary minimum rent by calculating an account's size.](./basics/rent/README.md)
-
-[anchor](./basics/rent/anchor) [pinocchio](./basics/rent/pinocchio) [native](./basics/rent/native)
-
 ### Laying out larger programs
 
 [Layout larger Solana onchain programs.](./basics/repository-layout/README.md)
@@ -120,34 +115,24 @@ How to store state that changes size in Solana.
 [Send SOL between two accounts.](./basics/transfer-sol/README.md)
 
 [anchor](./basics/transfer-sol/anchor) [pinocchio](./basics/transfer-sol/pinocchio) [native](./basics/transfer-sol/native)
+
 ## Tokens
+
 ### Creating tokens
 
 [Create a token on Solana with a token symbol and icon.](./tokens/create-token/README.md)
 
 [anchor](./tokens/create-token/anchor) [pinocchio](./tokens/create-token/pinocchio) [native](./tokens/create-token/native)
 
-### Minting NFTS
-
-[Mint an NFT from inside your own onchain program using the Token and Metaplex Token Metadata programs.](./tokens/nft-minter/README.md) Reminder: you don't need your own program just to mint an NFT, see the note at the top of this README.
-
-[anchor](./tokens/nft-minter/anchor) [native](./tokens/nft-minter/native)
-
 ### NFT operations
 
-Create an NFT collection, mint NFTs, and verify NFTs as part of a collection using Metaplex Token Metadata.
+Create an NFT collection, mint NFTs, and verify NFTs as part of a collection using Metaplex Token Metadata. Reminder: you don't need your own program just to mint an NFT, see the note at the top of this README.
 
 [anchor](./tokens/nft-operations/anchor)
 
-### Minting a token from inside a program
-
-[Mint a Token from inside your own onchain program using the Token program.](./tokens/spl-token-minter/README.md) Reminder: you don't need your own program just to mint an NFT, see the note at the top of this README.
-
-[anchor](./tokens/spl-token-minter/anchor) [native](./tokens/spl-token-minter/native)
-
 ### Transferring Tokens
 
-[Transfer tokens between accounts](./tokens/transfer-tokens/README.md)
+[Create a token mint, mint tokens, and transfer tokens between accounts.](./tokens/transfer-tokens/README.md)
 
 [anchor](./tokens/transfer-tokens/anchor) [pinocchio](./tokens/transfer-tokens/pinocchio) [native](./tokens/transfer-tokens/native)
 
@@ -162,6 +147,12 @@ Allow two users to swap digital assets with each other, each getting 100% of wha
 Create a fundraiser account specifying a target mint and amount, allowing contributors to deposit tokens until the goal is reached.
 
 [anchor](./tokens/token-fundraiser/anchor)
+
+### Distributing tokens with Merkle-proof claims
+
+[Fund a vault once, publish a Merkle root of a balance snapshot, and let each holder claim their allocation with a proof](./tokens/merkle-tree-token-claimer/README.md) — the claim pattern behind large airdrops and chain migrations.
+
+[anchor](./tokens/merkle-tree-token-claimer/anchor)
 
 ### Minting a token from inside a program with a PDA as the mint authority
 
@@ -180,7 +171,9 @@ Create a fundraiser account specifying a target mint and amount, allowing contri
 Control token transfers using an external secp256k1 delegate signature.
 
 [anchor](./tokens/external-delegate-token-master/anchor)
+
 ## Token Extensions
+
 ### Basics - create token mints, mint tokens, and transfer tokens with Token Extensions
 
 Create token mints, mint tokens, and transfer tokens using Token Extensions.
@@ -233,7 +226,7 @@ Create tokens that store their onchain metadata inside the token mint, without n
 
 Create an NFT using the Token Extensions metadata pointer, storing onchain metadata (including custom fields) inside the mint account itself.
 
-[anchor](./tokens/token-2022/nft-meta-data-pointer/anchor-example/anchor)
+[anchor](./tokens/token-2022/nft-meta-data-pointer/anchor)
 
 ### Allow a designated account to close a mint
 
@@ -289,6 +282,12 @@ Restrict or allow token transfers using an on-chain allow/block list managed by 
 
 [anchor](./tokens/token-2022/transfer-hook/allow-block-list-token/anchor)
 
+### Transfer hook - block list with Codama clients
+
+A block-list transfer hook as a full project: Pinocchio program, Codama-generated Rust and TypeScript clients, and a CLI.
+
+[pinocchio](./tokens/token-2022/transfer-hook/block-list/pinocchio)
+
 ### Transfer hook - transfer cost
 
 Charge an additional cost or fee on every token transfer using a transfer hook.
@@ -301,12 +300,8 @@ Enable or disable token transfers with an on-chain switch using a transfer hook.
 
 [anchor](./tokens/token-2022/transfer-hook/transfer-switch/anchor)
 
-### Transfer hook - whitelist
-
-Restrict token transfers so only whitelisted accounts can receive tokens.
-
-[anchor](./tokens/token-2022/transfer-hook/whitelist/anchor)
 ## Compression
+
 ### Cnft-burn
 
 Burn compressed NFTs.
@@ -324,19 +319,17 @@ Store Metaplex compressed NFTs inside a PDA.
 Work with Metaplex compressed NFTs.
 
 [anchor](./compression/cutils/anchor)
+
 ## Oracles
+
 ### pyth
 
 Use a data source for offchain data (called an Oracle) to perform activities onchain.
 
 [anchor](./oracles/pyth/anchor)
-## Tools
-### Shank and Solita
 
-Use Shank and Solita to generate IDLs and TypeScript clients for native Solana programs, the same way Anchor does for Anchor programs.
-
-[native](./tools/shank-and-solita/native)
 ## Games
+
 ### World Cup bracket prediction
 
 A bracket-prediction game: entrants pay a fee to submit a 32-game bracket, an oracle posts results, scores are tallied on-chain, and the unique winner sweeps the pot. A full Pinocchio + Codama project with a TypeScript client and a webapp.

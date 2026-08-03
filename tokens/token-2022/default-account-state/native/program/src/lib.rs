@@ -13,9 +13,7 @@ use {
     },
     spl_token_2022_interface::{
         extension::{
-            default_account_state::instruction::{
-                initialize_default_account_state, update_default_account_state,
-            },
+            default_account_state::instruction::{initialize_default_account_state, update_default_account_state},
             ExtensionType,
         },
         instruction as token_instruction,
@@ -31,11 +29,7 @@ pub struct CreateTokenArgs {
 
 entrypoint!(process_instruction);
 
-fn process_instruction(
-    _program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
+fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
     let args = CreateTokenArgs::try_from_slice(instruction_data)?;
 
     let accounts_iter = &mut accounts.iter();
@@ -48,8 +42,7 @@ fn process_instruction(
     let token_program = next_account_info(accounts_iter)?;
 
     // Find the size for the account with the Extension
-    let space =
-        ExtensionType::try_calculate_account_len::<Mint>(&[ExtensionType::DefaultAccountState])?;
+    let space = ExtensionType::try_calculate_account_len::<Mint>(&[ExtensionType::DefaultAccountState])?;
 
     // Get the required rent exemption amount for the account
     let rent_required = Rent::get()?.minimum_balance(space);
@@ -65,29 +58,15 @@ fn process_instruction(
             space as u64,
             token_program.key,
         ),
-        &[
-            mint_account.clone(),
-            payer.clone(),
-            system_program.clone(),
-            token_program.clone(),
-        ],
+        &[mint_account.clone(), payer.clone(), system_program.clone(), token_program.clone()],
     )?;
 
     // This needs to be done before the Mint is initialized
 
     // Initialize the Default Account State as Frozen
     invoke(
-        &initialize_default_account_state(
-            token_program.key,
-            mint_account.key,
-            &AccountState::Frozen,
-        )
-        .unwrap(),
-        &[
-            mint_account.clone(),
-            token_program.clone(),
-            system_program.clone(),
-        ],
+        &initialize_default_account_state(token_program.key, mint_account.key, &AccountState::Frozen).unwrap(),
+        &[mint_account.clone(), token_program.clone(), system_program.clone()],
     )?;
 
     // Initialize the Token Mint
@@ -99,12 +78,7 @@ fn process_instruction(
             Some(mint_authority.key),
             args.token_decimals,
         )?,
-        &[
-            mint_account.clone(),
-            mint_authority.clone(),
-            token_program.clone(),
-            rent.clone(),
-        ],
+        &[mint_account.clone(), mint_authority.clone(), token_program.clone(), rent.clone()],
     )?;
 
     // Update the Default Account State to Initialized
@@ -117,12 +91,7 @@ fn process_instruction(
             &AccountState::Initialized,
         )
         .unwrap(),
-        &[
-            mint_account.clone(),
-            payer.clone(),
-            token_program.clone(),
-            system_program.clone(),
-        ],
+        &[mint_account.clone(), payer.clone(), token_program.clone(), system_program.clone()],
     )?;
 
     msg!("Mint created!");

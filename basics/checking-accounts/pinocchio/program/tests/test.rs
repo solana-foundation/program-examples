@@ -16,18 +16,12 @@ fn test_checking_accounts() {
     svm.airdrop(&payer.pubkey(), LAMPORTS_PER_SOL * 10).unwrap();
 
     let program_id = Pubkey::new_unique();
-    let program_bytes =
-        include_bytes!("../../tests/fixtures/checking_accounts_pinocchio_program.so");
+    let program_bytes = include_bytes!("../../tests/fixtures/checking_accounts_pinocchio_program.so");
 
     svm.add_program(program_id, program_bytes).unwrap();
 
-    let create_account_ix = create_account(
-        &payer.pubkey(),
-        &account_to_change.pubkey(),
-        LAMPORTS_PER_SOL,
-        0,
-        &program_id,
-    );
+    let create_account_ix =
+        create_account(&payer.pubkey(), &account_to_change.pubkey(), LAMPORTS_PER_SOL, 0, &program_id);
 
     let tx = Transaction::new_signed_with_payer(
         &[create_account_ix],

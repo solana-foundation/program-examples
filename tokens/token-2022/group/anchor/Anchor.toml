@@ -1,4 +1,5 @@
 [toolchain]
+anchor_version = "1.0.2"
 solana_version = "3.1.8"
 
 [features]
@@ -6,13 +7,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-group = "4XCDGMD8fsdjUzmYj6d9if8twFt1f23Ym52iDmWK8fFs"
-
-# [registry] section removed — no longer used in Anchor 1.0
+group = "2q91RT4FSHVdyuBMDiCtnZn2ETSrG4mLFZvEC3UxKfue"
 
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"
+
+[hooks]

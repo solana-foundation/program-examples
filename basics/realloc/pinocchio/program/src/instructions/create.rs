@@ -9,7 +9,7 @@ use crate::state::AddressInfo;
 
 pub fn create_address_info(
     program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let [target_account, payer, _] = accounts else {

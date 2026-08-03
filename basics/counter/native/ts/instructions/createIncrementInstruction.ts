@@ -1,20 +1,19 @@
-import { type PublicKey, TransactionInstruction } from "@solana/web3.js";
-import { PROGRAM_ID } from "../";
+import { AccountRole, type Address } from '@solana/kit';
+import { PROGRAM_ID } from '../';
 
 export type IncrementInstructionAccounts = {
-  counter: PublicKey;
+    counter: Address;
 };
 
-export function createIncrementInstruction(accounts: IncrementInstructionAccounts): TransactionInstruction {
-  return new TransactionInstruction({
-    programId: PROGRAM_ID,
-    keys: [
-      {
-        pubkey: accounts.counter,
-        isSigner: false,
-        isWritable: true,
-      },
-    ],
-    data: Buffer.from([0x0]),
-  });
+export function createIncrementInstruction(accounts: IncrementInstructionAccounts) {
+    return {
+        programAddress: PROGRAM_ID,
+        accounts: [
+            {
+                address: accounts.counter,
+                role: AccountRole.WRITABLE,
+            },
+        ],
+        data: new Uint8Array([0x0]),
+    };
 }
