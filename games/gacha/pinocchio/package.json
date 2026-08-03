@@ -47,6 +47,7 @@
       "minimatch": "9.0.9",
       "picomatch": "4.0.4",
       "rollup": "4.60.2",
+      "rpc-websockets>uuid": "9.0.1",
       "ws@^8.0.0": "8.20.1"
     }
   }
