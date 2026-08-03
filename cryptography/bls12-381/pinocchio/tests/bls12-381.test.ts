@@ -28,6 +28,7 @@ const G2_TWO =
 const G2_THREE =
     '09380275bbc8e5dcea7dc4dd7e0550ff2ac480905396eda55062650f8d251c96eb480673937cc6d9d6a44aaa56ca66dc122915c824a0857e2ee414a3dccb23ae691ae54329781315a0c75df1c04d6d7a50a030fc866f09d516020ef82324afae08f239ba329b3967fe48d718a36cfe5f62a7e42e0bf1c1ed714150a166bfbd6bcf6b3b58b975b9edea56d53f23a0e8490b21da7955969e61010c7a1abc1a6f0136961d1e3b20b1a7326ac738fef5c721479dfd948b52fdf2455e44813ecfd892';
 
+// Instruction discriminators, mirroring the program's dispatch order.
 const IX_G1_ADD = 0;
 const IX_G1_SUB = 1;
 const IX_G1_MUL = 2;

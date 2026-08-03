@@ -6,6 +6,7 @@ use solana_native_token::LAMPORTS_PER_SOL;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
 
+// Instruction discriminators, mirroring the program's dispatch order.
 const IX_G2_ADD: u8 = 0;
 const IX_G2_MUL: u8 = 1;
 const IX_AGGREGATE_VERIFY: u8 = 2;

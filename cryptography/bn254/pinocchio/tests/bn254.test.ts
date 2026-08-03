@@ -32,10 +32,12 @@ const AGG_SIG_ALL =
 const AGG_SIG_FIRST_TWO =
     '29da90779ff721fffa657af0a02eb50fcb18cc8176e4d63127827a1767d69c7e227c651364e066d84349de32d97fd6b7f423a1e2b9a162ba061337d5a29e9303';
 
+// Instruction discriminators, mirroring the program's dispatch order.
 const IX_G2_ADD = 0;
 const IX_G2_MUL = 1;
 const IX_AGGREGATE_VERIFY = 2;
 
+// How LiteSVM renders the program's Bn254Error codes in a failed transaction.
 const ERR_INVALID_INPUT_LENGTH = 'InstructionErrorCustom { code: 0 }';
 const ERR_AGGREGATE_VERIFY_FAILED = 'InstructionErrorCustom { code: 3 }';
 
