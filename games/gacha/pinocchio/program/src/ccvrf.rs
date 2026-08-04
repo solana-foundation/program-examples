@@ -15,24 +15,24 @@
 //! hashed into that proof, so this program serializes them from its own pool
 //! state — an operator cannot substitute a different registration.
 
+use light_sdk_types::constants as light;
 use pinocchio::{cpi::invoke, instruction::InstructionAccount, instruction::InstructionView, Address, ProgramResult};
 
 /// cc-vrf program (same address on mainnet and devnet).
 pub const CC_VRF_PROGRAM_ID: Address = Address::from_str_const("ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ");
-/// Light system program.
-pub const LIGHT_SYSTEM_PROGRAM_ID: Address = Address::from_str_const("SySTEM1eSU2p4BGQfQpimFEWWSC1XDFeun3Nqzz3rT7");
 /// cc-vrf's CPI signer PDA (`["cpi_authority"]` under cc-vrf).
 pub const CC_VRF_CPI_AUTHORITY: Address = Address::from_str_const("JEwC9hjj9yfWCQZQsMvy8zG92CcThefPxEp5T63UCFD");
-/// Light registered-program PDA for cc-vrf.
-pub const REGISTERED_PROGRAM_PDA: Address = Address::from_str_const("35hkDgaAKwMCaxRz2ocSZ6NaUrtKkyNqU6c4RV3tYJRh");
+
+/// Light system program.
+pub const LIGHT_SYSTEM_PROGRAM_ID: Address = Address::new_from_array(light::LIGHT_SYSTEM_PROGRAM_ID);
+/// Light registered-program PDA.
+pub const REGISTERED_PROGRAM_PDA: Address = Address::new_from_array(light::REGISTERED_PROGRAM_PDA);
 /// Account-compression CPI authority (`["cpi_authority"]` under the Light system program).
-pub const ACCOUNT_COMPRESSION_AUTHORITY: Address =
-    Address::from_str_const("HwXnGK3tPkkVY6P439H2p68AxpeuWXd5PcrAxFpbmfbA");
+pub const ACCOUNT_COMPRESSION_AUTHORITY: Address = Address::new_from_array(light::ACCOUNT_COMPRESSION_AUTHORITY_PDA);
 /// Light account-compression program.
-pub const ACCOUNT_COMPRESSION_PROGRAM_ID: Address =
-    Address::from_str_const("compr6CUsB5m2jS4Y3831ztGSTnDpnKJTKS95d64XVq");
+pub const ACCOUNT_COMPRESSION_PROGRAM_ID: Address = Address::new_from_array(light::ACCOUNT_COMPRESSION_PROGRAM_ID);
 /// The canonical Light v2 batched address tree; cc-vrf rejects any other.
-pub const ADDRESS_TREE_V2: Address = Address::from_str_const("amt2kaJA14v3urZbZvnc5v2np8jqvc4Z8zDep5wbtzx");
+pub const ADDRESS_TREE_V2: Address = Address::new_from_array(light::ADDRESS_TREE_V2);
 
 /// Anchor discriminator for `commit_proof_with_beta`
 /// (`sha256("global:commit_proof_with_beta")[..8]`).

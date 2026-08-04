@@ -281,7 +281,11 @@
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
-        "name": "pull"
+        "name": "pull",
+        "pda": {
+          "kind": "pdaLinkNode",
+          "name": "pull"
+        }
       },
       {
         "data": {
@@ -1724,6 +1728,46 @@
             "name": "pull",
             "type": {
               "kind": "publicKeyTypeNode"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "pdaNode",
+        "name": "pull",
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": {
+              "encoding": "utf8",
+              "kind": "stringTypeNode"
+            },
+            "value": {
+              "kind": "stringValueNode",
+              "string": "pull"
+            }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "pool",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "buyer",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "index",
+            "type": {
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
             }
           }
         ]

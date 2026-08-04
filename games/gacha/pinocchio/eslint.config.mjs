@@ -53,6 +53,7 @@ export default [
             '**/.claude/**',
             '**/.remember/**',
             '**/.git/**',
+            '**/.next/**',
             '**/dist/**',
             '**/node_modules/**',
             '**/target/**',

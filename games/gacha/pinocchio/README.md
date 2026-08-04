@@ -64,6 +64,13 @@ just test      # unit + integration + light + client tests
 just demo      # off-chain operator/verifier walkthrough (no RPC)
 ```
 
+On devnet, `just burst-test 200` opens and settles 200 pulls against a throwaway
+1-lamport pool, re-derives every reveal off-chain, and scores the tier distribution
+(chi-square), the beta bit balance, and the beta byte uniformity — the statistical
+counterpart to the per-instruction tests. `just burst-report` re-scores every pull
+that pool has recorded without sending a transaction. Both need a devnet operator
+registered with `just register-operator`.
+
 The Light-stack tests dump the mainnet cc-vrf binary once (`just dump-cc-vrf`) and
 spawn a local prover automatically. Production operators need a Photon-capable RPC
 (e.g. Helius) to fetch validity proofs; nothing in `just test` needs an RPC beyond

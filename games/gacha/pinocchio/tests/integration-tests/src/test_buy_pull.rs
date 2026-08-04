@@ -1,8 +1,9 @@
 use solana_signer::Signer;
 
 use crate::{
+    client,
     state::PullStatus,
-    tests::{asserts::TransactionResultExt, pda::get_pool_pda, utils::*},
+    tests::{asserts::TransactionResultExt, utils::*},
     Pull, TIER_UNSET,
 };
 
@@ -22,7 +23,7 @@ fn opens_a_pending_pull_and_escrows_fee() {
     let view = read_pull(&svm, &pull);
     assert_eq!(view.status, PullStatus::Pending as u8);
     assert_eq!(view.tier_selected, TIER_UNSET);
-    assert_eq!(view.pool, get_pool_pda(&admin.pubkey()).0.to_bytes());
+    assert_eq!(view.pool, client::Pool::find_pda(&admin.pubkey()).0.to_bytes());
     assert_eq!(view.buyer, buyer.pubkey().to_bytes());
     assert_eq!(view.index, 0);
     assert_eq!(view.client_seed, client_seed);

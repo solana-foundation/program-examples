@@ -2,5 +2,5 @@
 export * from './generated/index.js';
 // Hand-written constants.
 export * from './constants.js';
-// Hand-written gacha helpers: pull PDA, tier selection (mirrors on-chain), ECVRF operator/verify wrappers.
+// Hand-written gacha helpers: alpha derivation and tier selection (mirror the on-chain logic), ECVRF operator/verify wrappers.
 export * from './gacha.js';

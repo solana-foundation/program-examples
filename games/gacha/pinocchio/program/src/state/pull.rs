@@ -24,6 +24,10 @@ pub const TIER_UNSET: u8 = u8::MAX;
 /// **PDA seeds:** `["pull", pool, buyer, index_le]`
 #[repr(C, packed)]
 #[derive(CodamaAccount)]
+#[codama(seed(type = string(utf8), value = "pull"))]
+#[codama(seed(name = "pool", type = public_key))]
+#[codama(seed(name = "buyer", type = public_key))]
+#[codama(seed(name = "index", type = number(u64)))]
 pub struct Pull {
     /// Account type discriminator ([`AccountDiscriminator::Pull`]).
     pub discriminator: u8,

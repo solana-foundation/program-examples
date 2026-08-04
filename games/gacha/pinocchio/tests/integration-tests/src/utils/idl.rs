@@ -11,6 +11,12 @@ pub struct IdlAccount {
 }
 
 /// The ordered account metas the IDL declares for an instruction.
+///
+/// `test_account_meta` drives its cases off this: for each account the IDL marks
+/// writable, it rebuilds the instruction with that account demoted to read-only
+/// and asserts the program rejects it. A flag that drifts out of sync between the
+/// IDL and the program's validation therefore fails a test rather than shipping
+/// as a client that silently under-declares its writes.
 pub fn instruction_accounts(instruction: &str) -> Vec<IdlAccount> {
     let value: serde_json::Value = serde_json::from_str(IDL).expect("valid IDL json");
     let program = value.get("program").unwrap_or(&value);

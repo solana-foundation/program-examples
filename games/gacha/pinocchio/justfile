@@ -105,8 +105,9 @@ test: unit-test integration-test light-test client-test
 unit-test:
     cargo test -p gacha-program
 
-# Run LiteSVM integration tests (builds the .so first)
-integration-test: build-program
+# Run LiteSVM integration tests (the tests derive PDAs through the generated
+# Rust client, so the clients are generated before the .so is built)
+integration-test: generate-clients build-program
     cargo test -p tests-gacha
 
 # Dump the mainnet cc-vrf program for the Light-stack tests
@@ -223,6 +224,15 @@ register-operator:
 # Run the operator crank, loading its Photon RPC from webapp/.env.local
 operator-watch:
     pnpm exec tsx scripts/operator-settle.ts --watch
+
+# Buy + settle N pulls on a dedicated 1-lamport devnet pool, then score every
+# reveal and the tier distribution (needs a registered operator; ~0.0025 SOL/pull)
+burst-test pulls="100":
+    PULLS={{pulls}} pnpm exec tsx scripts/burst-randomness.ts
+
+# Re-score every pull the burst pool has recorded, without buying or settling
+burst-report:
+    pnpm exec tsx scripts/burst-randomness.ts --analyze
 
 # ============================================
 # Format and lint

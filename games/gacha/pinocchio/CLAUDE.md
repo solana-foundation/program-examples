@@ -78,6 +78,8 @@ just integration-test   # LiteSVM integration tests (builds the .so first)
 just light-test         # Light-stack tests: real settle -> cc-vrf CPI w/ proofs
 just dump-cc-vrf        # Fetch the mainnet cc-vrf binary for light-test
 just client-test        # TypeScript client tests (parity + ECVRF + forged-reveal)
+just burst-test 200     # Devnet: buy+settle 200 pulls, score the reveals + distribution
+just burst-report       # Re-score every pull the burst pool has recorded (no txs)
 just demo               # Off-chain operator/verifier demo (no RPC)
 just fmt                # cargo fmt + prettier
 just check              # fmt-check + lint-check
@@ -105,7 +107,7 @@ clients/{typescript,rust}/src/generated/   (gitignored; re-exported from src/ind
 - `program/src/lib.rs` — declares the program ID, wires modules
 - `program/src/gacha.rs` — pure logic: `select_tier`, `derive_alpha`, prize constants (host unit-tested)
 - `program/src/ccvrf.rs` — hand-built Anchor CPI to cc-vrf `commit_proof_with_beta` (program IDs, wire layout, account order)
-- `program/src/instructions/` — `init_pool`, `buy_pull`, `settle_pull`, `refund_pull`, `withdraw_fees`, `claim_prize`, `emit_event` (self-CPI target) + `helpers/`
+- `program/src/instructions/` — `init_pool`, `buy_pull`, `settle_pull`, `refund_pull`, `withdraw_fees`, `claim_prize`, `emit_event` (self-CPI target) + `helpers/` (`checks`, `account`, `prize_nft` — the Token-2022 NFT mint + metadata CPIs)
 - `program/src/state/` — `Pool`, `Pull` PDA structs + `Vault` / `PrizeMint` markers + `common.rs` (discriminator, pull status, PDA derivation)
 - `program/src/event_engine.rs` — Anchor-compatible self-CPI event emission
 - `program/src/events/` — one event struct per state-changing instruction
@@ -147,12 +149,24 @@ client could recombine them with an address lookup table.)
 
 - `tests/integration-tests` — LiteSVM 0.12: everything that does not need a live
   cc-vrf (init/buy/refund/withdraw, settle/claim negatives, claim decode via a
-  fabricated settled pull with `set_account`).
+  fabricated settled pull with `set_account`). PDAs are derived through
+  `gacha_client`'s generated `find_pda` helpers, so a seed the IDL gets wrong
+  fails the suite rather than shipping to clients. Requires
+  `just generate-clients` first — hence the recipe dependency.
 - `tests/light-integration-tests` — `light-program-test`: the real
   `settle_pull` → cc-vrf → Light CPI chain with genuine validity proofs (local
   gnark prover, prepared by `just light-bootstrap`; binary + keys cached in
   `~/.config/light`). Runs against the mainnet-dumped `tests/fixtures/cc_vrf.so`.
   Single-threaded (shared prover port).
+- `scripts/burst-randomness.ts` (`just burst-test <n>`) — devnet statistical test:
+  opens and settles `n` pulls against a throwaway 1-lamport pool owned by
+  `keys/burst-admin-keypair.json`, re-derives every reveal off-chain (alpha, the
+  operator's ECVRF output, the selected tier, proof verification), and scores the
+  tier distribution, beta bit balance, and beta byte uniformity, failing at
+  p < 0.001. `just burst-report` re-scores the pool's whole history without
+  spending anything. Costs ~0.0025 SOL of pull rent per pull, unrecoverable once
+  a pull is settled — pull accounts are only closable while pending, via
+  `refund_pull`.
 
 ## Conventions
 
@@ -160,6 +174,9 @@ client could recombine them with an address lookup table.)
 - **Packed state**: `#[repr(C, packed)]`, byte-0 discriminator, zero-copy `transmute`.
   Never take a reference to a packed field whose type has alignment > 1 (u32/u64
   arrays) — copy the field into a local first.
+- **Light Protocol addresses come from `light-sdk-types`**, not local literals.
+  cc-vrf publishes no crate, so its program ID, CPI authority, and instruction
+  discriminator are still declared in `ccvrf.rs`.
 - **Foreign CPIs are hand-serialized**: Anchor programs (cc-vrf) take an 8-byte
   `sha256("global:<name>")` discriminator + borsh args; SPL interface programs
   (token-metadata) take an 8-byte `SplDiscriminate` hash + borsh args. Program

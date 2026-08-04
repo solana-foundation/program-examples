@@ -8,19 +8,19 @@ use solana_instruction::{AccountMeta, Instruction};
 use solana_keypair::Keypair;
 use solana_message::Message;
 use solana_native_token::LAMPORTS_PER_SOL;
-use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
 
 use crate::{
-    ccvrf::LightCommitContext,
+    ccvrf::{
+        LightCommitContext, ACCOUNT_COMPRESSION_AUTHORITY, ACCOUNT_COMPRESSION_PROGRAM_ID, ADDRESS_TREE_V2,
+        CC_VRF_CPI_AUTHORITY, CC_VRF_PROGRAM_ID, LIGHT_SYSTEM_PROGRAM_ID, REGISTERED_PROGRAM_PDA,
+    },
+    client,
+    event_engine::event_authority_pda,
     tests::{
-        constants::{
-            ACCOUNT_COMPRESSION_AUTHORITY, ACCOUNT_COMPRESSION_PROGRAM_ID, ADDRESS_TREE_V2, ATA_PROGRAM_ID,
-            CC_VRF_CPI_AUTHORITY, CC_VRF_ID, EVENT_AUTHORITY, LIGHT_SYSTEM_PROGRAM_ID, PROGRAM_ID,
-            REGISTERED_PROGRAM_PDA, SYSTEM_PROGRAM_ID, TOKEN_2022_ID,
-        },
-        pda::{get_ata, get_mint_pda, get_pool_pda, get_pull_pda, get_vault_pda},
+        constants::{ATA_PROGRAM_ID, PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_2022_ID},
+        pda::get_ata,
     },
     utils::cu_tracker::record_cu,
     GachaInstruction, Pool, Pull,
@@ -59,7 +59,7 @@ pub const TX_FEE: u64 = 5_000;
 pub fn build_and_send(
     litesvm: &mut LiteSVM,
     signers: &[&Keypair],
-    payer: &Pubkey,
+    payer: &Address,
     ix: &Instruction,
 ) -> TransactionResult {
     let tx = Transaction::new(signers, Message::new(std::slice::from_ref(ix), Some(payer)), litesvm.latest_blockhash());
@@ -74,7 +74,7 @@ pub fn build_and_send(
 }
 
 /// Serializes `InitPool` instruction data (weights zero-padded to 8 tiers).
-pub fn init_pool_data(operator: &Pubkey, entry_fee: u64, settle_deadline_slots: u64, weights: &[u32]) -> Vec<u8> {
+pub fn init_pool_data(operator: &Address, entry_fee: u64, settle_deadline_slots: u64, weights: &[u32]) -> Vec<u8> {
     let mut data = vec![0u8];
     data.extend_from_slice(operator.as_ref());
     data.extend_from_slice(&AUTHORITY_LABEL);
@@ -89,15 +89,15 @@ pub fn init_pool_data(operator: &Pubkey, entry_fee: u64, settle_deadline_slots: 
     data
 }
 
-pub fn init_pool_metas(admin: &Pubkey) -> Vec<AccountMeta> {
-    let (pool, _) = get_pool_pda(admin);
-    let (vault, _) = get_vault_pda(admin);
+pub fn init_pool_metas(admin: &Address) -> Vec<AccountMeta> {
+    let (pool, _) = client::Pool::find_pda(admin);
+    let (vault, _) = client::Vault::find_pda(admin);
     vec![
         AccountMeta::new(*admin, true),
         AccountMeta::new(pool, false),
         AccountMeta::new(vault, false),
         AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
-        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(event_authority_pda::ID, false),
         AccountMeta::new_readonly(PROGRAM_ID, false),
     ]
 }
@@ -106,7 +106,7 @@ pub fn init_pool_metas(admin: &Pubkey) -> Vec<AccountMeta> {
 pub fn init_pool(
     litesvm: &mut LiteSVM,
     admin: &Keypair,
-    operator: &Pubkey,
+    operator: &Address,
     entry_fee: u64,
     weights: &[u32],
 ) -> TransactionResult {
@@ -117,7 +117,7 @@ pub fn init_pool(
 pub fn init_pool_with_deadline(
     litesvm: &mut LiteSVM,
     admin: &Keypair,
-    operator: &Pubkey,
+    operator: &Address,
     entry_fee: u64,
     settle_deadline_slots: u64,
     weights: &[u32],
@@ -132,17 +132,17 @@ pub fn random_seed() -> [u8; 32] {
     Keypair::new().pubkey().to_bytes()
 }
 
-pub fn buy_pull_metas(admin: &Pubkey, buyer: &Pubkey, index: u64) -> Vec<AccountMeta> {
-    let (pool, _) = get_pool_pda(admin);
-    let (vault, _) = get_vault_pda(admin);
-    let (pull, _) = get_pull_pda(&pool, buyer, index);
+pub fn buy_pull_metas(admin: &Address, buyer: &Address, index: u64) -> Vec<AccountMeta> {
+    let (pool, _) = client::Pool::find_pda(admin);
+    let (vault, _) = client::Vault::find_pda(admin);
+    let (pull, _) = client::Pull::find_pda(&pool, buyer, index);
     vec![
         AccountMeta::new(*buyer, true),
         AccountMeta::new(pool, false),
         AccountMeta::new(pull, false),
         AccountMeta::new(vault, false),
         AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
-        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(event_authority_pda::ID, false),
         AccountMeta::new_readonly(PROGRAM_ID, false),
     ]
 }
@@ -157,13 +157,13 @@ pub fn buy_pull_data(client_seed: &[u8; 32]) -> Vec<u8> {
 #[allow(clippy::result_large_err)]
 pub fn buy_pull_with_seed(
     litesvm: &mut LiteSVM,
-    admin: &Pubkey,
+    admin: &Address,
     buyer: &Keypair,
     client_seed: &[u8; 32],
-) -> (TransactionResult, Pubkey) {
-    let (pool, _) = get_pool_pda(admin);
+) -> (TransactionResult, Address) {
+    let (pool, _) = client::Pool::find_pda(admin);
     let index = read_pool(litesvm, admin).pulls_count;
-    let (pull, _) = get_pull_pda(&pool, &buyer.pubkey(), index);
+    let (pull, _) = client::Pull::find_pda(&pool, &buyer.pubkey(), index);
 
     let accounts = buy_pull_metas(admin, &buyer.pubkey(), index);
     let ix = Instruction { program_id: PROGRAM_ID, accounts, data: buy_pull_data(client_seed) };
@@ -172,7 +172,7 @@ pub fn buy_pull_with_seed(
 
 /// Buys a pull with a random client seed, returning the seed for alpha checks.
 #[allow(clippy::result_large_err)]
-pub fn buy_pull(litesvm: &mut LiteSVM, admin: &Pubkey, buyer: &Keypair) -> (TransactionResult, Pubkey, [u8; 32]) {
+pub fn buy_pull(litesvm: &mut LiteSVM, admin: &Address, buyer: &Keypair) -> (TransactionResult, Address, [u8; 32]) {
     let client_seed = random_seed();
     let (result, pull) = buy_pull_with_seed(litesvm, admin, buyer, &client_seed);
     (result, pull, client_seed)
@@ -190,24 +190,24 @@ pub fn settle_pull_data(beta: &[u8; 64], proof: &[u8; 80]) -> Vec<u8> {
 
 /// Account metas for `SettlePull`. The mutable Light tree accounts are dummies:
 /// they are only touched by the cc-vrf CPI, which the negative tests never reach.
-pub fn settle_pull_metas(admin: &Pubkey, operator: &Pubkey, pull: &Pubkey) -> Vec<AccountMeta> {
-    let (pool, _) = get_pool_pda(admin);
+pub fn settle_pull_metas(admin: &Address, operator: &Address, pull: &Address) -> Vec<AccountMeta> {
+    let (pool, _) = client::Pool::find_pda(admin);
     vec![
         AccountMeta::new(*operator, true),
         AccountMeta::new(pool, false),
         AccountMeta::new(*pull, false),
-        AccountMeta::new_readonly(CC_VRF_ID, false),
+        AccountMeta::new_readonly(CC_VRF_PROGRAM_ID, false),
         AccountMeta::new_readonly(LIGHT_SYSTEM_PROGRAM_ID, false),
         AccountMeta::new_readonly(CC_VRF_CPI_AUTHORITY, false),
         AccountMeta::new_readonly(REGISTERED_PROGRAM_PDA, false),
         AccountMeta::new_readonly(ACCOUNT_COMPRESSION_AUTHORITY, false),
         AccountMeta::new_readonly(ACCOUNT_COMPRESSION_PROGRAM_ID, false),
         AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
-        AccountMeta::new(Pubkey::new_unique(), false),
-        AccountMeta::new(Pubkey::new_unique(), false),
+        AccountMeta::new(Address::new_unique(), false),
+        AccountMeta::new(Address::new_unique(), false),
         AccountMeta::new(ADDRESS_TREE_V2, false),
-        AccountMeta::new(Pubkey::new_unique(), false),
-        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new(Address::new_unique(), false),
+        AccountMeta::new_readonly(event_authority_pda::ID, false),
         AccountMeta::new_readonly(PROGRAM_ID, false),
     ]
 }
@@ -215,9 +215,9 @@ pub fn settle_pull_metas(admin: &Pubkey, operator: &Pubkey, pull: &Pubkey) -> Ve
 #[allow(clippy::result_large_err)]
 pub fn settle_pull(
     litesvm: &mut LiteSVM,
-    admin: &Pubkey,
+    admin: &Address,
     operator: &Keypair,
-    pull: &Pubkey,
+    pull: &Address,
     beta: &[u8; 64],
     proof: &[u8; 80],
 ) -> TransactionResult {
@@ -226,34 +226,34 @@ pub fn settle_pull(
     build_and_send(litesvm, &[operator], &operator.pubkey(), &ix)
 }
 
-pub fn refund_pull_metas(admin: &Pubkey, buyer: &Pubkey, pull: &Pubkey) -> Vec<AccountMeta> {
-    let (pool, _) = get_pool_pda(admin);
-    let (vault, _) = get_vault_pda(admin);
+pub fn refund_pull_metas(admin: &Address, buyer: &Address, pull: &Address) -> Vec<AccountMeta> {
+    let (pool, _) = client::Pool::find_pda(admin);
+    let (vault, _) = client::Vault::find_pda(admin);
     vec![
         AccountMeta::new(*buyer, true),
         AccountMeta::new(pool, false),
         AccountMeta::new(*pull, false),
         AccountMeta::new(vault, false),
-        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(event_authority_pda::ID, false),
         AccountMeta::new_readonly(PROGRAM_ID, false),
     ]
 }
 
 #[allow(clippy::result_large_err)]
-pub fn refund_pull(litesvm: &mut LiteSVM, admin: &Pubkey, buyer: &Keypair, pull: &Pubkey) -> TransactionResult {
+pub fn refund_pull(litesvm: &mut LiteSVM, admin: &Address, buyer: &Keypair, pull: &Address) -> TransactionResult {
     let accounts = refund_pull_metas(admin, &buyer.pubkey(), pull);
     let ix = Instruction { program_id: PROGRAM_ID, accounts, data: vec![3u8] };
     build_and_send(litesvm, &[buyer], &buyer.pubkey(), &ix)
 }
 
-pub fn withdraw_fees_metas(admin: &Pubkey, signer: &Pubkey) -> Vec<AccountMeta> {
-    let (pool, _) = get_pool_pda(admin);
-    let (vault, _) = get_vault_pda(admin);
+pub fn withdraw_fees_metas(admin: &Address, signer: &Address) -> Vec<AccountMeta> {
+    let (pool, _) = client::Pool::find_pda(admin);
+    let (vault, _) = client::Vault::find_pda(admin);
     vec![
         AccountMeta::new(*signer, true),
         AccountMeta::new_readonly(pool, false),
         AccountMeta::new(vault, false),
-        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(event_authority_pda::ID, false),
         AccountMeta::new_readonly(PROGRAM_ID, false),
     ]
 }
@@ -266,15 +266,15 @@ pub fn withdraw_fees_data(amount: u64) -> Vec<u8> {
 }
 
 #[allow(clippy::result_large_err)]
-pub fn withdraw_fees(litesvm: &mut LiteSVM, admin: &Pubkey, signer: &Keypair, amount: u64) -> TransactionResult {
+pub fn withdraw_fees(litesvm: &mut LiteSVM, admin: &Address, signer: &Keypair, amount: u64) -> TransactionResult {
     let accounts = withdraw_fees_metas(admin, &signer.pubkey());
     let ix = Instruction { program_id: PROGRAM_ID, accounts, data: withdraw_fees_data(amount) };
     build_and_send(litesvm, &[signer], &signer.pubkey(), &ix)
 }
 
-pub fn claim_prize_metas(admin: &Pubkey, payer: &Pubkey, pull: &Pubkey, buyer: &Pubkey) -> Vec<AccountMeta> {
-    let (pool, _) = get_pool_pda(admin);
-    let (mint, _) = get_mint_pda(pull);
+pub fn claim_prize_metas(admin: &Address, payer: &Address, pull: &Address, buyer: &Address) -> Vec<AccountMeta> {
+    let (pool, _) = client::Pool::find_pda(admin);
+    let (mint, _) = client::PrizeMint::find_pda(pull);
     let buyer_ata = get_ata(buyer, &mint);
     vec![
         AccountMeta::new(*payer, true),
@@ -286,7 +286,7 @@ pub fn claim_prize_metas(admin: &Pubkey, payer: &Pubkey, pull: &Pubkey, buyer: &
         AccountMeta::new_readonly(SYSTEM_PROGRAM_ID, false),
         AccountMeta::new_readonly(TOKEN_2022_ID, false),
         AccountMeta::new_readonly(ATA_PROGRAM_ID, false),
-        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(event_authority_pda::ID, false),
         AccountMeta::new_readonly(PROGRAM_ID, false),
     ]
 }
@@ -294,10 +294,10 @@ pub fn claim_prize_metas(admin: &Pubkey, payer: &Pubkey, pull: &Pubkey, buyer: &
 #[allow(clippy::result_large_err)]
 pub fn claim_prize(
     litesvm: &mut LiteSVM,
-    admin: &Pubkey,
+    admin: &Address,
     payer: &Keypair,
-    pull: &Pubkey,
-    buyer: &Pubkey,
+    pull: &Address,
+    buyer: &Address,
 ) -> TransactionResult {
     let accounts = claim_prize_metas(admin, &payer.pubkey(), pull, buyer);
     let ix = Instruction { program_id: PROGRAM_ID, accounts, data: vec![5u8] };
@@ -317,8 +317,8 @@ pub struct PoolView {
     pub weights: [u32; 8],
 }
 
-pub fn read_pool(litesvm: &LiteSVM, admin: &Pubkey) -> PoolView {
-    let (pool, _) = get_pool_pda(admin);
+pub fn read_pool(litesvm: &LiteSVM, admin: &Address) -> PoolView {
+    let (pool, _) = client::Pool::find_pda(admin);
     let account = litesvm.get_account(&pool).expect("pool exists");
     let p = Pool::load(&account.data).expect("valid pool");
     let admin_key = p.admin;
@@ -350,7 +350,7 @@ pub struct PullView {
     pub settled_slot: u64,
 }
 
-pub fn read_pull(litesvm: &LiteSVM, pull: &Pubkey) -> PullView {
+pub fn read_pull(litesvm: &LiteSVM, pull: &Address) -> PullView {
     let account = litesvm.get_account(pull).expect("pull exists");
     let p = Pull::load(&account.data).expect("valid pull");
     let pool = p.pool;
@@ -369,8 +369,8 @@ pub fn read_pull(litesvm: &LiteSVM, pull: &Pubkey) -> PullView {
     }
 }
 
-pub fn vault_balance(litesvm: &LiteSVM, admin: &Pubkey) -> u64 {
-    let (vault, _) = get_vault_pda(admin);
+pub fn vault_balance(litesvm: &LiteSVM, admin: &Address) -> u64 {
+    let (vault, _) = client::Vault::find_pda(admin);
     litesvm.get_account(&vault).map(|a| a.lamports).unwrap_or(0)
 }
 
@@ -386,9 +386,9 @@ pub fn beta_from(value: u128) -> [u8; 64] {
 /// exists (from a real buy) it is flipped to settled and the pool's
 /// `pending_pulls` is decremented; otherwise a settled pull is written from
 /// scratch and the pool's `pulls_count` is advanced past `index`.
-pub fn set_settled_pull(litesvm: &mut LiteSVM, admin: &Pubkey, buyer: &Pubkey, index: u64, tier: u8) -> Pubkey {
-    let (pool_pda, _) = get_pool_pda(admin);
-    let (pull_pda, pull_bump) = get_pull_pda(&pool_pda, buyer, index);
+pub fn set_settled_pull(litesvm: &mut LiteSVM, admin: &Address, buyer: &Address, index: u64, tier: u8) -> Address {
+    let (pool_pda, _) = client::Pool::find_pda(admin);
+    let (pull_pda, pull_bump) = client::Pull::find_pda(&pool_pda, buyer, index);
     let slot = litesvm.get_sysvar::<Clock>().slot;
 
     let existing = litesvm.get_account(&pull_pda).filter(|a| !a.data.is_empty());

@@ -1,4 +1,7 @@
 pub use ::gacha::*;
+/// The codama-generated client, used for account decoding and PDA derivation so
+/// the tests never re-derive what the IDL already declares.
+pub use ::gacha_client as client;
 
 pub mod utils;
 

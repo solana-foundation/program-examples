@@ -1,43 +1,8 @@
 import { generateKeyPair, proveVRF, publicKeyFromSeed, verifyVRF, vrfProofToHash } from '@collectorcrypt/ecvrf';
 import { sha256 } from '@noble/hashes/sha2.js';
-import {
-    type Address,
-    getAddressEncoder,
-    getProgramDerivedAddress,
-    getU64Encoder,
-    getUtf8Encoder,
-    type ProgramDerivedAddress,
-} from '@solana/kit';
+import { type Address, getAddressEncoder } from '@solana/kit';
 
 import { MAX_TIERS } from './constants.js';
-import { GACHA_PROGRAM_ADDRESS } from './generated/index.js';
-
-/** Seeds for a pull PDA: `["pull", pool, buyer, index_le]`. */
-export type PullSeeds = {
-    buyer: Address;
-    index: bigint | number;
-    pool: Address;
-};
-
-/**
- * Derives the pull PDA. The generated client derives the pool and vault PDAs, but
- * the pull PDA uses a numeric seed, so it is derived here.
- */
-export async function findPullPda(
-    seeds: PullSeeds,
-    config: { programAddress?: Address } = {},
-): Promise<ProgramDerivedAddress> {
-    const { programAddress = GACHA_PROGRAM_ADDRESS } = config;
-    return await getProgramDerivedAddress({
-        programAddress,
-        seeds: [
-            getUtf8Encoder().encode('pull'),
-            getAddressEncoder().encode(seeds.pool),
-            getAddressEncoder().encode(seeds.buyer),
-            getU64Encoder().encode(BigInt(seeds.index)),
-        ],
-    });
-}
 
 /**
  * The VRF input for a pull: `SHA-256(pull_address || client_seed)`.

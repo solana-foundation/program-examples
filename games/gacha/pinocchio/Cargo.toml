@@ -27,6 +27,7 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 [workspace.dependencies]
 codama = "=0.9.3"
 const-crypto = "0.3"
+light-sdk-types = { version = "0.23", default-features = false, features = ["v2"] }
 pinocchio = { version = "0.11.1", features = ["cpi", "copy"] }
 pinocchio-associated-token-account = "0.4.0"
 pinocchio-system = "0.6.1"

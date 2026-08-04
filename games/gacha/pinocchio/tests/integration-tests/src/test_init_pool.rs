@@ -1,8 +1,9 @@
-use solana_pubkey::Pubkey;
+use solana_address::Address;
 use solana_signer::Signer;
 
 use crate::{
-    tests::{asserts::TransactionResultExt, pda::get_vault_pda, utils::*},
+    client,
+    tests::{asserts::TransactionResultExt, utils::*},
     GachaError,
 };
 
@@ -59,7 +60,7 @@ fn rejects_zero_deadline() {
 #[test]
 fn rejects_zero_operator() {
     let (mut svm, admin) = setup();
-    init_pool(&mut svm, &admin, &Pubkey::default(), ENTRY_FEE, &[100]).assert_err(GachaError::InvalidOperator);
+    init_pool(&mut svm, &admin, &Address::default(), ENTRY_FEE, &[100]).assert_err(GachaError::InvalidOperator);
 }
 
 #[test]
@@ -71,7 +72,7 @@ fn rejects_operator_equal_admin() {
 #[test]
 fn rejects_off_curve_operator() {
     let (mut svm, admin) = setup();
-    let (off_curve, _) = get_vault_pda(&admin.pubkey());
+    let (off_curve, _) = client::Vault::find_pda(&admin.pubkey());
     init_pool(&mut svm, &admin, &off_curve, ENTRY_FEE, &[100]).assert_err(GachaError::InvalidOperator);
 }
 

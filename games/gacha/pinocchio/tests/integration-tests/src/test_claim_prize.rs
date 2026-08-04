@@ -1,6 +1,6 @@
+use solana_address::Address;
 use solana_instruction::{AccountMeta, Instruction};
 use solana_keypair::Keypair;
-use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use spl_token_2022_interface::{
     extension::{metadata_pointer::MetadataPointer, BaseStateWithExtensions, StateWithExtensions},
@@ -9,11 +9,12 @@ use spl_token_2022_interface::{
 use spl_token_metadata_interface::state::TokenMetadata;
 
 use crate::{
+    client,
     state::PullStatus,
     tests::{
         asserts::TransactionResultExt,
         constants::{PROGRAM_ID, TOKEN_2022_ID},
-        pda::{get_ata, get_mint_pda, get_pool_pda},
+        pda::get_ata,
         utils::*,
     },
     GachaError, NFT_NAME_PREFIX, NFT_SYMBOL, NFT_URI, RARITY_LABELS,
@@ -46,8 +47,8 @@ fn claim_mints_prize() {
     let payer = funded_keypair(&mut svm);
     claim_prize(&mut svm, &admin.pubkey(), &payer, &pull, &buyer).assert_ok();
 
-    let (pool, _) = get_pool_pda(&admin.pubkey());
-    let (mint, _) = get_mint_pda(&pull);
+    let (pool, _) = client::Pool::find_pda(&admin.pubkey());
+    let (mint, _) = client::PrizeMint::find_pda(&pull);
     let mint_account = svm.get_account(&mint).expect("mint exists");
     assert_eq!(mint_account.owner, TOKEN_2022_ID);
 
@@ -105,7 +106,7 @@ fn rejects_wrong_mint_pda() {
 
     let payer = funded_keypair(&mut svm);
     let mut metas = claim_prize_metas(&admin.pubkey(), &payer.pubkey(), &pull, &buyer);
-    metas[4] = AccountMeta::new(Pubkey::new_unique(), false);
+    metas[4] = AccountMeta::new(Address::new_unique(), false);
     let ix = Instruction { program_id: PROGRAM_ID, accounts: metas, data: vec![5u8] };
     build_and_send(&mut svm, &[&payer], &payer.pubkey(), &ix).assert_err(GachaError::InvalidMintPda);
 }
@@ -120,7 +121,7 @@ fn rejects_wrong_token_program() {
     let pull = set_settled_pull(&mut svm, &admin.pubkey(), &buyer, 0, 0);
 
     let payer = funded_keypair(&mut svm);
-    let spl_token_v1 = Pubkey::from_str_const("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    let spl_token_v1 = Address::from_str_const("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
     let mut metas = claim_prize_metas(&admin.pubkey(), &payer.pubkey(), &pull, &buyer);
     metas[7] = AccountMeta::new_readonly(spl_token_v1, false);
     let ix = Instruction { program_id: PROGRAM_ID, accounts: metas, data: vec![5u8] };

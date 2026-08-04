@@ -22,6 +22,7 @@ serde_json = { workspace = true }
 [dependencies]
 codama = { workspace = true }
 const-crypto = { workspace = true }
+light-sdk-types = { workspace = true }
 pinocchio = { workspace = true }
 pinocchio-associated-token-account = { workspace = true }
 pinocchio-system = { workspace = true }

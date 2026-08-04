@@ -62,12 +62,6 @@ import {
 } from '@solana/kit';
 import { solanaRpc } from '@solana/kit-plugin-rpc';
 import { signer } from '@solana/kit-plugin-signer';
-// The Light `PackedAccounts` builder for a direct cc-vrf call needs the cc-vrf
-// program as a web3.js `PublicKey` (`SystemAccountMetaConfig.new` calls
-// `.toBuffer()` on it), and `@lightprotocol/stateless.js` exports no `PublicKey`
-// factory. This is the only remaining web3.js use; every address elsewhere is a
-// kit `Address` or a stateless-returned `PublicKey`.
-import { PublicKey } from '@solana/web3.js';
 
 import { loadWebappEnv } from './load-webapp-env.js';
 
@@ -86,7 +80,7 @@ const LAMPORTS_PER_SOL = 1_000_000_000;
 
 const CC_VRF_PROGRAM_ADDRESS = address('ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ');
 const CC_VRF_PROGRAM_ID = addressToBytes(CC_VRF_PROGRAM_ADDRESS);
-const CC_VRF_PROGRAM_PUBKEY = new PublicKey('ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ');
+const CC_VRF_PROGRAM_PUBKEY = toLightPubkey(CC_VRF_PROGRAM_ADDRESS);
 const SYSTEM_PROGRAM_ADDRESS = address('11111111111111111111111111111111');
 const ADDRESS_TREE_V2 = addressToBytes(address(batchAddressTree));
 const AUTHORITY_SEED = new TextEncoder().encode('vrf_authority');
@@ -125,6 +119,22 @@ function addressToBytes(value: Address): Uint8Array {
     return Uint8Array.from(getAddressEncoder().encode(value));
 }
 
+/** The web3.js `PublicKey` that Light's account builders accept, typed without importing web3.js. */
+type LightPubkey = Parameters<typeof SystemAccountMetaConfig.new>[0];
+
+/**
+ * Present a kit `Address` as the program key Light's account builders expect.
+ * They call exactly two methods on it: `toBuffer()`, to derive the Light
+ * `cpi_authority` PDA, and `toBase58()`, when the built metas are read back.
+ */
+function toLightPubkey(value: Address): LightPubkey {
+    const bytes = addressToBytes(value);
+    return {
+        toBase58: () => value,
+        toBuffer: () => Buffer.from(bytes),
+    } as unknown as LightPubkey;
+}
+
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
     return a.length === b.length && a.every((x, i) => x === b[i]);
 }
@@ -150,7 +160,7 @@ function encodeValidityProof(
     );
 }
 
-function toKitMeta(meta: { isSigner: boolean; isWritable: boolean; pubkey: PublicKey }): {
+function toKitMeta(meta: { isSigner: boolean; isWritable: boolean; pubkey: { toBase58(): string } }): {
     address: Address;
     role: AccountRole;
 } {

@@ -2,8 +2,8 @@
 //! the Light passthrough accounts can be dummies; the happy path (a real commit
 //! against the cc-vrf registry) lives in the Light-stack suite.
 
+use solana_address::Address;
 use solana_instruction::{AccountMeta, Instruction};
-use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 
 use crate::{
@@ -37,7 +37,7 @@ fn rejects_wrong_cc_vrf_program() {
     result.assert_ok();
 
     let mut metas = settle_pull_metas(&admin.pubkey(), &operator.pubkey(), &pull);
-    metas[3] = AccountMeta::new_readonly(Pubkey::new_unique(), false);
+    metas[3] = AccountMeta::new_readonly(Address::new_unique(), false);
     let ix = Instruction { program_id: PROGRAM_ID, accounts: metas, data: settle_pull_data(&beta_from(0), &[0u8; 80]) };
     build_and_send(&mut svm, &[&operator], &operator.pubkey(), &ix).assert_err(GachaError::NotCcVrfProgram);
 }
