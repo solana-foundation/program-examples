@@ -33,6 +33,15 @@ spl-transfer-hook-interface = { version = "2.1.0" }
 spl-discriminator = "0.5.1"
 
 [dev-dependencies]
+litesvm = "0.11.0"
+solana-instruction = "3.0.0"
+solana-keypair = "3.0.1"
+solana-message = "3.1.0"
+solana-native-token = "3.0.0"
+solana-pubkey = "3.0.0"
+solana-sdk-ids = "3.0.0"
+solana-signer = "3.0.0"
+solana-transaction = "3.0.1"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

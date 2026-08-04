@@ -1,23 +1,17 @@
-// TODO: Move this test back to programs/abl-token/tests/test.rs once the litesvm
-// version gap is resolved. Currently litesvm <=0.6 pins solana-account-info to
-// =2.2.1, but anchor-lang 0.32.1 needs >=2.3.0 (for AccountInfo::resize).
-// litesvm 0.9+ uses solana 3.x which has type mismatches with anchor-lang's v2 types.
-// This will resolve when anchor-lang upgrades to solana 3.x (likely anchor 0.33+).
-
 use {
     abl_token::{accounts::InitConfig, accounts::InitMint, instructions::InitMintArgs, Mode},
     anchor_lang::InstructionData,
     anchor_lang::ToAccountMetas,
+    anchor_spl::token_2022::ID as TOKEN_22_PROGRAM_ID,
     litesvm::LiteSVM,
     solana_instruction::Instruction,
     solana_keypair::Keypair,
     solana_message::Message,
     solana_native_token::LAMPORTS_PER_SOL,
-    solana_pubkey::{pubkey, Pubkey},
+    solana_pubkey::Pubkey,
     solana_sdk_ids::system_program::ID as SYSTEM_PROGRAM_ID,
     solana_signer::Signer,
     solana_transaction::Transaction,
-    spl_token_2022::ID as TOKEN_22_PROGRAM_ID,
     std::path::PathBuf,
 };
 
