@@ -53,6 +53,32 @@ fn test_close_account() {
     assert_eq!(account.owner, program_id);
     assert_eq!(&account.data[..5], b"Jacob");
 
+    // An attacker cannot close another user's account: the attacker signs
+    // with their own key, but passes the victim's User PDA as the account
+    // to close. Without a check that the target PDA actually belongs to the
+    // signer, this would drain the victim's account into the attacker's.
+    let attacker = Keypair::new();
+    svm.airdrop(&attacker.pubkey(), LAMPORTS_PER_SOL).unwrap();
+
+    let mut data = Vec::new();
+    data.push(CLOSE_DISCRIMINATOR);
+
+    let attack_ix = Instruction {
+        program_id,
+        accounts: vec![
+            AccountMeta::new(test_account_pubkey, false),
+            AccountMeta::new(attacker.pubkey(), true),
+            AccountMeta::new(solana_system_interface::program::ID, false),
+        ],
+        data,
+    };
+
+    let tx =
+        Transaction::new_signed_with_payer(&[attack_ix], Some(&attacker.pubkey()), &[&attacker], svm.latest_blockhash());
+
+    let res = svm.send_transaction(tx);
+    assert!(res.is_err(), "expected the attacker transaction to fail");
+
     // process_close
     let mut data = Vec::new();
     data.push(CLOSE_DISCRIMINATOR);

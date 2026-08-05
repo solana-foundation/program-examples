@@ -46,6 +46,7 @@ describe('Anchor: Transfer SOL', () => {
                 payer: payerAccount.publicKey,
                 recipient: recipientAccount.publicKey,
             })
+            .signers([payerAccount])
             .rpc();
 
         const recipientBalance = await provider.connection.getBalance(recipientAccount.publicKey);

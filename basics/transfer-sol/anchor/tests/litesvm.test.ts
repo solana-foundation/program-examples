@@ -8,7 +8,7 @@ import {
     TransactionInstruction,
 } from '@solana/web3.js';
 import { assert } from 'chai';
-import { LiteSVM } from 'litesvm';
+import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import Idl from '../target/idl/transfer_sol.json' with { type: 'json' };
 
 describe('LiteSVM: Transfer SOL', () => {
@@ -92,5 +92,49 @@ describe('LiteSVM: Transfer SOL', () => {
 
         const recipientAcc = svm.getAccount(recipientAccount.publicKey);
         assert.equal(recipientAcc.lamports, LAMPORTS_PER_SOL);
+    });
+
+    it("An attacker cannot drain another user's program-owned account", () => {
+        const victimAccount = Keypair.generate();
+        const ixVictim = SystemProgram.createAccount({
+            fromPubkey: payer.publicKey,
+            newAccountPubkey: victimAccount.publicKey,
+            lamports: LAMPORTS_PER_SOL,
+            space: 0,
+            programId,
+        });
+        const txVictim = new Transaction().add(ixVictim);
+        txVictim.feePayer = payer.publicKey;
+        txVictim.recentBlockhash = svm.latestBlockhash();
+        txVictim.sign(payer, victimAccount);
+        svm.sendTransaction(txVictim);
+        svm.expireBlockhash();
+
+        // The attacker never has victimAccount's private key. They mark it
+        // as a non-signer in the instruction and only sign with their own
+        // (unrelated) fee-payer key.
+        const attackerRecipient = Keypair.generate();
+
+        const ixArgs = {
+            amount: new anchor.BN(LAMPORTS_PER_SOL),
+        };
+        const data = coder.instruction.encode('transfer_sol_with_program', ixArgs);
+        const ix = new TransactionInstruction({
+            keys: [
+                { pubkey: victimAccount.publicKey, isSigner: false, isWritable: true },
+                { pubkey: attackerRecipient.publicKey, isSigner: false, isWritable: true },
+                { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+            ],
+            programId,
+            data,
+        });
+
+        const tx = new Transaction().add(ix);
+        tx.feePayer = payer.publicKey;
+        tx.recentBlockhash = svm.latestBlockhash();
+        tx.sign(payer);
+
+        const result = svm.sendTransaction(tx);
+        assert(result instanceof FailedTransactionMetadata, 'expected the attacker transaction to fail');
     });
 });

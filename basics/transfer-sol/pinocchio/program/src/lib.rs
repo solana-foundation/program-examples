@@ -35,6 +35,11 @@ fn transfer_sol_with_program(accounts: &mut [AccountView], instruction_data: &[u
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
+    // Only the account's owner may move its lamports.
+    if !payer.is_signer() {
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+
     let amount_bytes: [u8; 8] = instruction_data[0..8].try_into().map_err(|_| ProgramError::InvalidInstructionData)?;
     let amount = u64::from_le_bytes(amount_bytes);
 

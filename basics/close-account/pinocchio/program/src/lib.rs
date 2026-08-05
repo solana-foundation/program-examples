@@ -17,7 +17,7 @@ nostd_panic_handler!();
 fn process_instruction(program_id: &Address, accounts: &mut [AccountView], instruction_data: &[u8]) -> ProgramResult {
     match instruction_data.split_first() {
         Some((&CREATE_DISCRIMINATOR, data)) => process_user(program_id, accounts, data),
-        Some((&CLOSE_DISCRIMINATOR, _)) => process_close(accounts),
+        Some((&CLOSE_DISCRIMINATOR, _)) => process_close(program_id, accounts),
         _ => Err(ProgramError::InvalidInstructionData),
     }
 }
@@ -65,10 +65,22 @@ fn process_user(program_id: &Address, accounts: &mut [AccountView], instruction_
     Ok(())
 }
 
-fn process_close(accounts: &mut [AccountView]) -> ProgramResult {
+fn process_close(program_id: &Address, accounts: &mut [AccountView]) -> ProgramResult {
     let [target_account, payer, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
+
+    // Only the account's owner may close it.
+    if !payer.is_signer() {
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+
+    // Verify target_account is actually payer's User PDA, not another user's account.
+    let (expected_user_pda, _) =
+        Address::find_program_address(&[User::SEED_PREFIX.as_bytes(), payer.address().as_ref()], program_id);
+    if target_account.address() != &expected_user_pda {
+        return Err(ProgramError::IncorrectProgramId);
+    }
 
     let rent = Rent::get()?;
 

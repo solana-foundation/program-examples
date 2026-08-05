@@ -1,5 +1,6 @@
 import {
     type Address,
+    AccountRole,
     appendTransactionMessageInstructions,
     createTransactionMessage,
     generateKeyPairSigner,
@@ -93,6 +94,48 @@ describe('transfer-sol', () => {
         await sendTransaction([ix]);
 
         getBalances(test2Recipient1.address, test2Recipient2.address, 'Resulting');
+    });
+
+    it("An attacker cannot drain another user's program-owned account", async () => {
+        const victimAccount = await generateKeyPairSigner();
+        const attackerRecipient = await generateKeyPairSigner();
+
+        const createIx = getCreateAccountInstruction({
+            payer,
+            newAccount: victimAccount,
+            space: 0,
+            lamports: 2 * LAMPORTS_PER_SOL,
+            programAddress: programId,
+        });
+        await sendTransaction([createIx]);
+
+        // The attacker never has victimAccount's private key. They build the
+        // instruction with victimAccount marked as a non-signer and only
+        // sign with their own (unrelated) fee-payer key.
+        const legitIx = createTransferInstruction(
+            victimAccount,
+            attackerRecipient.address,
+            programId,
+            InstructionType.ProgramTransfer,
+            transferAmount,
+        );
+        const attackIx = {
+            ...legitIx,
+            accounts: [
+                { address: victimAccount.address, role: AccountRole.WRITABLE },
+                ...legitIx.accounts.slice(1),
+            ],
+        };
+
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstructions([attackIx], m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        assert(result instanceof FailedTransactionMetadata, 'expected the attacker transaction to fail');
     });
 
     function getBalances(payerAddress: Address, recipientAddress: Address, timeframe: string) {
