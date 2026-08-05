@@ -26,11 +26,14 @@ import { FailedTransactionMetadata, type LiteSVM } from 'litesvm';
 const addressEncoder = getAddressEncoder();
 
 export const expectRevert = async (promise: Promise<unknown>) => {
+    let reverted = false;
     try {
         await promise;
-        throw new Error('Expected a revert');
     } catch {
-        return;
+        reverted = true;
+    }
+    if (!reverted) {
+        throw new Error('Expected a revert');
     }
 };
 
@@ -136,14 +139,18 @@ export async function createValues(defaults?: TestValuesDefaults): Promise<TestV
     const maker = defaults?.maker ?? (await generateKeyPairSigner());
     const taker = defaults?.taker ?? (await generateKeyPairSigner());
 
-    // Making sure tokens are in the right order
-    let mintAKeypair = defaults?.mintAKeypair;
-    let mintBKeypair = defaults?.mintBKeypair;
-    if (!mintAKeypair || !mintBKeypair) {
-        mintAKeypair = mintAKeypair ?? (await generateKeyPairSigner());
-        mintBKeypair = mintBKeypair ?? (await generateKeyPairSigner());
-        while (addressValue(mintBKeypair.address) < addressValue(mintAKeypair.address)) {
+    // Making sure tokens are in the right order. Only the mint(s) NOT
+    // supplied by the caller are ever (re)generated, so a caller-provided
+    // mint is never silently discarded.
+    let mintAKeypair = defaults?.mintAKeypair ?? (await generateKeyPairSigner());
+    let mintBKeypair = defaults?.mintBKeypair ?? (await generateKeyPairSigner());
+    while (addressValue(mintBKeypair.address) < addressValue(mintAKeypair.address)) {
+        if (!defaults?.mintAKeypair) {
+            mintAKeypair = await generateKeyPairSigner();
+        } else if (!defaults?.mintBKeypair) {
             mintBKeypair = await generateKeyPairSigner();
+        } else {
+            throw new Error('mintAKeypair and mintBKeypair were both supplied out of the required address order');
         }
     }
 

@@ -33,6 +33,11 @@ impl RefundOffer {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
+        // ensure the caller didn't substitute a fake token program - the real
+        // program is what actually enforces the transfer/close below
+        //
+        spl_token_interface::check_program_account(token_program.key)?;
+
         // get the offer data
         //
         let offer = Offer::try_from_slice(&offer_info.data.borrow()[..])?;
@@ -57,6 +62,11 @@ impl RefundOffer {
         // validate the maker's receiving address
         //
         assert_is_associated_token_account(maker_token_account_a.key, maker.key, token_mint_a.key)?;
+
+        // validate the vault is the offer's actual vault, not a substitute
+        // token-A account that also happens to be owned by the offer PDA
+        //
+        assert_is_associated_token_account(vault.key, offer_info.key, token_mint_a.key)?;
 
         // return the vaulted tokens to the maker
         //
