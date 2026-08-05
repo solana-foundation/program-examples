@@ -1,18 +1,18 @@
-import { BN } from '@anchor-lang/core';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { useKitTransactionSigner } from '@solana/connector/react';
+import { getBase64Encoder, type Address } from '@solana/kit';
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
-    GAME_DATA_SEED,
-    type GameData,
-    MAX_ENERGY,
+    fetchMaybeGameData,
+    fetchMaybePlayerData,
+    getGameDataDecoder,
+    getPlayerDataDecoder,
     type PlayerData,
-    program,
-    TIME_TO_REFILL_ENERGY,
-} from '@/utils/anchor';
+} from '@/generated/accounts';
+import { findGameDataPda, findPlayerPda } from '@/generated/pdas';
+import { GAME_DATA_SEED, MAX_ENERGY, rpc, rpcSubscriptions, TIME_TO_REFILL_ENERGY } from '@/utils/anchor';
 
 const GameStateContext = createContext<{
-    playerDataPDA: PublicKey | null;
+    playerDataPDA: Address | null;
     gameState: PlayerData | null;
     nextEnergyIn: number;
     totalWoodAvailable: number | null;
@@ -26,90 +26,96 @@ const GameStateContext = createContext<{
 export const useGameState = () => useContext(GameStateContext);
 
 export const GameStateProvider = ({ children }: { children: React.ReactNode }) => {
-    const { publicKey } = useWallet();
-    const { connection } = useConnection();
+    const { signer } = useKitTransactionSigner();
 
-    const [playerDataPDA, setPlayerData] = useState<PublicKey | null>(null);
+    const [playerDataPDA, setPlayerDataPDA] = useState<Address | null>(null);
     const [playerState, setPlayerState] = useState<PlayerData | null>(null);
     const [_timePassed, setTimePassed] = useState<number>(0);
     const [nextEnergyIn, setEnergyNextIn] = useState<number>(0);
-    const [gameDataPDA, setGameDataPDA] = useState<PublicKey | null>(null);
-    const [_gameData, setGameData] = useState<GameData | null>(null);
     const [totalWoodAvailable, setTotalWoodAvailable] = useState<number | null>(0);
 
     useEffect(() => {
         setPlayerState(null);
-        if (!publicKey) {
+        if (!signer) {
             return;
         }
-        const [pda] = PublicKey.findProgramAddressSync(
-            [Buffer.from('player', 'utf8'), publicKey.toBuffer()],
-            program.programId,
-        );
-        setPlayerData(pda);
 
-        program.account.playerData
-            .fetch(pda)
-            .then(data => {
-                setPlayerState(data);
-            })
-            .catch(_error => {
+        const abortController = new AbortController();
+
+        (async () => {
+            const [pda] = await findPlayerPda({ signer: signer.address });
+            setPlayerDataPDA(pda);
+
+            const maybePlayer = await fetchMaybePlayerData(rpc, pda);
+            if (maybePlayer.exists) {
+                setPlayerState(maybePlayer.data);
+            } else {
                 window.alert('No player data found, please init!');
-            });
+            }
 
-        connection.onAccountChange(pda, account => {
-            setPlayerState(program.coder.accounts.decode('playerData', account.data));
+            const notifications = await rpcSubscriptions
+                .accountNotifications(pda, { commitment: 'confirmed', encoding: 'base64' })
+                .subscribe({ abortSignal: abortController.signal });
+
+            for await (const notification of notifications) {
+                const [base64Data] = notification.value.data;
+                setPlayerState(getPlayerDataDecoder().decode(getBase64Encoder().encode(base64Data)));
+            }
+        })().catch(error => {
+            if (!abortController.signal.aborted) console.error(error);
         });
-    }, [publicKey, connection.onAccountChange]);
+
+        return () => abortController.abort();
+    }, [signer]);
 
     useEffect(() => {
-        setGameData(null);
-        if (!publicKey) {
-            return;
-        }
-        const [pda] = PublicKey.findProgramAddressSync([Buffer.from(GAME_DATA_SEED, 'utf8')], program.programId);
-        setGameDataPDA(gameDataPDA);
+        const abortController = new AbortController();
 
-        program.account.gameData
-            .fetch(pda)
-            .then(data => {
-                setGameData(data);
-                setTotalWoodAvailable(data.totalWoodCollected.toNumber());
-            })
-            .catch(_error => {
+        (async () => {
+            const [pda] = await findGameDataPda({ levelSeed: GAME_DATA_SEED });
+
+            const maybeGameData = await fetchMaybeGameData(rpc, pda);
+            if (maybeGameData.exists) {
+                setTotalWoodAvailable(Number(maybeGameData.data.totalWoodCollected));
+            } else {
                 window.alert('No game data found, please init!');
-            });
+            }
 
-        connection.onAccountChange(pda, account => {
-            const newGameData = program.coder.accounts.decode('gameData', account.data);
-            setGameData(newGameData);
-            setTotalWoodAvailable(newGameData.totalWoodCollected.toNumber());
+            const notifications = await rpcSubscriptions
+                .accountNotifications(pda, { commitment: 'confirmed', encoding: 'base64' })
+                .subscribe({ abortSignal: abortController.signal });
+
+            for await (const notification of notifications) {
+                const [base64Data] = notification.value.data;
+                const gameData = getGameDataDecoder().decode(getBase64Encoder().encode(base64Data));
+                setTotalWoodAvailable(Number(gameData.totalWoodCollected));
+            }
+        })().catch(error => {
+            if (!abortController.signal.aborted) console.error(error);
         });
-    }, [publicKey, connection.onAccountChange, gameDataPDA]);
+
+        return () => abortController.abort();
+    }, []);
 
     useEffect(() => {
-        const interval = setInterval(async () => {
-            if (
-                playerState == null ||
-                playerState.lastLogin === undefined ||
-                playerState.energy.toNumber() >= MAX_ENERGY
-            ) {
+        const interval = setInterval(() => {
+            if (playerState == null || playerState.lastLogin === undefined || playerState.energy >= MAX_ENERGY) {
                 return;
             }
 
-            const lastLoginTime = playerState.lastLogin.toNumber() * 1000;
+            const lastLoginTime = Number(playerState.lastLogin) * 1000;
             const currentTime = Date.now();
             let timePassed = (currentTime - lastLoginTime) / 1000;
 
-            while (timePassed >= TIME_TO_REFILL_ENERGY.toNumber() && playerState.energy.toNumber() < MAX_ENERGY) {
-                playerState.energy = playerState.energy.add(new BN(1));
-                playerState.lastLogin = playerState.lastLogin.add(TIME_TO_REFILL_ENERGY);
-                timePassed -= TIME_TO_REFILL_ENERGY.toNumber();
+            let energy = playerState.energy;
+            while (timePassed >= Number(TIME_TO_REFILL_ENERGY) && energy < MAX_ENERGY) {
+                energy += 1n;
+                timePassed -= Number(TIME_TO_REFILL_ENERGY);
             }
 
             setTimePassed(timePassed);
 
-            const nextEnergyIn = Math.floor(TIME_TO_REFILL_ENERGY.toNumber() - timePassed);
+            const nextEnergyIn = Math.floor(Number(TIME_TO_REFILL_ENERGY) - timePassed);
             setEnergyNextIn(nextEnergyIn > 0 ? nextEnergyIn : 0);
         }, 1000);
 

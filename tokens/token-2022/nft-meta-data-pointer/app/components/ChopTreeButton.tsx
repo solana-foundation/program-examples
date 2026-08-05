@@ -1,17 +1,21 @@
 import { Button, HStack, VStack } from '@chakra-ui/react';
 import { useSessionWallet } from '@magicblock-labs/gum-react-sdk';
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { useKitTransactionSigner } from '@solana/connector/react';
+import { createNoopSigner, type Address } from '@solana/kit';
+import { Transaction } from '@solana/web3.js';
 import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useGameState } from '@/contexts/GameStateProvider';
 import { useNftState } from '@/contexts/NftProvider';
-import { GAME_DATA_SEED, gameDataPDA, program } from '@/utils/anchor';
+import { getChopTreeInstructionAsync } from '@/generated/instructions';
+import { findNftAuthorityPda } from '@/generated/pdas';
+import { useSendInstruction } from '@/hooks/useSendInstruction';
+import { GAME_DATA_SEED } from '@/utils/anchor';
+import { kitInstructionToLegacy } from '@/utils/legacyBridge';
 
 const ChopTreeButton = () => {
-    const { publicKey, sendTransaction } = useWallet();
-    const { connection } = useConnection();
+    const { signer } = useKitTransactionSigner();
+    const sendInstruction = useSendInstruction();
     const sessionWallet = useSessionWallet();
     const { gameState, playerDataPDA } = useGameState();
     const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -27,7 +31,7 @@ const ChopTreeButton = () => {
         }
         setTransactionCounter(transactionCounter + 1);
 
-        const nftAuthority = await PublicKey.findProgramAddress([Buffer.from('nft_authority')], program.programId);
+        const [nftAuthority] = await findNftAuthorityPda();
 
         if (nftState == null) {
             window.alert('Load NFT state first');
@@ -36,11 +40,10 @@ const ChopTreeButton = () => {
         }
 
         let nft = null;
-
         for (let i = 0; i < nftState.items.length; i++) {
             try {
                 const nftData = nftState.items[i];
-                if (nftData.authorities[0] === nftAuthority[0].toBase58()) {
+                if (nftData.authorities[0] === nftAuthority) {
                     nft = nftData;
                 }
                 console.log('NFT data', nftData);
@@ -57,19 +60,17 @@ const ChopTreeButton = () => {
         }
 
         try {
-            const transaction = await program.methods
-                .chopTree(GAME_DATA_SEED, transactionCounter)
-                .accounts({
-                    player: playerDataPDA,
-                    gameData: gameDataPDA,
-                    signer: sessionWallet.publicKey,
-                    sessionToken: sessionWallet.sessionToken,
-                    nftAuthority: nftAuthority[0],
-                    mint: nft.id,
-                    systemProgram: SystemProgram.programId,
-                    tokenProgram: TOKEN_2022_PROGRAM_ID,
-                })
-                .transaction();
+            const instruction = await getChopTreeInstructionAsync({
+                sessionToken: sessionWallet.sessionToken as Address,
+                player: playerDataPDA,
+                signer: createNoopSigner(sessionWallet.publicKey.toBase58() as Address),
+                mint: nft.id as Address,
+                nftAuthority,
+                levelSeed: GAME_DATA_SEED,
+                counter: transactionCounter,
+            });
+
+            const transaction = new Transaction().add(kitInstructionToLegacy(instruction));
 
             const txids = await sessionWallet.signAndSendTransaction?.(transaction);
 
@@ -86,10 +87,10 @@ const ChopTreeButton = () => {
     }, [sessionWallet, nftState, playerDataPDA, transactionCounter]);
 
     const onChopMainWalletClick = useCallback(async () => {
-        if (!publicKey || !playerDataPDA) return;
+        if (!signer || !playerDataPDA) return;
 
         setIsLoadingMainWallet(true);
-        const nftAuthority = await PublicKey.findProgramAddress([Buffer.from('nft_authority')], program.programId);
+        const [nftAuthority] = await findNftAuthorityPda();
 
         if (nftState == null) {
             window.alert('Load NFT state first');
@@ -104,9 +105,9 @@ const ChopTreeButton = () => {
                 const nftData = nftState.items[i];
                 const authority = nftData.authorities[0];
                 const authorityAddress = typeof authority === 'string' ? authority : authority.address;
-                console.log(`${authorityAddress} == ${nftAuthority[0].toBase58()}`);
+                console.log(`${authorityAddress} == ${nftAuthority}`);
 
-                if (authorityAddress === nftAuthority[0].toBase58()) {
+                if (authorityAddress === nftAuthority) {
                     nft = nftData;
                 }
                 console.log('NFT data', nftData);
@@ -125,34 +126,28 @@ const ChopTreeButton = () => {
             const nftAuthorityAddress =
                 typeof nft.authorities[0] === 'string' ? nft.authorities[0] : nft.authorities[0].address;
             console.log('NFTid', nft.id, 'NFT authority', nftAuthorityAddress);
-            const transaction = await program.methods
-                .chopTree(GAME_DATA_SEED, transactionCounter)
-                .accounts({
-                    player: playerDataPDA,
-                    gameData: gameDataPDA,
-                    signer: publicKey,
-                    sessionToken: null,
-                    nftAuthority: nftAuthority[0].toBase58(),
-                    mint: nft.id,
-                    systemProgram: SystemProgram.programId,
-                    tokenProgram: TOKEN_2022_PROGRAM_ID,
-                })
-                .transaction();
 
-            const txSig = await sendTransaction(transaction, connection, {
-                skipPreflight: true,
+            const instruction = await getChopTreeInstructionAsync({
+                player: playerDataPDA,
+                signer,
+                mint: nft.id as Address,
+                nftAuthority: nftAuthorityAddress as Address,
+                levelSeed: GAME_DATA_SEED,
+                counter: transactionCounter,
             });
+
+            const txSig = await sendInstruction(instruction, signer);
             console.log(`https://explorer.solana.com/tx/${txSig}?cluster=devnet`);
         } catch (error) {
             console.log('error', `Chopping failed! ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setIsLoadingMainWallet(false);
         }
-    }, [publicKey, playerDataPDA, connection, nftState, transactionCounter, sendTransaction]);
+    }, [signer, playerDataPDA, nftState, transactionCounter, sendInstruction]);
 
     return (
         <>
-            {publicKey && gameState && (
+            {signer && gameState && (
                 <VStack>
                     <Image src="/Beaver.png" alt="Energy Icon" width={64} height={64} />
                     <HStack>

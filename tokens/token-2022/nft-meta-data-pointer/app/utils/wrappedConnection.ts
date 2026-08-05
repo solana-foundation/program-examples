@@ -1,4 +1,3 @@
-import { Connection } from '@solana/web3.js';
 import axios from 'axios';
 import { METAPLEX_READAPI } from './anchor';
 
@@ -7,7 +6,9 @@ interface SortBy {
     sortDirection: string;
 }
 
-export class WrappedConnection extends Connection {
+// Not a real RPC connection - just the DAS (Digital Asset Standard) read API,
+// which @solana/kit has no client for. Kept separate from the kit `rpc` object.
+export class WrappedConnection {
     async getAsset(assetId: string): Promise<unknown> {
         try {
             const response = await axios.post(

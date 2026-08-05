@@ -1,0 +1,308 @@
+{
+    "address": "H31ofLpWqeAzF2Pg54HSPQGYifJad843tTJg8vCYVoh3",
+    "metadata": {
+        "name": "extension_nft",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Created with Anchor"
+    },
+    "instructions": [
+        {
+            "name": "chop_tree",
+            "discriminator": [120, 56, 196, 91, 213, 182, 36, 28],
+            "accounts": [
+                {
+                    "name": "session_token",
+                    "optional": true
+                },
+                {
+                    "name": "player",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [112, 108, 97, 121, 101, 114]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "player.authority",
+                                "account": "PlayerData"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "game_data",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "arg",
+                                "path": "level_seed"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "mint",
+                    "writable": true
+                },
+                {
+                    "name": "nft_authority",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [110, 102, 116, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                }
+            ],
+            "args": [
+                {
+                    "name": "_level_seed",
+                    "type": "string"
+                },
+                {
+                    "name": "counter",
+                    "type": "u16"
+                }
+            ]
+        },
+        {
+            "name": "init_player",
+            "discriminator": [114, 27, 219, 144, 50, 15, 228, 66],
+            "accounts": [
+                {
+                    "name": "player",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [112, 108, 97, 121, 101, 114]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "signer"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "game_data",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "arg",
+                                "path": "level_seed"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "_level_seed",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "mint_nft",
+            "discriminator": [211, 57, 6, 167, 15, 219, 35, 251],
+            "accounts": [
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                },
+                {
+                    "name": "token_account",
+                    "writable": true
+                },
+                {
+                    "name": "mint",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "rent",
+                    "address": "SysvarRent111111111111111111111111111111111"
+                },
+                {
+                    "name": "associated_token_program",
+                    "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+                },
+                {
+                    "name": "nft_authority",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [110, 102, 116, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121]
+                            }
+                        ]
+                    }
+                }
+            ],
+            "args": []
+        }
+    ],
+    "accounts": [
+        {
+            "name": "GameData",
+            "discriminator": [237, 88, 58, 243, 16, 69, 238, 190]
+        },
+        {
+            "name": "NftAuthority",
+            "discriminator": [194, 127, 219, 16, 219, 18, 250, 12]
+        },
+        {
+            "name": "PlayerData",
+            "discriminator": [197, 65, 216, 202, 43, 139, 147, 128]
+        }
+    ],
+    "errors": [
+        {
+            "code": 6000,
+            "name": "NotEnoughEnergy",
+            "msg": "Not enough energy"
+        },
+        {
+            "code": 6001,
+            "name": "WrongAuthority",
+            "msg": "Wrong Authority"
+        },
+        {
+            "code": 6002,
+            "name": "InvalidMintAccountSpace",
+            "msg": "Invalid Mint account space"
+        },
+        {
+            "code": 6003,
+            "name": "CantInitializeMetadataPointer",
+            "msg": "Cant initialize metadata_pointer"
+        }
+    ],
+    "types": [
+        {
+            "name": "GameData",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "total_wood_collected",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "NftAuthority",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "PlayerData",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "level",
+                        "type": "u8"
+                    },
+                    {
+                        "name": "xp",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "wood",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "energy",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "last_login",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "last_id",
+                        "type": "u16"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "SessionToken",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "target_program",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "session_signer",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "valid_until",
+                        "type": "i64"
+                    }
+                ]
+            }
+        }
+    ]
+}

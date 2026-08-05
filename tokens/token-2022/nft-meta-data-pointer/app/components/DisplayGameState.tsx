@@ -1,16 +1,16 @@
 import { HStack, Text, VStack } from '@chakra-ui/react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useKitTransactionSigner } from '@solana/connector/react';
 import Image from 'next/image';
 import { useGameState } from '@/contexts/GameStateProvider';
 import { TOTAL_WOOD_AVAILABLE } from '@/utils/anchor';
 
 const DisplayPlayerData = () => {
-    const { publicKey } = useWallet();
+    const { signer } = useKitTransactionSigner();
     const { gameState, nextEnergyIn, totalWoodAvailable } = useGameState();
 
     return (
         <>
-            {gameState && publicKey && (
+            {gameState && signer && (
                 <HStack justifyContent="center" spacing={4}>
                     <HStack>
                         <Image src="/Wood.png" alt="Wood Icon" width={64} height={64} />

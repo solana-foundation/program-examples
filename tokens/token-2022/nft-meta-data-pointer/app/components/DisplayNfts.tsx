@@ -1,4 +1,4 @@
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useKitTransactionSigner } from '@solana/connector/react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useNftState } from '@/contexts/NftProvider';
@@ -14,7 +14,7 @@ export class Nft {
 }
 
 const DisplayNfts = () => {
-    const { publicKey } = useWallet();
+    const { signer } = useKitTransactionSigner();
     const { nftState } = useNftState();
     const [showItems, setShowItems] = useState(false);
 
@@ -46,7 +46,7 @@ const DisplayNfts = () => {
 
     return (
         <>
-            {nftState && publicKey && (
+            {nftState && signer && (
                 <div>
                     <button type="button" onClick={handleButtonClick}>
                         Show NFTs

@@ -1,56 +1,41 @@
 import { Button, HStack, VStack } from '@chakra-ui/react';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, SystemProgram } from '@solana/web3.js';
+import { useKitTransactionSigner } from '@solana/connector/react';
+import { generateKeyPairSigner } from '@solana/kit';
+import { findAssociatedTokenPda, TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
 import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useGameState } from '@/contexts/GameStateProvider';
-import { program } from '@/utils/anchor';
+import { getMintNftInstructionAsync } from '@/generated/instructions';
+import { useSendInstruction } from '@/hooks/useSendInstruction';
 
 const MintNftButton = () => {
-    const { publicKey, sendTransaction } = useWallet();
-    const { connection } = useConnection();
+    const { signer } = useKitTransactionSigner();
+    const sendInstruction = useSendInstruction();
     const { gameState, playerDataPDA } = useGameState();
     const [isLoadingMainWallet, showSpinner] = useState(false);
 
     const onMintNftClick = useCallback(async () => {
-        if (!publicKey || !playerDataPDA) return;
+        if (!signer || !playerDataPDA) return;
 
         showSpinner(true);
 
         try {
-            const nftAuthority = await PublicKey.findProgramAddress([Buffer.from('nft_authority')], program.programId);
+            const mint = await generateKeyPairSigner();
 
-            const mint = new Keypair();
-
-            const destinationTokenAccount = getAssociatedTokenAddressSync(
-                mint.publicKey,
-                publicKey,
-                false,
-                TOKEN_2022_PROGRAM_ID,
-            );
-
-            const transaction = await program.methods
-                .mintNft()
-                .accounts({
-                    signer: publicKey,
-                    systemProgram: SystemProgram.programId,
-                    tokenProgram: TOKEN_2022_PROGRAM_ID,
-                    tokenAccount: destinationTokenAccount,
-                    mint: mint.publicKey,
-                    rent: SYSVAR_RENT_PUBKEY,
-                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-                    nftAuthority: nftAuthority[0],
-                })
-                .signers([mint])
-                .transaction();
-
-            console.log('transaction', transaction);
-
-            const txSig = await sendTransaction(transaction, connection, {
-                signers: [mint],
-                skipPreflight: true,
+            const [tokenAccount] = await findAssociatedTokenPda({
+                owner: signer.address,
+                mint: mint.address,
+                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
             });
+
+            const instruction = await getMintNftInstructionAsync({
+                signer,
+                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+                tokenAccount,
+                mint,
+            });
+
+            const txSig = await sendInstruction(instruction, signer);
 
             console.log(`https://explorer.solana.com/tx/${txSig}?cluster=devnet`);
         } catch (error) {
@@ -58,11 +43,11 @@ const MintNftButton = () => {
         } finally {
             showSpinner(false);
         }
-    }, [publicKey, playerDataPDA, connection, sendTransaction]);
+    }, [signer, playerDataPDA, sendInstruction]);
 
     return (
         <>
-            {publicKey && gameState && (
+            {signer && gameState && (
                 <VStack>
                     <Image src="/Beaver.png" alt="Energy Icon" width={64} height={64} />
                     <HStack>

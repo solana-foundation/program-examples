@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Solana client stack
+
+The on-chain client is [`@solana/kit`](https://github.com/anza-xyz/kit), generated from `idl/extension_nft.json` via [Codama](https://github.com/codama-idl/codama) (`pnpm generate-client`, wired as a `predev`/`prebuild` step) into a gitignored `generated/` directory — see `scripts/generate-client.ts`. Wallet connection is [`@solana/connector`](https://www.npmjs.com/package/@solana/connector) (wallet-standard, no per-wallet adapter packages).
+
+One legacy pocket remains: the session-key feature (`@magicblock-labs/gum-react-sdk`) is pinned to `@solana/web3.js` and `@solana/wallet-adapter-react` in its own published API and predates kit. Rather than run a second, separately-connected wallet-adapter-react instance alongside the kit-native wallet connection, `contexts/SessionProvider.tsx` and `utils/legacyBridge.ts` bridge the single kit-connected wallet into the `AnchorWallet` shape gum-sdk needs. `@solana/web3.js` and `@solana/wallet-adapter-react` stay in `package.json`, but only for that one boundary — nothing else in the app touches them.
+
 ## Getting Started
 
 First, run the development server:

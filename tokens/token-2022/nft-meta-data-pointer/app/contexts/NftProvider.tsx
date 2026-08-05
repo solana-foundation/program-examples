@@ -1,7 +1,7 @@
-import { useWallet } from '@solana/wallet-adapter-react';
-import type { PublicKey } from '@solana/web3.js';
+import { useKitTransactionSigner } from '@solana/connector/react';
+import type { Address } from '@solana/kit';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { CONNECTION } from '@/utils/anchor';
+import { dasConnection } from '@/utils/anchor';
 
 interface DasNftItem {
     id: string;
@@ -25,11 +25,11 @@ const NftContext = createContext<{
 export const useNftState = () => useContext(NftContext);
 
 export const NftProvider = ({ children }: { children: React.ReactNode }) => {
-    const { publicKey } = useWallet();
+    const { signer } = useKitTransactionSigner();
 
     const [nftState, setNftState] = useState<DasNftState | null>(null);
 
-    const getAssetsByOwner = useCallback(async (ownerAddress: PublicKey) => {
+    const getAssetsByOwner = useCallback(async (ownerAddress: Address) => {
         const sortBy = {
             sortBy: 'created',
             sortDirection: 'asc',
@@ -38,14 +38,7 @@ export const NftProvider = ({ children }: { children: React.ReactNode }) => {
         const page = 1;
         const before = '';
         const after = '';
-        const allAssetsOwned = await CONNECTION.getAssetsByOwner(
-            ownerAddress.toBase58(),
-            sortBy,
-            limit,
-            page,
-            before,
-            after,
-        );
+        const allAssetsOwned = await dasConnection.getAssetsByOwner(ownerAddress, sortBy, limit, page, before, after);
 
         setNftState(allAssetsOwned as DasNftState);
         console.log(allAssetsOwned);
@@ -53,12 +46,12 @@ export const NftProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         setNftState(null);
-        if (!publicKey) {
+        if (!signer) {
             return;
         }
 
-        getAssetsByOwner(publicKey);
-    }, [publicKey, getAssetsByOwner]);
+        getAssetsByOwner(signer.address);
+    }, [signer, getAssetsByOwner]);
 
     return (
         <NftContext.Provider

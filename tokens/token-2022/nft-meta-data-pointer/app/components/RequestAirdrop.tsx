@@ -1,33 +1,39 @@
 import { Button, Text } from '@chakra-ui/react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useKitTransactionSigner } from '@solana/connector/react';
+import { airdropFactory, lamports } from '@solana/kit';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { rpc, rpcSubscriptions } from '@/utils/anchor';
+
+const LAMPORTS_PER_SOL = 1_000_000_000n;
 
 const RequestAirdrop = () => {
-    const { publicKey } = useWallet();
-    const { connection } = useConnection();
+    const { signer } = useKitTransactionSigner();
     const [balance, setBalance] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(false);
+    const airdrop = useMemo(() => airdropFactory({ rpc, rpcSubscriptions }), []);
 
     const getBalance = useCallback(async () => {
-        if (!publicKey) return;
-        const balance = await connection.getBalance(publicKey, 'confirmed');
-        setBalance(balance / LAMPORTS_PER_SOL);
-    }, [publicKey, connection]);
+        if (!signer) return;
+        const { value: lamportsBalance } = await rpc.getBalance(signer.address, { commitment: 'confirmed' }).send();
+        setBalance(Number(lamportsBalance) / Number(LAMPORTS_PER_SOL));
+    }, [signer]);
 
     const onClick = useCallback(async () => {
         setIsLoading(true);
-        if (!publicKey) return;
+        if (!signer) return;
         try {
-            const txSig = await connection.requestAirdrop(publicKey, LAMPORTS_PER_SOL);
-            await connection.confirmTransaction(txSig);
-            getBalance();
+            await airdrop({
+                commitment: 'confirmed',
+                recipientAddress: signer.address,
+                lamports: lamports(LAMPORTS_PER_SOL),
+            });
+            await getBalance();
         } catch (error) {
             alert(error instanceof Error ? error.message : String(error));
         } finally {
             setIsLoading(false);
         }
-    }, [publicKey, connection, getBalance]);
+    }, [signer, airdrop, getBalance]);
 
     useEffect(() => {
         getBalance();
@@ -35,7 +41,7 @@ const RequestAirdrop = () => {
 
     return (
         <>
-            {publicKey &&
+            {signer &&
                 (balance <= 0 ? (
                     <Button onClick={onClick} isLoading={isLoading}>
                         Airdrop 1

@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, Spacer, Text, VStack } from '@chakra-ui/react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useKitTransactionSigner } from '@solana/connector/react';
 import ChopTreeButton from '@/components/ChopTreeButton';
 import DisplayGameState from '@/components/DisplayGameState';
 import DisplayNfts from '@/components/DisplayNfts';
@@ -10,7 +10,7 @@ import SessionKeyButton from '@/components/SessionKeyButton';
 import WalletMultiButton from '@/components/WalletMultiButton';
 
 export default function Home() {
-    const { publicKey } = useWallet();
+    const { signer } = useKitTransactionSigner();
 
     return (
         <Box>
@@ -20,7 +20,7 @@ export default function Home() {
             </Flex>
             <VStack>
                 <Heading>ExtensionNft</Heading>
-                {!publicKey && <Text>Connect to devnet wallet!</Text>}
+                {!signer && <Text>Connect to devnet wallet!</Text>}
                 <DisplayGameState />
                 <InitPlayerButton />
                 <SessionKeyButton />
