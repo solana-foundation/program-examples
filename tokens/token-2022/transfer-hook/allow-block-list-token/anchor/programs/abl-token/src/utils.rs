@@ -7,12 +7,27 @@ use spl_tlv_account_resolution::{
 use crate::AB_WALLET_SEED;
 
 pub fn get_meta_list_size() -> Result<usize> {
-    Ok(ExtraAccountMetaList::size_of(1).map_err(|_| ProgramError::InvalidArgument)?)
+    Ok(ExtraAccountMetaList::size_of(2).map_err(|_| ProgramError::InvalidArgument)?)
 }
 
 pub fn get_extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
     Ok(vec![
-        // [5] ab_wallet for destination token account wallet
+        // [5] ab_wallet for source token account wallet
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal {
+                    bytes: AB_WALLET_SEED.to_vec(),
+                },
+                Seed::AccountData {
+                    account_index: 0,
+                    data_index: 32,
+                    length: 32,
+                },
+            ],
+            false,
+            false,
+        ).map_err(|_| ProgramError::InvalidArgument)?, // [0] source token account
+        // [6] ab_wallet for destination token account wallet
         ExtraAccountMeta::new_with_seeds(
             &[
                 Seed::Literal {

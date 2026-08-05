@@ -83,10 +83,17 @@ export function useSendTokens() {
             if (!transferHook) throw new Error('bad token');
             const extraMetas = getExtraAccountMetaAddress(mint, transferHook.programId);
 
-            const seeds = [Buffer.from('ab_wallet'), destination.toBuffer()];
-            const abWallet = PublicKey.findProgramAddressSync(seeds, transferHook.programId)[0];
+            // The hook checks both the sender and the receiver's allow/block
+            // status - the account order here must match the program's
+            // get_extra_account_metas() (source first, then destination).
+            const sourceSeeds = [Buffer.from('ab_wallet'), publicKey.toBuffer()];
+            const sourceAbWallet = PublicKey.findProgramAddressSync(sourceSeeds, transferHook.programId)[0];
 
-            ix3.keys.push({ pubkey: abWallet, isSigner: false, isWritable: false });
+            const destinationSeeds = [Buffer.from('ab_wallet'), destination.toBuffer()];
+            const destinationAbWallet = PublicKey.findProgramAddressSync(destinationSeeds, transferHook.programId)[0];
+
+            ix3.keys.push({ pubkey: sourceAbWallet, isSigner: false, isWritable: false });
+            ix3.keys.push({ pubkey: destinationAbWallet, isSigner: false, isWritable: false });
             ix3.keys.push({
                 pubkey: transferHook.programId,
                 isSigner: false,
