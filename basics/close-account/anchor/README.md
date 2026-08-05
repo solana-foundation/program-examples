@@ -1,34 +1,37 @@
-# Destroy an Account
+# Close an Account
 
-1. We're creating a `PDA` using [create_user.rs](programs/destroy-an-account/src/instructions/create_user.rs)
+1. We're creating a `PDA` using [create_user.rs](programs/close-account/src/instructions/create_user.rs)
    instruction.
 
     ```rust
     #[account(
     init,
-    seeds=[User::PREFIX.as_bytes(), user.key().as_ref()],
     payer=user,
-    space=User::SIZE,
+    space=UserState::INIT_SPACE,
+    seeds=[b"USER", user.key().as_ref()],
     bump
     )]
-    pub user_account: Box<Account<'info, User>>,
+    pub user_account: Account<'info, UserState>,
     ```
 
-2. We're closing it using [destroy_user.rs](programs/destroy-an-account/src/instructions/destroy_user.rs)
-   instruction, which uses `Anchor` `AccoutClose` `trait`.
+2. We're closing it using [close_user.rs](programs/close-account/src/instructions/close_user.rs)
+   instruction, which uses the `close` account constraint to close the account and return its
+   lamports to `user`.
 
     ```rust
-    user_account.close(user.to_account_info())?;
+    #[account(
+    mut,
+    seeds=[b"USER", user.key().as_ref()],
+    bump=user_account.bump,
+    close=user, // close account and return lamports to user
+    )]
+    pub user_account: Account<'info, UserState>,
     ```
 
-3. In our test [destroy-an-account.ts](tests/destroy-an-account.ts) we're using `fetchNullable` since we expect
-   the account to be `null` prior to creation and after closing.
+3. In our test [test.ts](tests/test.ts) we're using `fetchNullable` after closing the account,
+   since a closed account no longer exists and should resolve to `null`.
 
     ```typescript
-    const userAccountBefore = await program.account.user.fetchNullable(userAccountAddress, "processed");
-    assert.equal(userAccountBefore, null);
-    ...
-    ...
-    const userAccountAfter = await program.account.user.fetchNullable(userAccountAddress, "processed");
-    assert.notEqual(userAccountAfter, null);
+    const userAccount = await program.account.userState.fetchNullable(userAccountAddress);
+    assert.equal(userAccount, null);
     ```

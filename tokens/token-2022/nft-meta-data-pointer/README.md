@@ -336,7 +336,7 @@ The project uses session keys (maintained by Magic Block) for auto approving tra
 
 Many casual games in traditional gaming use energy systems. This is how you can build it on chain.
 
-If you have no prior knowledge in solana and rust programming it is recommended to start with the Solana cookbook [Hello world example](<[https://unity.com/](https://solanacookbook.com/gaming/hello-world.html#getting-started-with-your-first-solana-game)>).
+If you have no prior knowledge in solana and rust programming it is recommended to start with the Solana cookbook [Hello world example](https://solanacookbook.com/gaming/hello-world.html#getting-started-with-your-first-solana-game).
 
 ## Anchor program
 

@@ -4,4 +4,4 @@ Just like with minting, transfers of SPL Tokens are conducted between Associated
 
 You can use the `transfer()` function provided by the SPL Token Program to conduct a transfer of any SPL Token with the appropriate permissions.
 
-Check out [SPL Token Minter](../spl-token-minter) or [NFT Minter](../nft-minter) to learn more about Associated Token Accounts.
+Check out [Create an SPL Token](../create-token) or [NFT Operations](../nft-operations) to learn more about Associated Token Accounts.
