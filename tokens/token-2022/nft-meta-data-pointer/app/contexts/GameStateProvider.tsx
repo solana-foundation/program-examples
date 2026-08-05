@@ -108,8 +108,10 @@ export const GameStateProvider = ({ children }: { children: React.ReactNode }) =
             let timePassed = (currentTime - lastLoginTime) / 1000;
 
             let energy = playerState.energy;
+            let lastLogin = playerState.lastLogin;
             while (timePassed >= Number(TIME_TO_REFILL_ENERGY) && energy < MAX_ENERGY) {
                 energy += 1n;
+                lastLogin += TIME_TO_REFILL_ENERGY;
                 timePassed -= Number(TIME_TO_REFILL_ENERGY);
             }
 
@@ -117,6 +119,10 @@ export const GameStateProvider = ({ children }: { children: React.ReactNode }) =
 
             const nextEnergyIn = Math.floor(Number(TIME_TO_REFILL_ENERGY) - timePassed);
             setEnergyNextIn(nextEnergyIn > 0 ? nextEnergyIn : 0);
+
+            if (energy !== playerState.energy || lastLogin !== playerState.lastLogin) {
+                setPlayerState({ ...playerState, energy, lastLogin });
+            }
         }, 1000);
 
         return () => clearInterval(interval);
