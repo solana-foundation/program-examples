@@ -48,4 +48,8 @@ pub mod abl_token {
     pub fn change_mode(ctx: Context<ChangeMode>, args: ChangeModeArgs) -> Result<()> {
         ctx.accounts.change_mode(args)
     }
+
+    pub fn resize_meta_list(ctx: Context<ResizeMetaList>) -> Result<()> {
+        ctx.accounts.resize_meta_list()
+    }
 }
