@@ -6,6 +6,7 @@ import * as borsh from 'borsh';
 enum EscrowInstruction {
     MakeOffer = 0,
     TakeOffer = 1,
+    RefundOffer = 2,
 }
 
 const MakeOfferSchema = {
@@ -18,6 +19,12 @@ const MakeOfferSchema = {
 };
 
 const TakeOfferSchema = {
+    struct: {
+        instruction: 'u8',
+    },
+};
+
+const RefundOfferSchema = {
     struct: {
         instruction: 'u8',
     },
@@ -97,6 +104,33 @@ export function buildTakeOffer(props: {
             { address: props.payer.address, role: AccountRole.WRITABLE_SIGNER, signer: props.payer },
             { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+        ],
+        data,
+    };
+}
+
+export function buildRefundOffer(props: {
+    offer: Address;
+    mint_a: Address;
+    maker_token_a: Address;
+    vault: Address;
+    maker: TransactionSigner;
+    programId: Address;
+}) {
+    const data = borshSerialize(RefundOfferSchema, {
+        instruction: EscrowInstruction.RefundOffer,
+    });
+
+    return {
+        programAddress: props.programId,
+        accounts: [
+            { address: props.offer, role: AccountRole.WRITABLE },
+            { address: props.mint_a, role: AccountRole.READONLY },
+            { address: props.maker_token_a, role: AccountRole.WRITABLE },
+            { address: props.vault, role: AccountRole.WRITABLE },
+            { address: props.maker.address, role: AccountRole.WRITABLE_SIGNER, signer: props.maker },
+            { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
         ],
         data,

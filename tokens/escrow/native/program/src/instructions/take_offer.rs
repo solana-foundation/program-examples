@@ -168,7 +168,7 @@ impl TakeOffer {
         let maker_amount_b = TokenAccount::unpack(&maker_token_account_b.data.borrow())?.amount;
 
         assert_eq!(taker_amount_a, taker_amount_a_before_transfer + vault_amount_a);
-        assert_eq!(maker_amount_b, taker_amount_a_before_transfer + offer.token_b_wanted_amount);
+        assert_eq!(maker_amount_b, maker_amount_b_before_transfer + offer.token_b_wanted_amount);
 
         let taker_amount_b = TokenAccount::unpack(&taker_token_account_b.data.borrow())?.amount;
         let vault_amount_a = TokenAccount::unpack(&vault.data.borrow())?.amount;

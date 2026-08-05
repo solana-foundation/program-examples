@@ -1,7 +1,7 @@
 use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
 use pinocchio_log::log;
 
-use crate::instructions::{make_offer, take_offer};
+use crate::instructions::{make_offer, refund_offer, take_offer};
 
 /// Dispatches an instruction based on its leading discriminator byte.
 ///
@@ -9,6 +9,7 @@ use crate::instructions::{make_offer, take_offer};
 ///   - `0` -> MakeOffer (args: `[id: u64 (LE), token_a_offered_amount: u64 (LE),
 ///                              token_b_wanted_amount: u64 (LE), bump: u8]`)
 ///   - `1` -> TakeOffer (no args)
+///   - `2` -> RefundOffer (no args)
 pub fn process_instruction(
     program_id: &Address,
     accounts: &mut [AccountView],
@@ -24,6 +25,10 @@ pub fn process_instruction(
         1 => {
             log!("Instruction: TakeOffer");
             take_offer(program_id, accounts, args)
+        }
+        2 => {
+            log!("Instruction: RefundOffer");
+            refund_offer(program_id, accounts, args)
         }
         _ => Err(ProgramError::InvalidInstructionData),
     }

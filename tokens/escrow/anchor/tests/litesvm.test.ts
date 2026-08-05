@@ -202,4 +202,65 @@ describe('Escrow LiteSVM example', () => {
     it("Puts the tokens from the vault into Bob's account, and gives Alice Bob's tokens, when Bob takes an offer", async () => {
         await take();
     });
+
+    it('Returns the vaulted tokens to Alice when she refunds her own offer', async () => {
+        await make();
+
+        const aliceTokenAAccountBefore = await getAccount(
+            connection,
+            accounts.makerTokenAccountA,
+            'processed',
+            TOKEN_PROGRAM,
+        );
+        const aliceBalanceBefore = new BN(aliceTokenAAccountBefore.amount.toString());
+
+        const _transactionSignature = await program.methods
+            .refundOffer()
+            .accounts({ ...accounts })
+            .signers([alice])
+            .rpc();
+
+        // anchor-litesvm's connection proxy throws rather than returning null
+        // for a missing account, so closure is verified by expecting a throw.
+        const isClosed = async (address: PublicKey) => {
+            try {
+                await connection.getAccountInfo(address);
+                return false;
+            } catch {
+                return true;
+            }
+        };
+        assert(await isClosed(accounts.offer), 'offer account not closed');
+        assert(await isClosed(accounts.vault), 'vault account not closed');
+
+        const aliceTokenAAccountAfter = await getAccount(
+            connection,
+            accounts.makerTokenAccountA,
+            'processed',
+            TOKEN_PROGRAM,
+        );
+        const aliceBalanceAfter = new BN(aliceTokenAAccountAfter.amount.toString());
+        assert(aliceBalanceAfter.eq(aliceBalanceBefore.add(tokenAOfferedAmount)));
+    });
+
+    it('Rejects a refund attempt from a non-maker signer', async () => {
+        await make();
+
+        // Bob attempts to refund Alice's offer by claiming to be its maker.
+        let threw = false;
+        try {
+            await program.methods
+                .refundOffer()
+                .accounts({
+                    ...accounts,
+                    maker: accounts.taker,
+                    makerTokenAccountA: accounts.takerTokenAccountA,
+                })
+                .signers([bob])
+                .rpc();
+        } catch {
+            threw = true;
+        }
+        assert(threw, 'expected a non-maker refund to fail');
+    });
 });

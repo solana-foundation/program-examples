@@ -17,11 +17,15 @@ fn process_instruction(program_id: &Pubkey, accounts: &[AccountInfo], instructio
     match instruction {
         EscrowInstruction::MakeOffer(data) => MakeOffer::process(program_id, accounts, data),
         EscrowInstruction::TakeOffer => TakeOffer::process(program_id, accounts),
+        EscrowInstruction::RefundOffer => RefundOffer::process(program_id, accounts),
     }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
+// "Offer" is domain vocabulary, not a redundant postfix - keep MakeOffer/TakeOffer/RefundOffer.
+#[allow(clippy::enum_variant_names)]
 enum EscrowInstruction {
     MakeOffer(MakeOffer),
     TakeOffer,
+    RefundOffer,
 }

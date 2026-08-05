@@ -168,14 +168,18 @@ export async function createValues(defaults?: TestValuesDefaults): Promise<TestV
 
     const programId = defaults?.programId ?? (await generateKeyPairSigner()).address;
     const id = defaults?.id ?? 0n;
-    const maker = await generateKeyPairSigner();
-    const taker = await generateKeyPairSigner();
+    const maker = defaults?.maker ?? (await generateKeyPairSigner());
+    const taker = defaults?.taker ?? (await generateKeyPairSigner());
 
     // Making sure tokens are in the right order
-    const mintAKeypair = await generateKeyPairSigner();
-    let mintBKeypair = await generateKeyPairSigner();
-    while (isLessThan(addressEncoder.encode(mintBKeypair.address), addressEncoder.encode(mintAKeypair.address))) {
-        mintBKeypair = await generateKeyPairSigner();
+    let mintAKeypair = defaults?.mintAKeypair;
+    let mintBKeypair = defaults?.mintBKeypair;
+    if (!mintAKeypair || !mintBKeypair) {
+        mintAKeypair = mintAKeypair ?? (await generateKeyPairSigner());
+        mintBKeypair = mintBKeypair ?? (await generateKeyPairSigner());
+        while (isLessThan(addressEncoder.encode(mintBKeypair.address), addressEncoder.encode(mintAKeypair.address))) {
+            mintBKeypair = await generateKeyPairSigner();
+        }
     }
 
     const [offer] = await getProgramDerivedAddress({
@@ -195,8 +199,8 @@ export async function createValues(defaults?: TestValuesDefaults): Promise<TestV
         makerAccountB: await findAssociatedTokenAddress(mintBKeypair.address, maker.address),
         takerAccountA: await findAssociatedTokenAddress(mintAKeypair.address, taker.address),
         takerAccountB: await findAssociatedTokenAddress(mintBKeypair.address, taker.address),
-        amountA: BigInt(4 * 10 ** 6),
-        amountB: BigInt(1 * 10 ** 6),
+        amountA: defaults?.amountA ?? BigInt(4 * 10 ** 6),
+        amountB: defaults?.amountB ?? BigInt(1 * 10 ** 6),
         programId,
     };
 }

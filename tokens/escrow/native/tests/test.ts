@@ -11,12 +11,16 @@ import {
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
-import { getTokenDecoder } from '@solana-program/token';
+import {
+    getCreateAssociatedTokenIdempotentInstruction,
+    getMintToInstruction,
+    getTokenDecoder,
+} from '@solana-program/token';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import { type OfferRaw, OfferSchema } from './account';
-import { buildMakeOffer, buildTakeOffer } from './instruction';
+import { buildMakeOffer, buildRefundOffer, buildTakeOffer } from './instruction';
 import { createValues, type TestValues, mintingTokens } from './utils';
 
 const LAMPORTS_PER_SOL = 1_000_000_000n;
@@ -137,5 +141,194 @@ describe('Escrow!', () => {
 
         assert(takerTokenAccountA.amount.toString() === values.amountA.toString(), 'unexpected amount a');
         assert(makerTokenAccountB.amount.toString() === values.amountB.toString(), 'unexpected amount b');
+    });
+
+    it("Take Offer succeeds even if the maker's receiving account already has a balance", async () => {
+        // Regression test: take_offer used to compare the maker's post-transfer
+        // token B balance against the wrong pre-transfer variable, so the
+        // instruction only worked by coincidence when the maker's token B
+        // account started at exactly 0. Any third party could permanently
+        // brick an offer for free by creating the maker's token B ATA and
+        // sending it 1 base unit before a take - both permissionless, no
+        // signature required from the maker. This offer's maker_token_b
+        // account is pre-funded before Take Offer runs to reproduce exactly
+        // that condition.
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 1n,
+        });
+
+        await sendTransaction(
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        );
+
+        // Pre-fund the maker's token B account with a small existing balance -
+        // this is exactly what a griefing third party (or a maker who simply
+        // already held some of the wanted token) would produce. This ATA is
+        // shared with the maker's other offers (same maker + mint B), so it
+        // may already carry a balance from earlier tests too - either way,
+        // the point is that it's nonzero before this Take Offer runs.
+        const dustAmount = 1n;
+        await sendTransaction(
+            getCreateAssociatedTokenIdempotentInstruction({
+                payer,
+                ata: offerValues.makerAccountB,
+                owner: offerValues.maker.address,
+                mint: offerValues.mintBKeypair.address,
+            }),
+        );
+        await sendTransaction(
+            getMintToInstruction({
+                mint: offerValues.mintBKeypair.address,
+                token: offerValues.makerAccountB,
+                mintAuthority: payer,
+                amount: dustAmount,
+            }),
+        );
+
+        const makerTokenBInfoBefore = svm.getAccount(offerValues.makerAccountB);
+        const makerTokenAccountBBefore = getTokenDecoder().decode(makerTokenBInfoBefore.data);
+        assert(makerTokenAccountBBefore.amount > 0n, "maker's token B account should be nonzero before Take Offer");
+
+        const ix = buildTakeOffer({
+            maker: offerValues.maker.address,
+            offer: offerValues.offer,
+            vault: offerValues.vault,
+            mint_a: offerValues.mintAKeypair.address,
+            mint_b: offerValues.mintBKeypair.address,
+            maker_token_b: offerValues.makerAccountB,
+            taker: offerValues.taker,
+            taker_token_a: offerValues.takerAccountA,
+            taker_token_b: offerValues.takerAccountB,
+            payer,
+            programId: offerValues.programId,
+        });
+
+        await sendTransaction(ix);
+
+        const makerTokenBInfo = svm.getAccount(offerValues.makerAccountB);
+        const makerTokenAccountB = getTokenDecoder().decode(makerTokenBInfo.data);
+        assert(
+            makerTokenAccountB.amount.toString() === (makerTokenAccountBBefore.amount + offerValues.amountB).toString(),
+            'maker token B balance should be its pre-existing balance plus the wanted amount',
+        );
+    });
+
+    it('Refund Offer returns the vaulted tokens to the maker', async () => {
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 2n,
+        });
+
+        await sendTransaction(
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        );
+
+        const makerTokenAInfoBefore = svm.getAccount(offerValues.makerAccountA);
+        const makerTokenAccountABefore = getTokenDecoder().decode(makerTokenAInfoBefore.data);
+
+        const ix = buildRefundOffer({
+            offer: offerValues.offer,
+            mint_a: offerValues.mintAKeypair.address,
+            maker_token_a: offerValues.makerAccountA,
+            vault: offerValues.vault,
+            maker: offerValues.maker,
+            programId: offerValues.programId,
+        });
+
+        await sendTransaction(ix);
+
+        const offerInfo = svm.getAccount(offerValues.offer);
+        assert(!offerInfo.exists, 'offer account not closed');
+
+        const vaultInfo = svm.getAccount(offerValues.vault);
+        assert(!vaultInfo.exists, 'vault account not closed');
+
+        const makerTokenAInfoAfter = svm.getAccount(offerValues.makerAccountA);
+        const makerTokenAccountAAfter = getTokenDecoder().decode(makerTokenAInfoAfter.data);
+        assert(
+            makerTokenAccountAAfter.amount.toString() ===
+                (makerTokenAccountABefore.amount + offerValues.amountA).toString(),
+            'refunded amount not credited back to the maker',
+        );
+    });
+
+    it('Refund Offer rejects a non-maker signer', async () => {
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 3n,
+        });
+
+        await sendTransaction(
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        );
+
+        // The taker attempts to refund the maker's offer to their own account.
+        const ix = buildRefundOffer({
+            offer: offerValues.offer,
+            mint_a: offerValues.mintAKeypair.address,
+            maker_token_a: offerValues.takerAccountA,
+            vault: offerValues.vault,
+            maker: offerValues.taker,
+            programId: offerValues.programId,
+        });
+
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(payer, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        assert(result instanceof FailedTransactionMetadata, 'expected a non-maker refund to fail');
     });
 });

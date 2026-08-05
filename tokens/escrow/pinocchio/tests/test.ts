@@ -4,8 +4,8 @@ import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { LiteSVM } from 'litesvm';
 import { type OfferRaw, OfferSchema } from './account';
-import { buildMakeOffer, buildTakeOffer } from './instruction';
-import { createValues, mintingTokens, sendInstructions, type TestValues } from './utils';
+import { buildMakeOffer, buildRefundOffer, buildTakeOffer } from './instruction';
+import { createValues, expectRevert, mintingTokens, sendInstructions, type TestValues } from './utils';
 
 const addressDecoder = getAddressDecoder();
 
@@ -105,5 +105,104 @@ describe('Escrow (Pinocchio)', () => {
 
         assert(takerTokenAccountA.amount === values.amountA, 'unexpected amount a');
         assert(makerTokenAccountB.amount === values.amountB, 'unexpected amount b');
+    });
+
+    it('Refund Offer returns the vaulted tokens to the maker', async () => {
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 1n,
+        });
+
+        await sendInstructions(svm, payer, [
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                bump: offerValues.offerBump,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        ]);
+
+        const makerTokenAInfoBefore = svm.getAccount(offerValues.makerAccountA);
+        if (!makerTokenAInfoBefore.exists) throw new Error('Maker token A account not found');
+        const makerTokenAccountABefore = getTokenDecoder().decode(makerTokenAInfoBefore.data);
+
+        await sendInstructions(svm, payer, [
+            buildRefundOffer({
+                offer: offerValues.offer,
+                mint_a: offerValues.mintAKeypair.address,
+                maker_token_a: offerValues.makerAccountA,
+                vault: offerValues.vault,
+                maker: offerValues.maker,
+                programId: offerValues.programId,
+            }),
+        ]);
+
+        const offerInfo = svm.getAccount(offerValues.offer);
+        assert(!offerInfo.exists, 'offer account not closed');
+
+        const vaultInfo = svm.getAccount(offerValues.vault);
+        assert(!vaultInfo.exists, 'vault account not closed');
+
+        const makerTokenAInfoAfter = svm.getAccount(offerValues.makerAccountA);
+        if (!makerTokenAInfoAfter.exists) throw new Error('Maker token A account not found');
+        const makerTokenAccountAAfter = getTokenDecoder().decode(makerTokenAInfoAfter.data);
+        assert(
+            makerTokenAccountAAfter.amount === makerTokenAccountABefore.amount + offerValues.amountA,
+            'refunded amount not credited back to the maker',
+        );
+    });
+
+    it('Refund Offer rejects a non-maker signer', async () => {
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 2n,
+        });
+
+        await sendInstructions(svm, payer, [
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                bump: offerValues.offerBump,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        ]);
+
+        // The taker attempts to refund the maker's offer to their own account.
+        await expectRevert(
+            sendInstructions(svm, payer, [
+                buildRefundOffer({
+                    offer: offerValues.offer,
+                    mint_a: offerValues.mintAKeypair.address,
+                    maker_token_a: offerValues.takerAccountA,
+                    vault: offerValues.vault,
+                    maker: offerValues.taker,
+                    programId: offerValues.programId,
+                }),
+            ]),
+        );
     });
 });

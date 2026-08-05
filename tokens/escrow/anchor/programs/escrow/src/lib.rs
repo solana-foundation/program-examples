@@ -29,4 +29,8 @@ pub mod escrow {
         instructions::take_offer::send_wanted_tokens_to_maker(&context)?;
         instructions::take_offer::withdraw_and_close_vault(context)
     }
+
+    pub fn refund_offer(context: Context<RefundOffer>) -> Result<()> {
+        instructions::refund_offer::withdraw_and_close_vault_for_refund(context)
+    }
 }
