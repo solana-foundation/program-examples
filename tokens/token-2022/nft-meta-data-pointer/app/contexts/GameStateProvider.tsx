@@ -99,7 +99,11 @@ export const GameStateProvider = ({ children }: { children: React.ReactNode }) =
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (playerState == null || playerState.lastLogin === undefined || playerState.energy >= MAX_ENERGY) {
+            if (playerState == null || playerState.lastLogin === undefined) {
+                return;
+            }
+            if (playerState.energy >= MAX_ENERGY) {
+                setEnergyNextIn(0);
                 return;
             }
 
