@@ -20,7 +20,8 @@ pub fn close_user(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResul
     }
 
     // Verify target_account is actually payer's User PDA, not another user's account.
-    let (expected_user_pda, _) = Pubkey::find_program_address(&[User::SEED_PREFIX.as_bytes(), payer.key.as_ref()], program_id);
+    let (expected_user_pda, _) =
+        Pubkey::find_program_address(&[User::SEED_PREFIX.as_bytes(), payer.key.as_ref()], program_id);
     if target_account.key != &expected_user_pda {
         return Err(ProgramError::IncorrectProgramId);
     }

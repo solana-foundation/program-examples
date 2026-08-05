@@ -121,10 +121,7 @@ describe('transfer-sol', () => {
         );
         const attackIx = {
             ...legitIx,
-            accounts: [
-                { address: victimAccount.address, role: AccountRole.WRITABLE },
-                ...legitIx.accounts.slice(1),
-            ],
+            accounts: [{ address: victimAccount.address, role: AccountRole.WRITABLE }, ...legitIx.accounts.slice(1)],
         };
 
         const transactionMessage = pipe(

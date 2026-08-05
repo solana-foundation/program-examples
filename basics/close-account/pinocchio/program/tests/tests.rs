@@ -73,8 +73,12 @@ fn test_close_account() {
         data,
     };
 
-    let tx =
-        Transaction::new_signed_with_payer(&[attack_ix], Some(&attacker.pubkey()), &[&attacker], svm.latest_blockhash());
+    let tx = Transaction::new_signed_with_payer(
+        &[attack_ix],
+        Some(&attacker.pubkey()),
+        &[&attacker],
+        svm.latest_blockhash(),
+    );
 
     let res = svm.send_transaction(tx);
     assert!(res.is_err(), "expected the attacker transaction to fail");

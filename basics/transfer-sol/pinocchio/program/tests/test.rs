@@ -110,15 +110,11 @@ fn test_transfer_sol() {
 
     let attack_ix = Instruction {
         program_id,
-        accounts: vec![
-            AccountMeta::new(victim.pubkey(), false),
-            AccountMeta::new(attacker_recipient.pubkey(), false),
-        ],
+        accounts: vec![AccountMeta::new(victim.pubkey(), false), AccountMeta::new(attacker_recipient.pubkey(), false)],
         data,
     };
 
-    let tx =
-        Transaction::new_signed_with_payer(&[attack_ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
+    let tx = Transaction::new_signed_with_payer(&[attack_ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
     assert!(res.is_err(), "expected the attacker transaction to fail");
