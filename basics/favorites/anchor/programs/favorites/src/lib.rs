@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 // This matches the key in the target/deploy directory
 declare_id!("ww9C83noARSQVBnqmCUmaVdbJjmiwcV9j2LkXYMoUCV");
 
-// Anchor programs always use 8 bits for the discriminator
+// Anchor programs always use 8 bytes for the discriminator
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 
 // Our Solana program!
