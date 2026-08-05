@@ -1,9 +1,11 @@
 use litesvm::LiteSVM;
 use solana_instruction::{AccountMeta, Instruction};
+use solana_instruction_error::InstructionError;
 use solana_keypair::{Keypair, Signer};
 use solana_native_token::LAMPORTS_PER_SOL;
 use solana_pubkey::Pubkey;
 use solana_transaction::Transaction;
+use solana_transaction_error::TransactionError;
 
 use close_account_pinocchio_program::{User, CLOSE_DISCRIMINATOR, CREATE_DISCRIMINATOR};
 
@@ -81,7 +83,12 @@ fn test_close_account() {
     );
 
     let res = svm.send_transaction(tx);
-    assert!(res.is_err(), "expected the attacker transaction to fail");
+    let err = res.expect_err("expected the attacker transaction to fail").err;
+    assert_eq!(
+        err,
+        TransactionError::InstructionError(0, InstructionError::IncorrectProgramId),
+        "expected the attacker's target PDA to be rejected as not belonging to them"
+    );
 
     // process_close
     let mut data = Vec::new();

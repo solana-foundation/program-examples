@@ -1066,6 +1066,7 @@ dependencies = [
  "pinocchio-log",
  "pinocchio-system",
  "solana-instruction",
+ "solana-instruction-error",
  "solana-keypair",
  "solana-message 4.4.0",
  "solana-native-token",
@@ -1073,6 +1074,7 @@ dependencies = [
  "solana-signer",
  "solana-system-interface 2.0.0",
  "solana-transaction 3.1.0",
+ "solana-transaction-error",
 ]
 
 [[package]]
@@ -6052,11 +6054,13 @@ dependencies = [
  "pinocchio",
  "pinocchio-system",
  "solana-instruction",
+ "solana-instruction-error",
  "solana-keypair",
  "solana-native-token",
  "solana-pubkey 3.0.0",
  "solana-system-interface 2.0.0",
  "solana-transaction 3.1.0",
+ "solana-transaction-error",
 ]
 
 [[package]]

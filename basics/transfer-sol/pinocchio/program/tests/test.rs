@@ -1,10 +1,12 @@
 use litesvm::LiteSVM;
 use solana_instruction::{AccountMeta, Instruction};
+use solana_instruction_error::InstructionError;
 use solana_keypair::{Keypair, Signer};
 use solana_native_token::LAMPORTS_PER_SOL;
 use solana_pubkey::Pubkey;
 use solana_system_interface::instruction::create_account;
 use solana_transaction::Transaction;
+use solana_transaction_error::TransactionError;
 use transfer_sol_pinocchio_program::{CPI_TRANSFER_DISCRIMINATOR, PROGRAM_TRANSFER_DISCRIMINATOR};
 #[test]
 fn test_transfer_sol() {
@@ -117,5 +119,10 @@ fn test_transfer_sol() {
     let tx = Transaction::new_signed_with_payer(&[attack_ix], Some(&payer.pubkey()), &[&payer], svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
-    assert!(res.is_err(), "expected the attacker transaction to fail");
+    let err = res.expect_err("expected the attacker transaction to fail").err;
+    assert_eq!(
+        err,
+        TransactionError::InstructionError(0, InstructionError::MissingRequiredSignature),
+        "expected the debit to be rejected for lacking the victim's signature"
+    );
 }

@@ -133,6 +133,11 @@ describe('transfer-sol', () => {
         const signedTx = await signTransactionMessageWithSigners(transactionMessage);
         const result = svm.sendTransaction(signedTx);
         assert(result instanceof FailedTransactionMetadata, 'expected the attacker transaction to fail');
+        assert.include(
+            result.err().toString(),
+            'MissingRequiredSignature',
+            `expected the debit to be rejected for lacking the victim's signature, got: ${result.toString()}`,
+        );
     });
 
     function getBalances(payerAddress: Address, recipientAddress: Address, timeframe: string) {

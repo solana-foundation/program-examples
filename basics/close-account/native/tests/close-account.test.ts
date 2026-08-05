@@ -68,6 +68,11 @@ describe('Close Account!', () => {
 
         const result = svm.sendTransaction(signedTx);
         assert(result instanceof FailedTransactionMetadata, 'expected the attacker transaction to fail');
+        assert.include(
+            result.err().toString(),
+            'IncorrectProgramId',
+            `expected the attacker's target PDA to be rejected as not belonging to them, got: ${result.toString()}`,
+        );
     });
 
     it('Close the account', async () => {

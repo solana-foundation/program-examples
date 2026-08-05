@@ -136,5 +136,10 @@ describe('LiteSVM: Transfer SOL', () => {
 
         const result = svm.sendTransaction(tx);
         assert(result instanceof FailedTransactionMetadata, 'expected the attacker transaction to fail');
+        assert.include(
+            result.err().toString(),
+            'code: 3010',
+            `expected Anchor's AccountNotSigner error (code 3010: "The given account did not sign"), got: ${result.toString()}`,
+        );
     });
 });
