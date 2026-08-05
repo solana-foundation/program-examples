@@ -9,7 +9,7 @@ pub struct CreateUserContext<'info> {
     #[account(
         init,
         payer = user,
-        space = UserState::INIT_SPACE,
+        space = 8 + UserState::INIT_SPACE,
         seeds = [
             b"USER",
             user.key().as_ref(),
