@@ -203,6 +203,7 @@ describe('Escrow!', () => {
         );
 
         const makerTokenBInfoBefore = svm.getAccount(offerValues.makerAccountB);
+        assert(makerTokenBInfoBefore.exists, 'maker token B account does not exist');
         const makerTokenAccountBBefore = getTokenDecoder().decode(makerTokenBInfoBefore.data);
         assert(makerTokenAccountBBefore.amount > 0n, "maker's token B account should be nonzero before Take Offer");
 
@@ -223,6 +224,7 @@ describe('Escrow!', () => {
         await sendTransaction(ix);
 
         const makerTokenBInfo = svm.getAccount(offerValues.makerAccountB);
+        assert(makerTokenBInfo.exists, 'maker token B account does not exist');
         const makerTokenAccountB = getTokenDecoder().decode(makerTokenBInfo.data);
         assert(
             makerTokenAccountB.amount.toString() === (makerTokenAccountBBefore.amount + offerValues.amountB).toString(),
@@ -257,6 +259,7 @@ describe('Escrow!', () => {
         );
 
         const makerTokenAInfoBefore = svm.getAccount(offerValues.makerAccountA);
+        assert(makerTokenAInfoBefore.exists, 'maker token A account does not exist');
         const makerTokenAccountABefore = getTokenDecoder().decode(makerTokenAInfoBefore.data);
 
         const ix = buildRefundOffer({
@@ -277,6 +280,7 @@ describe('Escrow!', () => {
         assert(!vaultInfo.exists, 'vault account not closed');
 
         const makerTokenAInfoAfter = svm.getAccount(offerValues.makerAccountA);
+        assert(makerTokenAInfoAfter.exists, 'maker token A account does not exist');
         const makerTokenAccountAAfter = getTokenDecoder().decode(makerTokenAInfoAfter.data);
         assert(
             makerTokenAccountAAfter.amount.toString() ===

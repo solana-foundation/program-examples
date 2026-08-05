@@ -247,15 +247,19 @@ describe('Escrow LiteSVM example', () => {
         await make();
 
         // Bob attempts to refund Alice's offer by claiming to be its maker.
+        // The mismatched accounts are intentional (that's what this test is
+        // proving the program rejects), so the strict IDL-derived account
+        // type doesn't apply here.
+        const forgedAccounts: Record<string, PublicKey> = {
+            ...accounts,
+            maker: accounts.taker,
+            makerTokenAccountA: accounts.takerTokenAccountA,
+        };
         let threw = false;
         try {
             await program.methods
                 .refundOffer()
-                .accounts({
-                    ...accounts,
-                    maker: accounts.taker,
-                    makerTokenAccountA: accounts.takerTokenAccountA,
-                })
+                .accounts(forgedAccounts as any)
                 .signers([bob])
                 .rpc();
         } catch {
