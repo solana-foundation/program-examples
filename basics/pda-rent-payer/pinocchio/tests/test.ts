@@ -5,6 +5,9 @@ import {
     createTransactionMessage,
     generateKeyPairSigner,
     getProgramDerivedAddress,
+    getStructEncoder,
+    getU8Encoder,
+    getU64Encoder,
     type Instruction,
     type KeyPairSigner,
     lamports,
@@ -19,6 +22,12 @@ import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 const INIT_RENT_VAULT_DISCRIMINATOR = 0;
 const CREATE_NEW_ACCOUNT_DISCRIMINATOR = 1;
 const FUND_LAMPORTS = 1_000_000_000n;
+
+const initRentVaultEncoder = getStructEncoder([
+    ['discriminator', getU8Encoder()],
+    ['bump', getU8Encoder()],
+    ['lamports', getU64Encoder()],
+]);
 
 describe('PDA Rent-Payer', () => {
     const svm = new LiteSVM();
@@ -60,11 +69,6 @@ describe('PDA Rent-Payer', () => {
     }
 
     it('Initialize the Rent Vault', async () => {
-        const data = Buffer.alloc(10);
-        data.writeUInt8(INIT_RENT_VAULT_DISCRIMINATOR, 0);
-        data.writeUInt8(bump, 1);
-        data.writeBigUInt64LE(FUND_LAMPORTS, 2);
-
         const ix = {
             programAddress: programId,
             accounts: [
@@ -72,7 +76,11 @@ describe('PDA Rent-Payer', () => {
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            data: new Uint8Array(data),
+            data: initRentVaultEncoder.encode({
+                discriminator: INIT_RENT_VAULT_DISCRIMINATOR,
+                bump,
+                lamports: FUND_LAMPORTS,
+            }),
         };
 
         const result = await sendInstruction(ix);

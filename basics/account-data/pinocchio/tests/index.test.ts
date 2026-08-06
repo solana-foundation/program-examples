@@ -3,7 +3,15 @@ import {
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
+    fixDecoderSize,
+    fixEncoderSize,
     generateKeyPairSigner,
+    getStructDecoder,
+    getStructEncoder,
+    getU8Decoder,
+    getU8Encoder,
+    getUtf8Decoder,
+    getUtf8Encoder,
     type KeyPairSigner,
     lamports,
     pipe,
@@ -13,67 +21,26 @@ import {
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-interface AddressInfo {
-    name: string;
-    house_number: number;
-    street: string;
-    city: string;
-}
+// The on-chain account stores each field padded to a fixed width, with a single
+// alignment byte before `house_number` and before `city`.
+const createAddressInfoEncoder = getStructEncoder([
+    ['discriminator', getU8Encoder()],
+    ['name', fixEncoderSize(getUtf8Encoder(), 16)],
+    ['namePadding', getU8Encoder()],
+    ['houseNumber', getU8Encoder()],
+    ['street', fixEncoderSize(getUtf8Encoder(), 16)],
+    ['streetPadding', getU8Encoder()],
+    ['city', fixEncoderSize(getUtf8Encoder(), 16)],
+]);
 
-function toBytes(addressInfo: AddressInfo): Buffer {
-    const data: number[] = [];
-
-    // Add instruction discriminator
-    data.push(0);
-
-    // Pad name to 16 bytes (data[1..17])
-    const nameBytes = Buffer.from(addressInfo.name, 'utf-8');
-    const namePadded = Buffer.alloc(16);
-    nameBytes.copy(namePadded, 0, 0, Math.min(nameBytes.length, 16));
-    data.push(...namePadded);
-
-    // Add 1 byte padding at index 17
-    data.push(0);
-
-    // Add house_number at index 18
-    data.push(addressInfo.house_number);
-
-    // Pad street to 16 bytes (data[19..35])
-    const streetBytes = Buffer.from(addressInfo.street, 'utf-8');
-    const streetPadded = Buffer.alloc(16);
-    streetBytes.copy(streetPadded, 0, 0, Math.min(streetBytes.length, 16));
-    data.push(...streetPadded);
-
-    // Add 1 byte padding at index 35
-    data.push(0);
-
-    // Pad city to 16 bytes (data[36..52])
-    const cityBytes = Buffer.from(addressInfo.city, 'utf-8');
-    const cityPadded = Buffer.alloc(16);
-    cityBytes.copy(cityPadded, 0, 0, Math.min(cityBytes.length, 16));
-    data.push(...cityPadded);
-
-    return Buffer.from(data);
-}
-
-function fromBytes(buffer: Buffer): AddressInfo {
-    // name: bytes 0..16
-    const nameBytes = buffer.subarray(0, 16);
-    const name = nameBytes.toString('utf-8').replace(/\0/g, '');
-
-    // house_number: byte 17
-    const house_number = buffer[17];
-
-    // street: bytes 18..34
-    const streetBytes = buffer.subarray(18, 34);
-    const street = streetBytes.toString('utf-8').replace(/\0/g, '');
-
-    // city: bytes 35..51
-    const cityBytes = buffer.subarray(35, 51);
-    const city = cityBytes.toString('utf-8').replace(/\0/g, '');
-
-    return { name, house_number, street, city };
-}
+const addressInfoDecoder = getStructDecoder([
+    ['name', fixDecoderSize(getUtf8Decoder(), 16)],
+    ['namePadding', getU8Decoder()],
+    ['houseNumber', getU8Decoder()],
+    ['street', fixDecoderSize(getUtf8Decoder(), 16)],
+    ['streetPadding', getU8Decoder()],
+    ['city', fixDecoderSize(getUtf8Decoder(), 16)],
+]);
 
 describe('Account Data!', () => {
     const litesvm = new LiteSVM();
@@ -97,13 +64,6 @@ describe('Account Data!', () => {
         console.log(`Payer Address      : ${payer.address}`);
         console.log(`Address Info Acct  : ${addressInfoAccount.address}`);
 
-        const addressInfo: AddressInfo = {
-            name: 'Joe C',
-            house_number: 136,
-            street: 'Mile High Dr.',
-            city: 'Solana Beach',
-        };
-
         const ix = {
             programAddress: programId,
             accounts: [
@@ -115,7 +75,15 @@ describe('Account Data!', () => {
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            data: new Uint8Array(toBytes(addressInfo)),
+            data: createAddressInfoEncoder.encode({
+                discriminator: 0,
+                name: 'Joe C',
+                namePadding: 0,
+                houseNumber: 136,
+                street: 'Mile High Dr.',
+                streetPadding: 0,
+                city: 'Solana Beach',
+            }),
         };
 
         const transactionMessage = pipe(
@@ -139,10 +107,10 @@ describe('Account Data!', () => {
             throw new Error('Account not found');
         }
 
-        const readAddressInfo = fromBytes(Buffer.from(accountInfo.data));
+        const readAddressInfo = addressInfoDecoder.decode(accountInfo.data);
 
         console.log(`Name     : ${readAddressInfo.name}`);
-        console.log(`House Num: ${readAddressInfo.house_number}`);
+        console.log(`House Num: ${readAddressInfo.houseNumber}`);
         console.log(`Street   : ${readAddressInfo.street}`);
         console.log(`City     : ${readAddressInfo.city}`);
     });

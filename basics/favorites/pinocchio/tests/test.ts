@@ -3,9 +3,20 @@ import {
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
+    fixDecoderSize,
+    fixEncoderSize,
     generateKeyPairSigner,
     getAddressEncoder,
+    getArrayDecoder,
+    getArrayEncoder,
     getProgramDerivedAddress,
+    getStructDecoder,
+    getStructEncoder,
+    getU8Encoder,
+    getU64Decoder,
+    getU64Encoder,
+    getUtf8Decoder,
+    getUtf8Encoder,
     type Instruction,
     type KeyPairSigner,
     lamports,
@@ -20,11 +31,19 @@ import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 const CREATE_PDA = 1;
 const GET_PDA = 2;
 
-function fixedBytes(text: string, length: number): Buffer {
-    const buffer = Buffer.alloc(length);
-    buffer.write(text, 'utf8');
-    return buffer;
-}
+const createFavoritesEncoder = getStructEncoder([
+    ['discriminator', getU8Encoder()],
+    ['bump', getU8Encoder()],
+    ['number', getU64Encoder()],
+    ['color', fixEncoderSize(getUtf8Encoder(), 8)],
+    ['hobbies', getArrayEncoder(fixEncoderSize(getUtf8Encoder(), 16), { size: 4 })],
+]);
+
+const favoritesDecoder = getStructDecoder([
+    ['number', getU64Decoder()],
+    ['color', fixDecoderSize(getUtf8Decoder(), 8)],
+    ['hobbies', getArrayDecoder(fixDecoderSize(getUtf8Decoder(), 16), { size: 4 })],
+]);
 
 describe('Favorites Solana Pinocchio', () => {
     const svm = new LiteSVM();
@@ -64,15 +83,6 @@ describe('Favorites Solana Pinocchio', () => {
     }
 
     it('Create the favorites PDA', async () => {
-        const number = Buffer.alloc(8);
-        number.writeBigUInt64LE(favorites.number);
-        const data = Buffer.concat([
-            Buffer.from([CREATE_PDA, favoritesBump]),
-            number,
-            fixedBytes(favorites.color, 8),
-            ...favorites.hobbies.map(hobby => fixedBytes(hobby, 16)),
-        ]);
-
         const ix = {
             programAddress: programId,
             accounts: [
@@ -80,7 +90,11 @@ describe('Favorites Solana Pinocchio', () => {
                 { address: favoritesPda, role: AccountRole.WRITABLE },
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            data: new Uint8Array(data),
+            data: createFavoritesEncoder.encode({
+                discriminator: CREATE_PDA,
+                bump: favoritesBump,
+                ...favorites,
+            }),
         };
 
         const result = await sendInstruction(ix);
@@ -89,13 +103,10 @@ describe('Favorites Solana Pinocchio', () => {
         const account = svm.getAccount(favoritesPda);
         assert(account.exists);
         assert.equal(account.programAddress, programId);
-        const stored = Buffer.from(account.data);
-        assert.equal(stored.readBigUInt64LE(0), favorites.number);
-        assert.equal(stored.subarray(8, 8 + favorites.color.length).toString('utf8'), favorites.color);
-        favorites.hobbies.forEach((hobby, index) => {
-            const offset = 16 + index * 16;
-            assert.equal(stored.subarray(offset, offset + hobby.length).toString('utf8'), hobby);
-        });
+        const stored = favoritesDecoder.decode(account.data);
+        assert.equal(stored.number, favorites.number);
+        assert.equal(stored.color, favorites.color);
+        assert.deepEqual(stored.hobbies, favorites.hobbies);
     });
 
     it('Read the favorites PDA', async () => {

@@ -1,7 +1,7 @@
-import BN from 'bn.js';
+import { getU64Decoder } from '@solana/kit';
 
 export type Counter = {
-    count: BN;
+    count: bigint;
 };
 
 export const COUNTER_ACCOUNT_SIZE = 8;
@@ -12,6 +12,6 @@ export function deserializeCounterAccount(data: Buffer): Counter {
     }
 
     return {
-        count: new BN(data, 'le'),
+        count: getU64Decoder().decode(data),
     };
 }

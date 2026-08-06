@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import { Buffer } from 'node:buffer';
 import {
     AccountRole,
     type Address,
@@ -8,6 +7,12 @@ import {
     generateKeyPairSigner,
     getAddressEncoder,
     getProgramDerivedAddress,
+    getStructDecoder,
+    getStructEncoder,
+    getU8Decoder,
+    getU8Encoder,
+    getU32Decoder,
+    getU32Encoder,
     type Instruction,
     type KeyPairSigner,
     lamports,
@@ -17,6 +22,17 @@ import {
 } from '@solana/kit';
 import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+
+const createPageVisitsEncoder = getStructEncoder([
+    ['discriminator', getU8Encoder()],
+    ['pageVisits', getU32Encoder()],
+    ['bump', getU8Encoder()],
+]);
+
+const pageVisitsDecoder = getStructDecoder([
+    ['pageVisits', getU32Decoder()],
+    ['bump', getU8Decoder()],
+]);
 
 describe('PDAs', () => {
     const svm = new LiteSVM();
@@ -55,7 +71,7 @@ describe('PDAs', () => {
     function readPageVisits(): number {
         const account = svm.getAccount(pageVisitsPda);
         assert(account.exists, 'page visits account not found');
-        return Buffer.from(account.data).readUInt32LE(0);
+        return pageVisitsDecoder.decode(account.data).pageVisits;
     }
 
     function incrementInstruction(): Instruction {
@@ -79,11 +95,6 @@ describe('PDAs', () => {
     });
 
     it('Create the page visits tracking PDA', async () => {
-        const data = Buffer.alloc(6);
-        data.writeUInt8(0, 0);
-        data.writeUInt32LE(0, 1);
-        data.writeUInt8(pageVisitsBump, 5);
-
         const ix = {
             programAddress: programId,
             accounts: [
@@ -92,7 +103,7 @@ describe('PDAs', () => {
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             ],
-            data: new Uint8Array(data),
+            data: createPageVisitsEncoder.encode({ discriminator: 0, pageVisits: 0, bump: pageVisitsBump }),
         };
 
         await sendInstruction(ix);

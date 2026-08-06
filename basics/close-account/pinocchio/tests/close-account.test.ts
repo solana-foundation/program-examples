@@ -5,9 +5,15 @@ import {
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
+    fixDecoderSize,
+    fixEncoderSize,
     generateKeyPairSigner,
     getAddressEncoder,
     getProgramDerivedAddress,
+    getStructEncoder,
+    getU8Encoder,
+    getUtf8Decoder,
+    getUtf8Encoder,
     type Instruction,
     type KeyPairSigner,
     lamports,
@@ -22,6 +28,14 @@ import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 const USER_ACCOUNT_SIZE = 16;
 const CREATE_DISCRIMINATOR = 0;
 const CLOSE_DISCRIMINATOR = 1;
+
+const createUserEncoder = getStructEncoder([
+    ['discriminator', getU8Encoder()],
+    ['bump', getU8Encoder()],
+    ['name', fixEncoderSize(getUtf8Encoder(), USER_ACCOUNT_SIZE)],
+]);
+
+const userNameDecoder = fixDecoderSize(getUtf8Decoder(), USER_ACCOUNT_SIZE);
 
 describe('Close Account!', () => {
     const svm = new LiteSVM();
@@ -62,13 +76,10 @@ describe('Close Account!', () => {
     }
 
     it('Create the account', async () => {
-        const name = Buffer.alloc(USER_ACCOUNT_SIZE);
-        name.write('Jacob');
-
         const ix = {
             programAddress: programId,
             accounts: keys,
-            data: new Uint8Array(Buffer.concat([Buffer.from([CREATE_DISCRIMINATOR, bump]), name])),
+            data: createUserEncoder.encode({ discriminator: CREATE_DISCRIMINATOR, bump, name: 'Jacob' }),
         };
 
         const result = await sendInstruction(ix);
@@ -78,7 +89,7 @@ describe('Close Account!', () => {
         assert(account.exists, 'expected user account to exist');
         assert.equal(account.data.length, USER_ACCOUNT_SIZE);
         assert.equal(account.programAddress, programId, 'expected user account to be owned by the program');
-        assert.equal(Buffer.from(account.data.slice(0, 5)).toString(), 'Jacob');
+        assert.equal(userNameDecoder.decode(account.data), 'Jacob');
     });
 
     it('Close the account', async () => {

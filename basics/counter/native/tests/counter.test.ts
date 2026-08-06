@@ -67,8 +67,8 @@ describe('Counter Solana Native', () => {
 
         // Deserialize the counter & check count has been incremented
         const counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
-        assert(counterAccount.count.toNumber() === 1, 'Expected count to have been 1');
-        console.log(`[alloc+increment] count is: ${counterAccount.count.toNumber()}`);
+        assert(counterAccount.count === 1n, 'Expected count to have been 1');
+        console.log(`[alloc+increment] count is: ${counterAccount.count}`);
     });
 
     it('Test allocate tx and increment tx', async () => {
@@ -98,8 +98,8 @@ describe('Counter Solana Native', () => {
         assert(counterAccountInfo.exists, 'Expected counter account to have been created');
 
         let counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
-        assert(counterAccount.count.toNumber() === 0, 'Expected count to have been 0');
-        console.log(`[allocate] count is: ${counterAccount.count.toNumber()}`);
+        assert(counterAccount.count === 0n, 'Expected count to have been 0');
+        console.log(`[allocate] count is: ${counterAccount.count}`);
 
         // Check increment tx
         const incrementIx = createIncrementInstruction({ counter });
@@ -118,7 +118,7 @@ describe('Counter Solana Native', () => {
         assert(counterAccountInfo.exists, 'Expected counter account to have been created');
 
         counterAccount = deserializeCounterAccount(Buffer.from(counterAccountInfo.data));
-        assert(counterAccount.count.toNumber() === 1, 'Expected count to have been 1');
-        console.log(`[increment] count is: ${counterAccount.count.toNumber()}`);
+        assert(counterAccount.count === 1n, 'Expected count to have been 1');
+        console.log(`[increment] count is: ${counterAccount.count}`);
     });
 });

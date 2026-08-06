@@ -6,6 +6,9 @@ import {
     appendTransactionMessageInstruction,
     createTransactionMessage,
     generateKeyPairSigner,
+    getStructEncoder,
+    getU8Encoder,
+    getU64Encoder,
     type Instruction,
     type KeyPairSigner,
     lamports,
@@ -19,6 +22,11 @@ import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 const CPI_TRANSFER_DISCRIMINATOR = 0;
 const PROGRAM_TRANSFER_DISCRIMINATOR = 1;
+
+const transferInstructionEncoder = getStructEncoder([
+    ['discriminator', getU8Encoder()],
+    ['amount', getU64Encoder()],
+]);
 
 describe('transfer-sol', () => {
     const svm = new LiteSVM();
@@ -36,10 +44,6 @@ describe('transfer-sol', () => {
     });
 
     function createTransferInstruction(from: KeyPairSigner, to: Address, discriminator: number): Instruction {
-        const data = Buffer.alloc(9);
-        data.writeUInt8(discriminator, 0);
-        data.writeBigUInt64LE(transferAmount, 1);
-
         const accounts: (AccountMeta | AccountSignerMeta)[] = [
             { address: from.address, role: AccountRole.WRITABLE_SIGNER, signer: from },
             { address: to, role: AccountRole.WRITABLE },
@@ -48,7 +52,11 @@ describe('transfer-sol', () => {
             accounts.push({ address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY });
         }
 
-        return { programAddress: programId, accounts, data: new Uint8Array(data) };
+        return {
+            programAddress: programId,
+            accounts,
+            data: transferInstructionEncoder.encode({ discriminator, amount: transferAmount }),
+        };
     }
 
     async function sendInstruction(ix: Instruction) {

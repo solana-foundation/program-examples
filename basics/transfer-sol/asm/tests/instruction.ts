@@ -1,4 +1,4 @@
-import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import { AccountRole, type Address, getU64Encoder, type TransactionSigner } from '@solana/kit';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 
 export function createTransferInstruction(
@@ -7,9 +7,6 @@ export function createTransferInstruction(
     programAddress: Address,
     lamports: bigint,
 ) {
-    const data = new Uint8Array(8);
-    new DataView(data.buffer).setBigUint64(0, lamports, true);
-
     return {
         programAddress,
         accounts: [
@@ -17,6 +14,6 @@ export function createTransferInstruction(
             { address: recipientAddress, role: AccountRole.WRITABLE },
             { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
         ],
-        data,
+        data: getU64Encoder().encode(lamports),
     };
 }

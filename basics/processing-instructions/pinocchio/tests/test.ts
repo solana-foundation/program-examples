@@ -1,10 +1,13 @@
-import { Buffer } from 'node:buffer';
 import {
     AccountRole,
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
+    fixEncoderSize,
     generateKeyPairSigner,
+    getStructEncoder,
+    getU32Encoder,
+    getUtf8Encoder,
     type KeyPairSigner,
     lamports,
     pipe,
@@ -13,6 +16,11 @@ import {
 } from '@solana/kit';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+
+const instructionDataEncoder = getStructEncoder([
+    ['name', fixEncoderSize(getUtf8Encoder(), 8)],
+    ['height', getU32Encoder()],
+]);
 
 describe('custom-instruction-data', () => {
     const svm = new LiteSVM();
@@ -27,18 +35,11 @@ describe('custom-instruction-data', () => {
         svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    function encodeInstructionData(name: string, height: number): Buffer {
-        const data = Buffer.alloc(12);
-        data.write(name, 0, 8, 'utf8');
-        data.writeUInt32LE(height, 8);
-        return data;
-    }
-
     async function goToPark(name: string, height: number): Promise<string[]> {
         const ix = {
             programAddress: programId,
             accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
-            data: new Uint8Array(encodeInstructionData(name, height)),
+            data: instructionDataEncoder.encode({ name, height }),
         };
 
         const transactionMessage = pipe(
