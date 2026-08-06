@@ -68,10 +68,10 @@ impl<'info> Contribute<'info> {
             FundraiserError::ContributionTooBig
         );
 
-        // Check if the fundraising duration has been reached
+        // Check that the fundraising duration has not elapsed yet
         let current_time = Clock::get()?.unix_timestamp;
         require!(
-            self.fundraiser.duration <= ((current_time - self.fundraiser.time_started) / SECONDS_TO_DAYS) as u16,
+            self.fundraiser.duration > ((current_time - self.fundraiser.time_started) / SECONDS_TO_DAYS) as u16,
             crate::FundraiserError::FundraiserEnded
         );
 
