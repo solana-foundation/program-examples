@@ -1,9 +1,17 @@
 import { Message, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { AccountRole, type Instruction, type TransactionModifyingSigner } from '@solana/kit';
+import { AccountRole, type Address, type Instruction, type TransactionModifyingSigner } from '@solana/kit';
 
-// @magicblock-labs/gum-react-sdk (the session-key feature) is pinned to
-// @solana/web3.js and predates @solana/kit - these two helpers are the only
-// place in the app that cross that boundary.
+// @magicblock-labs/gum-react-sdk (the session-key feature) is built on
+// @solana/web3.js. These helpers are the only place in the app that converts
+// between web3.js and @solana/kit types.
+
+export function toLegacyPublicKey(address: Address): PublicKey {
+    return new PublicKey(address);
+}
+
+export function kitInstructionToLegacyTransaction(instruction: Instruction): Transaction {
+    return new Transaction().add(kitInstructionToLegacy(instruction));
+}
 
 export function kitInstructionToLegacy(instruction: Instruction): TransactionInstruction {
     return new TransactionInstruction({
@@ -18,10 +26,10 @@ export function kitInstructionToLegacy(instruction: Instruction): TransactionIns
 }
 
 // gum-sdk's useSessionKeyManager expects an AnchorWallet-shaped signTransaction
-// that returns a legacy Transaction. The connected wallet is only ever a kit
+// that returns a legacy Transaction. The connected wallet is a kit
 // TransactionModifyingSigner (from @solana/connector), so this signs via kit's
-// wire format (message bytes are identical between web3.js and kit - only the
-// surrounding object shapes differ) and reassembles a legacy Transaction from
+// wire format - message bytes are identical between web3.js and kit, only the
+// surrounding object shapes differ - and reassembles a legacy Transaction from
 // the result.
 export async function signLegacyTransactionWithKitSigner(
     signer: TransactionModifyingSigner,

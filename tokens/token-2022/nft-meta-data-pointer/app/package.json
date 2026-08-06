@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "pnpm run generate-client && tsc --noEmit"
   },
   "dependencies": {
     "@chakra-ui/next-js": "^2.1.3",
@@ -24,7 +25,6 @@
     "@solana/web3.js": "^1.98.4",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "axios": "^1.19.0",
     "@types/node": "20.2.5",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",

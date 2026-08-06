@@ -1,23 +1,10 @@
 import { useKitTransactionSigner } from '@solana/connector/react';
 import type { Address } from '@solana/kit';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { dasConnection } from '@/utils/anchor';
-
-interface DasNftItem {
-    id: string;
-    authorities: Array<{ address: string } | string>;
-    content: {
-        metadata: { name: string };
-        links: { image: string };
-    };
-}
-
-interface DasNftState {
-    items: DasNftItem[];
-}
+import { type DasAssetList, dasRpc } from '@/utils/das';
 
 const NftContext = createContext<{
-    nftState: DasNftState | null;
+    nftState: DasAssetList | null;
 }>({
     nftState: null,
 });
@@ -27,21 +14,24 @@ export const useNftState = () => useContext(NftContext);
 export const NftProvider = ({ children }: { children: React.ReactNode }) => {
     const { signer } = useKitTransactionSigner();
 
-    const [nftState, setNftState] = useState<DasNftState | null>(null);
+    const [nftState, setNftState] = useState<DasAssetList | null>(null);
 
     const getAssetsByOwner = useCallback(async (ownerAddress: Address) => {
-        const sortBy = {
-            sortBy: 'created',
-            sortDirection: 'asc',
-        };
-        const limit = 1000;
-        const page = 1;
-        const before = '';
-        const after = '';
-        const allAssetsOwned = await dasConnection.getAssetsByOwner(ownerAddress, sortBy, limit, page, before, after);
+        if (!dasRpc) {
+            window.alert('Set NEXT_PUBLIC_DAS_RPC to a Digital Asset Standard endpoint to load NFTs.');
+            return;
+        }
 
-        setNftState(allAssetsOwned as DasNftState);
-        console.log(allAssetsOwned);
+        const allAssetsOwned = await dasRpc
+            .getAssetsByOwner({
+                ownerAddress,
+                sortBy: { sortBy: 'created', sortDirection: 'asc' },
+                limit: 1000,
+                page: 1,
+            })
+            .send();
+
+        setNftState(allAssetsOwned);
     }, []);
 
     useEffect(() => {

@@ -34,6 +34,12 @@ yarn install
 yarn dev
 ```
 
+Copy `app/.env.example` to `app/.env.local` first. Listing the NFTs a wallet
+owns goes through the Metaplex Digital Asset Standard API, which is a separate
+service from the base Solana RPC and requires an endpoint from a provider such
+as Helius, Shyft, QuickNode, or Triton. Without `NEXT_PUBLIC_DAS_RPC` set, the
+app runs but the NFT list stays empty.
+
 # Minting the NFT
 
 For the creating of the NFT we perform the following steps:

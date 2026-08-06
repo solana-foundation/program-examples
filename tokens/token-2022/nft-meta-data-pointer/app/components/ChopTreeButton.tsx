@@ -2,7 +2,6 @@ import { Button, HStack, VStack } from '@chakra-ui/react';
 import { useSessionWallet } from '@magicblock-labs/gum-react-sdk';
 import { useKitTransactionSigner } from '@solana/connector/react';
 import { createNoopSigner, type Address } from '@solana/kit';
-import { Transaction } from '@solana/web3.js';
 import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useGameState } from '@/contexts/GameStateProvider';
@@ -11,7 +10,7 @@ import { getChopTreeInstructionAsync } from '@/generated/instructions';
 import { findNftAuthorityPda } from '@/generated/pdas';
 import { useSendInstruction } from '@/hooks/useSendInstruction';
 import { GAME_DATA_SEED } from '@/utils/anchor';
-import { kitInstructionToLegacy } from '@/utils/legacyBridge';
+import { kitInstructionToLegacyTransaction } from '@/utils/legacyBridge';
 
 const ChopTreeButton = () => {
     const { signer } = useKitTransactionSigner();
@@ -70,7 +69,7 @@ const ChopTreeButton = () => {
                 counter: transactionCounter,
             });
 
-            const transaction = new Transaction().add(kitInstructionToLegacy(instruction));
+            const transaction = kitInstructionToLegacyTransaction(instruction);
 
             const txids = await sessionWallet.signAndSendTransaction?.(transaction);
 

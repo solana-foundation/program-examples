@@ -36,6 +36,7 @@ export const GameStateProvider = ({ children }: { children: React.ReactNode }) =
 
     useEffect(() => {
         setPlayerState(null);
+        setPlayerDataPDA(null);
         if (!signer) {
             return;
         }
@@ -44,9 +45,11 @@ export const GameStateProvider = ({ children }: { children: React.ReactNode }) =
 
         (async () => {
             const [pda] = await findPlayerPda({ signer: signer.address });
+            if (abortController.signal.aborted) return;
             setPlayerDataPDA(pda);
 
             const maybePlayer = await fetchMaybePlayerData(rpc, pda);
+            if (abortController.signal.aborted) return;
             if (maybePlayer.exists) {
                 setPlayerState(maybePlayer.data);
             } else {

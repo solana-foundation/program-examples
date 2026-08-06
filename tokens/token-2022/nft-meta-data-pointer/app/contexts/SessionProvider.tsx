@@ -3,20 +3,18 @@ import { useKitTransactionSigner } from '@solana/connector/react';
 import type { AnchorWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, type VersionedTransaction } from '@solana/web3.js';
 import { useMemo } from 'react';
+import { RPC_URL } from '@/utils/anchor';
 import { signLegacyTransactionWithKitSigner } from '@/utils/legacyBridge';
 
 interface SessionProviderProps {
     children: React.ReactNode;
 }
 
-// gum-sdk (the session-key feature) is pinned to @solana/web3.js and predates
-// @solana/kit, and useSessionKeyManager needs an AnchorWallet-shaped signer.
-// The app otherwise has exactly one connected wallet (via @solana/connector) -
-// this bridges that single kit signer into the shape gum-sdk requires, rather
-// than running a second, separately-connected wallet-adapter-react instance.
+// gum-sdk's useSessionKeyManager requires an AnchorWallet-shaped signer backed
+// by @solana/web3.js. This adapts the one connected kit signer into that shape.
 const SessionProvider: React.FC<SessionProviderProps> = ({ children }) => {
     const { signer } = useKitTransactionSigner();
-    const connection = useMemo(() => new Connection('https://api.devnet.solana.com', 'confirmed'), []);
+    const connection = useMemo(() => new Connection(RPC_URL, 'confirmed'), []);
     const cluster = 'devnet'; // or "mainnet-beta", "testnet", "localnet"
 
     const anchorWallet = useMemo((): AnchorWallet | undefined => {
