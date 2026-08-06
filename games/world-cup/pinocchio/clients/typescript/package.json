@@ -21,8 +21,6 @@
         "test": "tsx --test test/*.test.ts"
     },
     "dependencies": {
-        "@solana/kit-plugin-rpc": "^0.11.1",
-        "@solana/kit-plugin-signer": "^0.10.0",
         "@solana/program-client-core": "^6.10.0"
     },
     "peerDependencies": {

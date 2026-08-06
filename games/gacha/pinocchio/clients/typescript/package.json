@@ -29,8 +29,6 @@
         "@collectorcrypt/ecvrf": "^0.1.1",
         "@lightprotocol/stateless.js": "^0.23.3",
         "@noble/hashes": "^2.2.0",
-        "@solana/kit-plugin-rpc": "^0.15.0",
-        "@solana/kit-plugin-signer": "^0.13.0",
         "@solana/program-client-core": "^7.0.0"
     },
     "peerDependencies": {

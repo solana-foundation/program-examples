@@ -7,8 +7,7 @@
     "deploy": "solana program deploy ./program/target/so/hello_solana_program.so"
   },
   "dependencies": {
-    "@solana/kit": "^7.0.0",
-    "@solana-program/system": "^0.13.0"
+    "@solana/kit": "^7.0.0"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
