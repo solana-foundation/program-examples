@@ -9,8 +9,7 @@
     "@solana-program/system": "^0.12.2",
     "@solana-program/token-2022": "^0.12.0",
     "@solana/kit": "^7.0.0",
-    "@solana/sysvars": "^6.10.0",
-    "borsh": "^2.0.0"
+    "@solana/sysvars": "^6.10.0"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",

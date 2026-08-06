@@ -5,6 +5,8 @@ import {
     appendTransactionMessageInstruction,
     createTransactionMessage,
     generateKeyPairSigner,
+    getStructEncoder,
+    getU8Encoder,
     lamports,
     pipe,
     setTransactionMessageFeePayerSigner,
@@ -14,15 +16,11 @@ import {
 import { SYSVAR_RENT_ADDRESS } from '@solana/sysvars';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { getMintDecoder, TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-// Borsh schema for the instruction data, matching the program's
-// `CreateTokenArgs` (and the native example's wire format).
-const CreateTokenArgsSchema: borsh.Schema = {
-    struct: { token_decimals: 'u8' },
-};
+// Instruction data layout, matching the program's `CreateTokenArgs`.
+const createTokenArgsEncoder = getStructEncoder([['tokenDecimals', getU8Encoder()]]);
 
 // Token-2022 lays a mint with one (valueless) extension out as:
 //   base account length (165) + account-type byte (1) + TLV entry (4) = 170
@@ -51,7 +49,7 @@ describe('Token-2022 Non-Transferable (Pinocchio)', () => {
 
         const mint = await generateKeyPairSigner();
 
-        const data = borsh.serialize(CreateTokenArgsSchema, { token_decimals: decimals });
+        const data = createTokenArgsEncoder.encode({ tokenDecimals: decimals });
 
         const ix = {
             programAddress: programId,

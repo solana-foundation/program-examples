@@ -5,6 +5,8 @@ import {
     appendTransactionMessageInstruction,
     createTransactionMessage,
     generateKeyPairSigner,
+    getStructEncoder,
+    getU8Encoder,
     type KeyPairSigner,
     lamports,
     pipe,
@@ -14,11 +16,11 @@ import {
 import { SYSVAR_RENT_ADDRESS } from '@solana/sysvars';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
-const CreateTokenArgsSchema: borsh.Schema = { struct: { token_decimals: 'u8' } };
+// Instruction data layout, matching the program's `CreateTokenArgs`.
+const createTokenArgsEncoder = getStructEncoder([['tokenDecimals', getU8Encoder()]]);
 
 const PROGRAM_SO = path.join(process.cwd(), 'tests', 'fixtures', 'token_2022_non_transferable_program.so');
 
@@ -39,7 +41,7 @@ describe('Create Token', () => {
     it('Create a Token-22 SPL-Token !', async () => {
         const mint = await generateKeyPairSigner();
 
-        const data = borsh.serialize(CreateTokenArgsSchema, { token_decimals: 9 });
+        const data = createTokenArgsEncoder.encode({ tokenDecimals: 9 });
 
         const ix = {
             programAddress: programId,

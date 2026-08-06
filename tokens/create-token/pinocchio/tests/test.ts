@@ -2,12 +2,17 @@ import { Buffer } from 'node:buffer';
 import * as path from 'node:path';
 import {
     AccountRole,
+    addEncoderSizePrefix,
     address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
     generateKeyPairSigner,
     getAddressEncoder,
     getProgramDerivedAddress,
+    getStructEncoder,
+    getU8Encoder,
+    getU32Encoder,
+    getUtf8Encoder,
     lamports,
     pipe,
     setTransactionMessageFeePayerSigner,
@@ -15,7 +20,6 @@ import {
 } from '@solana/kit';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
@@ -25,16 +29,13 @@ import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 // `@solana-program/*` client for Token Metadata, so its id stays hand-rolled.
 const TOKEN_METADATA_PROGRAM_ID = address('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 
-// Borsh schema for the instruction data, matching the program's `CreateTokenArgs`
-// (and the native example's wire format).
-const CreateTokenArgsSchema: borsh.Schema = {
-    struct: {
-        token_title: 'string',
-        token_symbol: 'string',
-        token_uri: 'string',
-        token_decimals: 'u8',
-    },
-};
+// Instruction data layout, matching the program's `CreateTokenArgs`.
+const createTokenArgsEncoder = getStructEncoder([
+    ['tokenTitle', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['tokenSymbol', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['tokenUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['tokenDecimals', getU8Encoder()],
+]);
 
 // The compiled program artifacts live in ./fixtures: the pinocchio program is
 // built there by `build-and-test`, and token_metadata.so is dumped from mainnet
@@ -69,14 +70,12 @@ describe('Create Token (Pinocchio)', () => {
             seeds: ['metadata', addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID), addressEncoder.encode(mint.address)],
         });
 
-        const data = Buffer.from(
-            borsh.serialize(CreateTokenArgsSchema, {
-                token_title: name,
-                token_symbol: symbol,
-                token_uri: uri,
-                token_decimals: decimals,
-            }),
-        );
+        const data = createTokenArgsEncoder.encode({
+            tokenTitle: name,
+            tokenSymbol: symbol,
+            tokenUri: uri,
+            tokenDecimals: decimals,
+        });
 
         const ix = {
             programAddress: programId,
@@ -89,7 +88,7 @@ describe('Create Token (Pinocchio)', () => {
                 { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // token program
                 { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // token metadata program
             ],
-            data: new Uint8Array(data),
+            data,
         };
 
         const transactionMessage = pipe(

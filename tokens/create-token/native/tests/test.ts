@@ -1,6 +1,6 @@
-import { Buffer } from 'node:buffer';
 import {
     AccountRole,
+    addEncoderSizePrefix,
     address,
     type Address,
     appendTransactionMessageInstruction,
@@ -8,6 +8,10 @@ import {
     generateKeyPairSigner,
     getAddressEncoder,
     getProgramDerivedAddress,
+    getStructEncoder,
+    getU8Encoder,
+    getU32Encoder,
+    getUtf8Encoder,
     type KeyPairSigner,
     lamports,
     pipe,
@@ -17,25 +21,19 @@ import {
 } from '@solana/kit';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { getMintDecoder, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 
 const TOKEN_METADATA_PROGRAM_ID = address('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 const SYSVAR_RENT_ADDRESS = address('SysvarRent111111111111111111111111111111111');
 
-const CreateTokenArgsSchema: borsh.Schema = {
-    struct: {
-        token_title: 'string',
-        token_symbol: 'string',
-        token_uri: 'string',
-        token_decimals: 'u8',
-    },
-};
-
-function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-}
+// Instruction data layout, matching the program's `CreateTokenArgs`.
+const createTokenArgsEncoder = getStructEncoder([
+    ['tokenTitle', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['tokenSymbol', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['tokenUri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+    ['tokenDecimals', getU8Encoder()],
+]);
 
 const addressEncoder = getAddressEncoder();
 
@@ -70,11 +68,11 @@ describe('Create Tokens!', () => {
         const mintKeypair = await generateKeyPairSigner();
         const metadataAddress = await findMetadataPda(mintKeypair.address);
 
-        const instructionData = borshSerialize(CreateTokenArgsSchema, {
-            token_title: tokenTitle,
-            token_symbol: tokenSymbol,
-            token_uri: tokenUri,
-            token_decimals: tokenDecimals,
+        const instructionData = createTokenArgsEncoder.encode({
+            tokenTitle,
+            tokenSymbol,
+            tokenUri,
+            tokenDecimals,
         });
 
         const ix = {
@@ -89,7 +87,7 @@ describe('Create Tokens!', () => {
                 { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
                 { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
             ],
-            data: new Uint8Array(instructionData),
+            data: instructionData,
         };
 
         const transactionMessage = pipe(
