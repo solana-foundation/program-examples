@@ -94,8 +94,10 @@ export function verifyPull(operatorPublicKey: Uint8Array, alpha: Uint8Array, pro
 
 /**
  * The reveal provenance a prize NFT carries in its Token-2022
- * `additional_metadata`, hex-decoded. Everything needed to verify the reveal
- * lives in the mint account itself — no transaction-history lookup required.
+ * `additional_metadata`, hex-decoded. Together with the pool account the mint
+ * names via its metadata update authority (which supplies the operator key,
+ * weights, and tier count), this is everything needed to verify the reveal —
+ * no transaction-history lookup required.
  */
 export interface PrizeProvenance {
     /** The ECVRF output, decoded from the `beta` key. */
@@ -127,6 +129,9 @@ export function decodeHexField(hex: string): Uint8Array {
  * recomputes `alpha = SHA-256(pull || client_seed)`, checks the ECVRF proof
  * against the pool's operator key, checks `beta` matches the proof, and
  * reproduces the tier from the pool's weights to confirm the recorded rarity.
+ *
+ * `operatorPublicKey`, `weights`, and `tierCount` come from the pool account
+ * the mint names via its metadata update authority.
  */
 export function verifyPrizeProvenance(
     provenance: PrizeProvenance,

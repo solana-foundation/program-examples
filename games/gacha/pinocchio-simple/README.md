@@ -23,11 +23,13 @@ Built with **Pinocchio** (`no_std`) and **Codama**-generated TypeScript + Rust c
    NFT straight to the buyer with `rarity`, `pull`, `client_seed`, `beta`, and
    `proof` in its Token-2022 metadata, and closes the pull (rent back to the
    buyer).
-3. Anyone verifies a prize from its metadata alone: recompute
-   `alpha = SHA-256(pull || client_seed)`, check the proof with
+3. Anyone verifies a prize from live accounts alone — no transaction-history
+   lookup. The mint's metadata `update_authority` is the pool PDA, so the NFT
+   names its pool; the pool account supplies the operator key and tier weights.
+   Recompute `alpha = SHA-256(pull || client_seed)`, check the proof with
    [`@collectorcrypt/ecvrf`](https://www.npmjs.com/package/@collectorcrypt/ecvrf)
-   against `pool.operator`, and reproduce the tier with `selectTier` — the client
-   ships this as `verifyPrizeProvenance`. No transaction-history lookup needed.
+   against `pool.operator`, and reproduce the tier with `selectTier` — the
+   client ships this as `verifyPrizeProvenance`.
 4. If the operator never reveals, the buyer reclaims fee + rent with
    `refund_pull` after the pool's deadline; the admin can only ever withdraw
    settled revenue.
@@ -75,8 +77,9 @@ settle-and-mint happy path, runs in LiteSVM.
 - **Vault** `["vault", admin]` — escrows entry fees; always covers pending refunds.
 - **Prize mint** `["mint", pull]` — Token-2022 NFT: decimals 0, supply 1,
   metadata in the mint itself with `rarity` + `pull` + `client_seed` + `beta` +
-  `proof` (hex) in `additional_metadata`. Its existence doubles as the once-only
-  settle guard.
+  `proof` (hex) in `additional_metadata`, and the pool PDA as metadata
+  `update_authority` (the link verifiers follow to the operator key and
+  weights). Its existence doubles as the once-only settle guard.
 
 **Instructions**
 

@@ -108,8 +108,9 @@ impl<'a> TryFrom<&'a mut [AccountView]> for SettleAndDistributeAccounts<'a> {
 /// One reveal per pull is structural: the prize mint is a PDA of the pull that
 /// can only be created once, the pull account closes here, and pull addresses
 /// are seeded by a monotonic pool index so a settled pull can never be
-/// re-created. The NFT is self-certifying — anyone can recompute
-/// `alpha = SHA-256(pull || client_seed)` from its metadata and verify
+/// re-created. The NFT is self-certifying — its metadata `update_authority` is
+/// the pool PDA, so from the mint and the pool account it names anyone can
+/// recompute `alpha = SHA-256(pull || client_seed)` and verify
 /// `beta = VRF(pool.operator, alpha)` off-chain.
 pub fn process(accounts: &mut [AccountView], data: &SettleAndDistributeData) -> ProgramResult {
     let accounts = SettleAndDistributeAccounts::try_from(accounts)?;

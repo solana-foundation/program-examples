@@ -4,4 +4,5 @@ Cargo.lock
 **/Assets/
 games/world-cup/
 games/gacha/pinocchio/idl/
+games/gacha/pinocchio-simple/idl/
 tokens/token-2022/transfer-hook/block-list/pinocchio/sdk/

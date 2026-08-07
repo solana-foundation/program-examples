@@ -49,13 +49,15 @@ leaves open:
    `pending_pulls × entry_fee`). Withholding delays; it never steals.
 6. **Verification story — the NFT is the evidence.** The prize mint's
    `additional_metadata` carries `rarity`, `pull`, `client_seed`, `beta`, and
-   `proof` (lowercase hex). From the mint account alone anyone can recompute
-   `alpha`, verify the proof with `@collectorcrypt/ecvrf` against
-   `pool.operator`, and reproduce the tier with `selectTier` — the TS client
-   ships this as `verifyPrizeProvenance`. The same data is emitted in
-   `PullSettledEvent`. The operator's 32-byte Ed25519 seed is **both** its
-   Solana signing key and its ECVRF key, so `pool.operator` equals the ECVRF
-   public key.
+   `proof` (lowercase hex), and its metadata `update_authority` is the pool
+   PDA — the NFT names its pool, and the pool account supplies the operator
+   key, weights, and tier count. From those two live accounts (no transaction
+   history) anyone can recompute `alpha`, verify the proof with
+   `@collectorcrypt/ecvrf` against `pool.operator`, and reproduce the tier
+   with `selectTier` — the TS client ships this as `verifyPrizeProvenance`.
+   The same data is emitted in `PullSettledEvent`. The operator's 32-byte
+   Ed25519 seed is **both** its Solana signing key and its ECVRF key, so
+   `pool.operator` equals the ECVRF public key.
 
 Comparison: oracle VRFs (Switchboard On-Demand, MagicBlock VRF, ORAO) verify the
 randomness proof **on-chain** at the cost of oracle fees, extra latency, and an

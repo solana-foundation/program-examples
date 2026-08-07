@@ -15,10 +15,10 @@ Two variants share the same draw semantics (`select_tier`/`derive_alpha` are
 byte-identical, pinned by shared test fixtures) and differ in how reveals are
 evidenced:
 
-| Variant                                        | Reveal evidence                                                                                                                                                 |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`./pinocchio`](./pinocchio)                   | Each reveal is anchored in Collector Crypt's deployed [`cc-vrf`](https://vrf.collectorcrypt.com) registry by CPI (Light Protocol compressed accounts)            |
-| [`./pinocchio-simple`](./pinocchio-simple)     | Each prize NFT carries its full reveal provenance (`pull`, `client_seed`, `beta`, `proof`) in its own Token-2022 metadata — verifiable from the mint account alone |
+| Variant                                    | Reveal evidence                                                                                                                                                                                                                        |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`./pinocchio`](./pinocchio)               | Each reveal is anchored in Collector Crypt's deployed [`cc-vrf`](https://vrf.collectorcrypt.com) registry by CPI (Light Protocol compressed accounts)                                                                                  |
+| [`./pinocchio-simple`](./pinocchio-simple) | Each prize NFT carries its full reveal provenance (`pull`, `client_seed`, `beta`, `proof`) in its own Token-2022 metadata and names its pool via the metadata update authority — verifiable from live accounts, no transaction history |
 
 Both examples are self-contained nested workspaces: each pins its own toolchain
 and dependencies and builds/tests via its own `justfile`.

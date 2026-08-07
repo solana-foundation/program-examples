@@ -11,6 +11,9 @@ games/gacha/pinocchio/clients/rust
 games/gacha/pinocchio/program
 games/gacha/pinocchio/tests/integration-tests
 games/gacha/pinocchio/tests/light-integration-tests
+games/gacha/pinocchio-simple/clients/rust
+games/gacha/pinocchio-simple/program
+games/gacha/pinocchio-simple/tests/integration-tests
 games/world-cup/pinocchio/clients/rust
 games/world-cup/pinocchio/program
 games/world-cup/pinocchio/tests/integration-tests
