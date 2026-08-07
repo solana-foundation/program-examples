@@ -16,22 +16,24 @@ pub const MINT_SEED: &[u8] = b"mint";
 
 /// One-byte discriminator identifying the type of a program-owned account.
 ///
-/// Stored at byte offset 0 of every data-carrying account created by this program.
+/// Stored at byte offset 0 of every data-carrying account created by this
+/// program. Values start at 1 so all-zero account data never carries a valid
+/// discriminator.
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Debug, CodamaType)]
 pub enum AccountDiscriminator {
     /// [`Pool`](super::pool::Pool) account.
-    Pool = 0,
+    Pool = 1,
     /// [`Pull`](super::pull::Pull) account.
-    Pull = 1,
+    Pull = 2,
 }
 
 impl TryFrom<u8> for AccountDiscriminator {
     type Error = ProgramError;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(Self::Pool),
-            1 => Ok(Self::Pull),
+            1 => Ok(Self::Pool),
+            2 => Ok(Self::Pull),
             _ => Err(GachaError::InvalidAccountDiscriminator.into()),
         }
     }

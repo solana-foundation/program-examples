@@ -398,12 +398,12 @@
           },
           "variants": [
             {
-              "discriminator": 0,
+              "discriminator": 1,
               "kind": "enumEmptyVariantTypeNode",
               "name": "pool"
             },
             {
-              "discriminator": 1,
+              "discriminator": 2,
               "kind": "enumEmptyVariantTypeNode",
               "name": "pull"
             }
