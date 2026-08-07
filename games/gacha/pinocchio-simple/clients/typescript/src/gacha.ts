@@ -151,4 +151,27 @@ export function verifyPrizeProvenance(
     return RARITY_LABELS[tier] === provenance.rarity;
 }
 
+/**
+ * Verifies a prize NFT's reveal end-to-end from caller-fetched accounts,
+ * binding the pool configuration to the pool the mint actually names:
+ * `mintUpdateAuthority` (read from the mint's token metadata) must equal
+ * `poolAddress` (the address the pool account was fetched from), and the
+ * operator key, weights, and tier count are taken from that pool's decoded
+ * data. Pool state is fixed at init, so the values cannot be stale.
+ *
+ * `pool` accepts the generated `Pool` account data shape directly.
+ */
+export function verifyPrizeAgainstPool(
+    provenance: PrizeProvenance,
+    mintUpdateAuthority: Address,
+    poolAddress: Address,
+    pool: { operator: Address; tierCount: number; weights: readonly number[] },
+): boolean {
+    if (mintUpdateAuthority !== poolAddress) {
+        return false;
+    }
+    const operatorKey = new Uint8Array(getAddressEncoder().encode(pool.operator));
+    return verifyPrizeProvenance(provenance, operatorKey, pool.weights, pool.tierCount);
+}
+
 export { generateKeyPair, proveVRF, publicKeyFromSeed, verifyVRF, vrfProofToHash };

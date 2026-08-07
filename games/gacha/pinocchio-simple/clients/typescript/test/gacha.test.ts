@@ -3,6 +3,8 @@ import { test } from 'node:test';
 
 import type { Address } from '@solana/kit';
 
+import { getAddressDecoder } from '@solana/kit';
+
 import { RARITY_LABELS } from '../src/constants.js';
 import {
     decodeHexField,
@@ -10,6 +12,7 @@ import {
     provePull,
     pullAlpha,
     selectTier,
+    verifyPrizeAgainstPool,
     verifyPrizeProvenance,
     verifyPull,
 } from '../src/gacha.js';
@@ -151,4 +154,36 @@ test('verifyPrizeProvenance accepts an honest reveal and rejects tampering', () 
     // A different operator key is caught.
     const { pk: roguePk } = generateKeyPair();
     assert.equal(verifyPrizeProvenance(provenance, roguePk, weights, 3), false);
+});
+
+// The binding step: pool configuration only counts if it comes from the pool
+// the mint names via its metadata update authority.
+test('verifyPrizeAgainstPool binds the configuration to the named pool', () => {
+    const { sk, pk } = generateKeyPair();
+    const weights = [70, 25, 5];
+    const clientSeed = new Uint8Array(32).fill(2);
+    const alpha = pullAlpha('4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi' as Address, clientSeed);
+    const { proof, beta } = provePull(sk, alpha);
+    const provenance = {
+        beta,
+        clientSeed,
+        proof,
+        pull: new Uint8Array(32).fill(1),
+        rarity: RARITY_LABELS[selectTier(beta, weights, 3)]!,
+    };
+
+    const poolAddress = '8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR' as Address;
+    const pool = { operator: getAddressDecoder().decode(pk), tierCount: 3, weights };
+
+    assert.equal(verifyPrizeAgainstPool(provenance, poolAddress, poolAddress, pool), true);
+
+    // A mint whose update authority is not the supplied pool is rejected, even
+    // with otherwise-valid configuration.
+    const otherPool = '4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi' as Address;
+    assert.equal(verifyPrizeAgainstPool(provenance, otherPool, poolAddress, pool), false);
+
+    // A pool whose operator did not produce the reveal is rejected.
+    const { pk: roguePk } = generateKeyPair();
+    const roguePool = { ...pool, operator: getAddressDecoder().decode(roguePk) };
+    assert.equal(verifyPrizeAgainstPool(provenance, poolAddress, poolAddress, roguePool), false);
 });
