@@ -1,0 +1,38 @@
+{
+    "name": "@solana/gacha-simple",
+    "version": "0.1.0",
+    "description": "TypeScript SDK and @solana/kit plugin for the Gacha Simple (provably-fair pack-pull) Solana program.",
+    "type": "module",
+    "license": "MIT",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "clean": "rm -rf dist",
+        "clean:generated": "rm -rf src/generated",
+        "test": "tsx --test test/*.test.ts"
+    },
+    "dependencies": {
+        "@collectorcrypt/ecvrf": "^0.1.1",
+        "@noble/hashes": "^2.2.0",
+        "@solana/program-client-core": "^7.0.0"
+    },
+    "peerDependencies": {
+        "@solana/kit": "^7.0.0"
+    },
+    "devDependencies": {
+        "@solana/kit": "^7.0.0",
+        "@types/node": "^25.7.0",
+        "tsup": "^8.3.0",
+        "tsx": "^4.22.0",
+        "typescript": "^5.7.0"
+    }
+}

@@ -1,0 +1,172 @@
+# Gacha Simple - Solana program build automation
+# https://github.com/casey/just
+
+# Use bash for all recipes
+set shell := ["bash", "-uc"]
+
+# Variables
+program_dir := "program"
+ts_client_dir := "clients/typescript"
+idl_file := "idl/gacha_simple.json"
+generated_paths := "idl clients/typescript/src/generated clients/rust/src/generated"
+
+# List available recipes
+default:
+    @just --list
+
+# ============================================
+# Setup
+# ============================================
+
+# Install dependencies
+setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    commands=(pnpm cargo solana-keygen)
+    for cmd in "${commands[@]}"; do
+        if ! command -v "$cmd" &>/dev/null; then
+            echo "Error: $cmd is required but not installed"
+            exit 1
+        fi
+    done
+    pnpm install
+    echo "✓ Setup complete"
+
+# Print program ID from keypair
+program-id:
+    @sed -n 's/.*declare_id!("\([^"]*\)").*/\1/p' "{{program_dir}}/src/lib.rs"
+
+# ============================================
+# Build
+# ============================================
+
+# Build everything (program + client)
+build: build-program build-client
+
+# Compile Solana program to .so
+build-program:
+    cd {{program_dir}} && cargo build-sbf
+    @echo "✓ Program built"
+
+# Generate IDL from Rust source
+generate-idl:
+    pnpm run generate-idl
+    @echo "✓ IDL generated"
+
+# Generate TypeScript + Rust clients from IDL
+generate-clients: generate-idl
+    pnpm run generate-clients
+    @echo "✓ Clients generated"
+
+# Check that committed IDL and generated clients are current
+check-generated: generate-clients
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! git diff --quiet -- {{generated_paths}} || [[ -n "$(git ls-files --others --exclude-standard -- {{generated_paths}})" ]]; then
+        echo "Error: IDL or generated clients are out of date"
+        echo "Run: just generate-clients"
+        git status --short -- {{generated_paths}}
+        exit 1
+    fi
+    echo "✓ IDL and generated clients are up-to-date"
+
+# Build TypeScript client
+build-client: generate-clients
+    cd {{ts_client_dir}} && pnpm run build
+    @echo "✓ TypeScript client built"
+
+# Build the generated Rust client
+build-rust-client: generate-clients
+    cargo build -p gacha-simple-client
+    @echo "✓ Rust client built"
+
+# ============================================
+# Test
+# ============================================
+
+# Run all tests (unit + integration + client)
+test: unit-test integration-test client-test
+
+# Run Rust unit tests
+unit-test:
+    cargo test -p gacha-simple-program
+
+# Run LiteSVM integration tests (the tests derive PDAs through the generated
+# Rust client, so the clients are generated before the .so is built)
+integration-test: generate-clients build-program
+    cargo test -p tests-gacha-simple
+
+# Run TypeScript client tests
+client-test: build-client
+    cd {{ts_client_dir}} && pnpm test
+
+# ============================================
+# Demo
+# ============================================
+
+# Run the off-chain operator/verifier demo (no RPC required)
+demo: build-client
+    pnpm exec tsx scripts/operator-demo.ts
+
+# Deploy the program to devnet (needs a devnet-configured Solana CLI + funded wallet; run `just build-program` first)
+deploy-devnet:
+    solana program deploy target/deploy/gacha_simple_program.so --program-id keys/gacha-simple-keypair.json
+
+# Create a pool on-chain (config via env, e.g. OPERATOR_PUBKEY, ADMIN_KEYPAIR, ENTRY_FEE_SOL, WEIGHTS)
+setup-pool:
+    pnpm exec tsx scripts/setup-pool.ts
+
+# Buy a pull (config via env, e.g. RPC_URL, BUYER_KEYPAIR, POOL_ADMIN)
+buy-pull:
+    pnpm exec tsx scripts/buy-pull.ts
+
+# Run the operator crank once
+operator-settle:
+    pnpm exec tsx scripts/operator-settle.ts
+
+# Run the operator crank as a watcher
+operator-watch:
+    pnpm exec tsx scripts/operator-settle.ts --watch
+
+# ============================================
+# Format and lint
+# ============================================
+
+# Check formatting without fixing
+fmt-check:
+    @cargo fmt -p gacha-simple-program -p tests-gacha-simple --check
+    @pnpm run format:check
+    @echo "✓ Format check passed"
+
+# Auto-format all code
+fmt:
+    @cargo fmt -p gacha-simple-program -p tests-gacha-simple
+    @pnpm run format
+    @echo "✓ Code formatted"
+
+# Lint with auto-fix
+lint:
+    @cargo clippy --workspace --exclude gacha-simple-client --all-targets --no-deps --fix -- -D warnings
+    @pnpm run lint:fix
+    @echo "✓ Code linted"
+
+# Check linting without fixing
+lint-check:
+    @cargo clippy --workspace --exclude gacha-simple-client --all-targets --no-deps -- -D warnings
+    @pnpm run lint
+    @echo "✓ Lint check passed"
+
+# Run all code quality checks
+check: fmt-check lint-check
+
+# ============================================
+# Clean
+# ============================================
+
+# Clean build artifacts and deps
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cargo clean
+    cd {{ts_client_dir}} && pnpm run clean || true
+    echo "✓ Clean complete"
