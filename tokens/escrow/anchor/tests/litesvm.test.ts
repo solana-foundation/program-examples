@@ -134,7 +134,7 @@ describe('Escrow LiteSVM example', () => {
     const tokenAOfferedAmount = new BN(1_000_000);
     const tokenBWantedAmount = new BN(1_000_000);
 
-    // We'll call this function from multiple tests, so let's seperate it out
+    // We'll call this function from multiple tests, so let's separate it out
     const make = async () => {
         // Pick a random ID for the offer we'll make
         const offerId = getRandomBigNumber();
@@ -170,7 +170,7 @@ describe('Escrow LiteSVM example', () => {
         assert(offerAccount.tokenBWantedAmount.eq(tokenBWantedAmount));
     };
 
-    // We'll call this function from multiple tests, so let's seperate it out
+    // We'll call this function from multiple tests, so let's separate it out
     const take = async () => {
         const _transactionSignature = await program.methods
             .takeOffer()
