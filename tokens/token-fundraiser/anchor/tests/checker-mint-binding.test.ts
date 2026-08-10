@@ -135,10 +135,7 @@ describe('fundraiser checker mint binding', () => {
             rejected = true;
         }
 
-        assert.isTrue(
-            rejected,
-            'check_contributions accepted a mint other than the one recorded at initialize',
-        );
+        assert.isTrue(rejected, 'check_contributions accepted a mint other than the one recorded at initialize');
 
         // The real campaign must still be alive — a wrong-mint call must not
         // reach `close = maker`.
