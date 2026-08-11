@@ -62,6 +62,16 @@ pub fn refund_offer(program_id: &Address, accounts: &mut [AccountView], _data: &
         return Err(ProgramError::InvalidAccountData);
     }
 
+    // Verify maker_token_account_a is the maker's actual associated token
+    // account, not a substitute destination.
+    let (expected_maker_token_account_a, _) = Address::find_program_address(
+        &[maker.address().as_ref(), pinocchio_token::ID.as_ref(), token_mint_a.address().as_ref()],
+        &pinocchio_associated_token_account::ID,
+    );
+    if maker_token_account_a.address() != &expected_maker_token_account_a {
+        return Err(ProgramError::InvalidAccountData);
+    }
+
     let vault_amount = TokenAccount::from_account_view(vault)?.amount();
 
     let seeds = [

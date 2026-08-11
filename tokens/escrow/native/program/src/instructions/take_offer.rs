@@ -70,6 +70,11 @@ impl TakeOffer {
         assert_is_associated_token_account(maker_token_account_b.key, maker.key, token_mint_b.key)?;
         assert_is_associated_token_account(taker_token_account_a.key, taker.key, token_mint_a.key)?;
 
+        // validate the vault is the offer's actual vault, not a substitute
+        // token-A account that also happens to be owned by the offer PDA
+        //
+        assert_is_associated_token_account(vault.key, offer_info.key, token_mint_a.key)?;
+
         // create taker token A account if needed, before receiveing tokens
         //
         if taker_token_account_a.lamports() == 0 {

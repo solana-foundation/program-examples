@@ -66,6 +66,16 @@ pub fn take_offer(program_id: &Address, accounts: &mut [AccountView], _data: &[u
         return Err(ProgramError::InvalidSeeds);
     }
 
+    // Verify vault is the offer's actual vault, not a substitute token-A
+    // account that also happens to be owned by the offer PDA.
+    let (expected_vault, _) = Address::find_program_address(
+        &[offer_account.address().as_ref(), pinocchio_token::ID.as_ref(), token_mint_a.address().as_ref()],
+        &pinocchio_associated_token_account::ID,
+    );
+    if vault.address() != &expected_vault {
+        return Err(ProgramError::InvalidAccountData);
+    }
+
     // Make sure both recipients have token accounts to receive into.
     log!("Ensuring taker token A account exists");
     CreateIdempotent {

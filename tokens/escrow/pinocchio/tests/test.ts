@@ -1,5 +1,11 @@
 import { generateKeyPairSigner, getAddressDecoder, type KeyPairSigner, lamports } from '@solana/kit';
-import { getTokenDecoder } from '@solana-program/token';
+import { getCreateAccountInstruction } from '@solana-program/system';
+import {
+    getInitializeAccount3Instruction,
+    getTokenDecoder,
+    getTokenSize,
+    TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token';
 import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { LiteSVM } from 'litesvm';
@@ -107,6 +113,81 @@ describe('Escrow (Pinocchio)', () => {
         assert(makerTokenAccountB.amount === values.amountB, 'unexpected amount b');
     });
 
+    it('Take Offer rejects a substitute vault account', async () => {
+        // Regression test: take_offer used to trust whatever account was
+        // passed as `vault` without verifying it's actually the offer's
+        // canonical ATA. Any token-A account with owner = the offer PDA
+        // (creatable by anyone, without the PDA's cooperation - a token
+        // account's owner field never needs the owner to sign at creation
+        // time) could be substituted, draining that decoy instead of the
+        // real vault and then closing the offer anyway - permanently
+        // stranding the real vault's funds.
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 3n,
+        });
+
+        await sendInstructions(svm, payer, [
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                bump: offerValues.offerBump,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        ]);
+
+        // Create a decoy token-A account owned by the offer PDA - NOT the
+        // canonical ATA, so it's a different address than offerValues.vault.
+        const decoyVault = await generateKeyPairSigner();
+        const tokenSize = BigInt(getTokenSize());
+        await sendInstructions(svm, payer, [
+            getCreateAccountInstruction({
+                payer,
+                newAccount: decoyVault,
+                space: tokenSize,
+                lamports: svm.minimumBalanceForRentExemption(tokenSize),
+                programAddress: TOKEN_PROGRAM_ADDRESS,
+            }),
+        ]);
+        await sendInstructions(svm, payer, [
+            getInitializeAccount3Instruction({
+                account: decoyVault.address,
+                mint: offerValues.mintAKeypair.address,
+                owner: offerValues.offer,
+            }),
+        ]);
+
+        await expectRevert(
+            sendInstructions(svm, payer, [
+                buildTakeOffer({
+                    maker: offerValues.maker.address,
+                    offer: offerValues.offer,
+                    vault: decoyVault.address,
+                    mint_a: offerValues.mintAKeypair.address,
+                    mint_b: offerValues.mintBKeypair.address,
+                    maker_token_b: offerValues.makerAccountB,
+                    taker: offerValues.taker,
+                    taker_token_a: offerValues.takerAccountA,
+                    taker_token_b: offerValues.takerAccountB,
+                    payer,
+                    programId: offerValues.programId,
+                }),
+            ]),
+        );
+    });
+
     it('Refund Offer returns the vaulted tokens to the maker', async () => {
         const offerValues = await createValues({
             programId: values.programId,
@@ -200,6 +281,117 @@ describe('Escrow (Pinocchio)', () => {
                     maker_token_a: offerValues.takerAccountA,
                     vault: offerValues.vault,
                     maker: offerValues.taker,
+                    programId: offerValues.programId,
+                }),
+            ]),
+        );
+    });
+
+    it('Refund Offer rejects a substitute vault account', async () => {
+        // Same class of bug as the Take Offer regression above, in
+        // refund_offer's own vault.
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 4n,
+        });
+
+        await sendInstructions(svm, payer, [
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                bump: offerValues.offerBump,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        ]);
+
+        const decoyVault = await generateKeyPairSigner();
+        const tokenSize = BigInt(getTokenSize());
+        await sendInstructions(svm, payer, [
+            getCreateAccountInstruction({
+                payer,
+                newAccount: decoyVault,
+                space: tokenSize,
+                lamports: svm.minimumBalanceForRentExemption(tokenSize),
+                programAddress: TOKEN_PROGRAM_ADDRESS,
+            }),
+        ]);
+        await sendInstructions(svm, payer, [
+            getInitializeAccount3Instruction({
+                account: decoyVault.address,
+                mint: offerValues.mintAKeypair.address,
+                owner: offerValues.offer,
+            }),
+        ]);
+
+        await expectRevert(
+            sendInstructions(svm, payer, [
+                buildRefundOffer({
+                    offer: offerValues.offer,
+                    mint_a: offerValues.mintAKeypair.address,
+                    maker_token_a: offerValues.makerAccountA,
+                    vault: decoyVault.address,
+                    maker: offerValues.maker,
+                    programId: offerValues.programId,
+                }),
+            ]),
+        );
+    });
+
+    it('Refund Offer rejects a substitute maker_token_account_a', async () => {
+        // Regression test: refund_offer used to trust whatever account was
+        // passed as `maker_token_account_a` (the refund destination) without
+        // verifying it's the maker's actual canonical ATA - only the vault
+        // was checked. A malicious or compromised client could redirect the
+        // refund to an attacker-controlled account while the maker still
+        // signs, unaware the destination was swapped.
+        const offerValues = await createValues({
+            programId: values.programId,
+            maker: values.maker,
+            taker: values.taker,
+            mintAKeypair: values.mintAKeypair,
+            mintBKeypair: values.mintBKeypair,
+            id: 5n,
+        });
+
+        await sendInstructions(svm, payer, [
+            buildMakeOffer({
+                id: offerValues.id,
+                maker: offerValues.maker,
+                maker_token_a: offerValues.makerAccountA,
+                offer: offerValues.offer,
+                bump: offerValues.offerBump,
+                token_a_offered_amount: offerValues.amountA,
+                token_b_wanted_amount: offerValues.amountB,
+                vault: offerValues.vault,
+                mint_a: offerValues.mintAKeypair.address,
+                mint_b: offerValues.mintBKeypair.address,
+                payer,
+                programId: offerValues.programId,
+            }),
+        ]);
+
+        // Substitute the taker's (unrelated) token A account as the refund
+        // destination instead of the maker's own canonical ATA.
+        await expectRevert(
+            sendInstructions(svm, payer, [
+                buildRefundOffer({
+                    offer: offerValues.offer,
+                    mint_a: offerValues.mintAKeypair.address,
+                    maker_token_a: offerValues.takerAccountA,
+                    vault: offerValues.vault,
+                    maker: offerValues.maker,
                     programId: offerValues.programId,
                 }),
             ]),
