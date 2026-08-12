@@ -13,4 +13,7 @@ pub enum ABListError {
 
     #[msg("Wallet blocked")]
     WalletBlocked,
+
+    #[msg("Mint is not configured to use this transfer hook program")]
+    MintNotUsingThisHook,
 }

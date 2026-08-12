@@ -1,8 +1,16 @@
 use {
     abl_token::{accounts::InitConfig, accounts::InitMint, accounts::ResizeMetaList, instructions::InitMintArgs, Mode},
+    anchor_lang::solana_program::system_instruction::create_account,
     anchor_lang::InstructionData,
     anchor_lang::ToAccountMetas,
-    anchor_spl::token_2022::ID as TOKEN_22_PROGRAM_ID,
+    anchor_spl::token_2022::{
+        spl_token_2022::{
+            self,
+            extension::{transfer_hook, ExtensionType},
+            instruction::initialize_mint2,
+        },
+        ID as TOKEN_22_PROGRAM_ID,
+    },
     litesvm::LiteSVM,
     solana_account::Account,
     solana_instruction::Instruction,
@@ -104,7 +112,7 @@ fn init_config_and_init_mint_succeed() {
 }
 
 #[test]
-fn resize_meta_list_succeeds_for_the_mints_transfer_hook_authority() {
+fn resize_meta_list_succeeds_and_is_idempotent() {
     let (mut svm, admin_kp) = setup();
     let admin_pk = admin_kp.pubkey();
     let (mint_pk, meta_list) = setup_mint(&mut svm, &admin_kp);
@@ -139,21 +147,20 @@ fn resize_meta_list_succeeds_for_the_mints_transfer_hook_authority() {
 }
 
 #[test]
-fn resize_meta_list_rejects_a_non_authority_signer() {
+fn resize_meta_list_is_permissionless() {
+    // Deliberately permissionless: gating this on the mint's transfer-hook
+    // authority would permanently strand any mint whose authority was
+    // revoked, since the content written doesn't depend on who calls it.
     let (mut svm, admin_kp) = setup();
     let (mint_pk, meta_list) = setup_mint(&mut svm, &admin_kp);
 
-    let attacker_kp = Keypair::new();
-    let attacker_pk = attacker_kp.pubkey();
-    svm.airdrop(&attacker_pk, 10 * LAMPORTS_PER_SOL).unwrap();
+    let stranger_kp = Keypair::new();
+    let stranger_pk = stranger_kp.pubkey();
+    svm.airdrop(&stranger_pk, 10 * LAMPORTS_PER_SOL).unwrap();
 
-    // Anyone can pay for the resize, but the CPI back into Token-2022's
-    // `update_transfer_hook` only succeeds if the signer is the mint's real
-    // transfer-hook authority (`admin_pk`, not `attacker_pk`) - that's what
-    // gates this instruction, since it has no authority table of its own.
     let resize_ix = abl_token::instruction::ResizeMetaList {};
     let resize_accounts = ResizeMetaList {
-        payer: attacker_pk,
+        payer: stranger_pk,
         mint: mint_pk,
         extra_metas_account: meta_list,
         system_program: SYSTEM_PROGRAM_ID,
@@ -164,11 +171,58 @@ fn resize_meta_list_rejects_a_non_authority_signer() {
         accounts: resize_accounts.to_account_metas(None),
         data: resize_ix.data(),
     };
-    let msg = Message::new(&[instruction], Some(&attacker_pk));
-    let tx = Transaction::new(&[&attacker_kp], msg, svm.latest_blockhash());
+    let msg = Message::new(&[instruction], Some(&stranger_pk));
+    let tx = Transaction::new(&[&stranger_kp], msg, svm.latest_blockhash());
+
+    svm.send_transaction(tx).unwrap();
+}
+
+#[test]
+fn resize_meta_list_rejects_a_mint_not_using_this_hook() {
+    let (mut svm, admin_kp) = setup();
+    let admin_pk = admin_kp.pubkey();
+
+    // A mint whose TransferHook extension points at some other program.
+    let mint_kp = Keypair::new();
+    let mint_pk = mint_kp.pubkey();
+    let other_program = Pubkey::new_unique();
+
+    let space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&[ExtensionType::TransferHook])
+        .unwrap();
+    let rent = svm.minimum_balance_for_rent_exemption(space);
+
+    let create_ix = create_account(&admin_pk, &mint_pk, rent, space as u64, &TOKEN_22_PROGRAM_ID);
+    let init_hook_ix =
+        transfer_hook::instruction::initialize(&TOKEN_22_PROGRAM_ID, &mint_pk, Some(admin_pk), Some(other_program))
+            .unwrap();
+    let init_mint_ix = initialize_mint2(&TOKEN_22_PROGRAM_ID, &mint_pk, &admin_pk, None, 6).unwrap();
+
+    let tx = Transaction::new(
+        &[&admin_kp, &mint_kp],
+        Message::new(&[create_ix, init_hook_ix, init_mint_ix], Some(&admin_pk)),
+        svm.latest_blockhash(),
+    );
+    svm.send_transaction(tx).unwrap();
+
+    let meta_list = derive_meta_list(&mint_pk);
+    let resize_ix = abl_token::instruction::ResizeMetaList {};
+    let resize_accounts = ResizeMetaList {
+        payer: admin_pk,
+        mint: mint_pk,
+        extra_metas_account: meta_list,
+        system_program: SYSTEM_PROGRAM_ID,
+        token_program: TOKEN_22_PROGRAM_ID,
+    };
+    let instruction = Instruction {
+        program_id: PROGRAM_ID,
+        accounts: resize_accounts.to_account_metas(None),
+        data: resize_ix.data(),
+    };
+    let msg = Message::new(&[instruction], Some(&admin_pk));
+    let tx = Transaction::new(&[&admin_kp], msg, svm.latest_blockhash());
 
     let res = svm.send_transaction(tx);
-    assert!(res.is_err(), "a non-authority signer must not be able to resize another mint's meta list");
+    assert!(res.is_err(), "resizing a mint that isn't using this hook program must be rejected");
 }
 
 #[test]
