@@ -1,11 +1,9 @@
-use anchor_lang::{
-    prelude::*, solana_program::program::invoke, solana_program::system_instruction::transfer,
-};
+use anchor_lang::{prelude::*, solana_program::program::invoke, solana_program::system_instruction::transfer};
 use anchor_spl::{
     token_2022::Token2022,
     token_interface::{
-        spl_token_metadata_interface::state::Field, token_metadata_initialize,
-        token_metadata_update_field, Mint, TokenMetadataInitialize, TokenMetadataUpdateField,
+        spl_token_metadata_interface::state::Field, token_metadata_initialize, token_metadata_update_field, Mint,
+        TokenMetadataInitialize, TokenMetadataUpdateField,
     },
 };
 
@@ -80,11 +78,7 @@ impl InitMint<'_> {
             };
             let cpi_ctx = CpiContext::new(self.token_program.key(), cpi_accounts);
 
-            token_metadata_update_field(
-                cpi_ctx,
-                Field::Key("threshold".to_string()),
-                args.threshold.to_string(),
-            )?;
+            token_metadata_update_field(cpi_ctx, Field::Key("threshold".to_string()), args.threshold.to_string())?;
         }
 
         let data = self.mint.to_account_info().data_len();
@@ -96,11 +90,7 @@ impl InitMint<'_> {
                     &self.mint.to_account_info().key(),
                     min_balance - self.mint.to_account_info().get_lamports(),
                 ),
-                &[
-                    self.payer.to_account_info(),
-                    self.mint.to_account_info(),
-                    self.system_program.to_account_info(),
-                ],
+                &[self.payer.to_account_info(), self.mint.to_account_info(), self.system_program.to_account_info()],
             )?;
         }
 

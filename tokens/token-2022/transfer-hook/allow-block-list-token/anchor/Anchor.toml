@@ -17,4 +17,8 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "../node_modules/.bin/mocha --import=tsx -t 1000000 tests/**/*.ts"
+# cargo test runs both the tx_hook.rs unit tests and the litesvm
+# integration test - CI's Anchor workflow only runs this [scripts] test
+# command (never a separate `cargo test`), so without this the Rust-side
+# tests were never actually executed.
+test = "cargo test -p abl-token && ../node_modules/.bin/mocha --import=tsx -t 1000000 tests/**/*.ts"

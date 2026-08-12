@@ -1,8 +1,5 @@
 use {
-    abl_token::{
-        accounts::InitConfig, accounts::InitMint, accounts::ResizeMetaList,
-        instructions::InitMintArgs, Mode,
-    },
+    abl_token::{accounts::InitConfig, accounts::InitMint, accounts::ResizeMetaList, instructions::InitMintArgs, Mode},
     anchor_lang::InstructionData,
     anchor_lang::ToAccountMetas,
     anchor_spl::token_2022::ID as TOKEN_22_PROGRAM_ID,
@@ -55,19 +52,11 @@ fn setup_mint(svm: &mut LiteSVM, admin_kp: &Keypair) -> (Pubkey, Pubkey) {
 
     let init_cfg_ix = abl_token::instruction::InitConfig {};
 
-    let init_cfg_accounts = InitConfig {
-        payer: admin_pk,
-        config: config,
-        system_program: SYSTEM_PROGRAM_ID,
-    };
+    let init_cfg_accounts = InitConfig { payer: admin_pk, config: config, system_program: SYSTEM_PROGRAM_ID };
 
     let accs = init_cfg_accounts.to_account_metas(None);
 
-    let instruction = Instruction {
-        program_id: PROGRAM_ID,
-        accounts: accs,
-        data: init_cfg_ix.data(),
-    };
+    let instruction = Instruction { program_id: PROGRAM_ID, accounts: accs, data: init_cfg_ix.data() };
     let msg = Message::new(&[instruction], Some(&admin_pk));
     let tx = Transaction::new(&[admin_kp], msg, svm.latest_blockhash());
 
@@ -99,11 +88,7 @@ fn setup_mint(svm: &mut LiteSVM, admin_kp: &Keypair) -> (Pubkey, Pubkey) {
 
     let accs = init_mint_accounts.to_account_metas(None);
 
-    let instruction = Instruction {
-        program_id: PROGRAM_ID,
-        accounts: accs,
-        data: data,
-    };
+    let instruction = Instruction { program_id: PROGRAM_ID, accounts: accs, data: data };
     let msg = Message::new(&[instruction], Some(&admin_pk));
     let tx = Transaction::new(&[admin_kp, &mint_kp], msg, svm.latest_blockhash());
 
@@ -113,7 +98,7 @@ fn setup_mint(svm: &mut LiteSVM, admin_kp: &Keypair) -> (Pubkey, Pubkey) {
 }
 
 #[test]
-fn test() {
+fn init_config_and_init_mint_succeed() {
     let (mut svm, admin_kp) = setup();
     setup_mint(&mut svm, &admin_kp);
 }
@@ -213,11 +198,7 @@ fn resize_meta_list_migrates_a_mint_created_under_the_old_one_entry_layout() {
     let current_account = svm.get_account(&meta_list).unwrap();
     svm.set_account(
         meta_list,
-        Account {
-            lamports: svm.minimum_balance_for_rent_exemption(old_size),
-            data: old_data,
-            ..current_account
-        },
+        Account { lamports: svm.minimum_balance_for_rent_exemption(old_size), data: old_data, ..current_account },
     )
     .unwrap();
     assert_eq!(svm.get_account(&meta_list).unwrap().data.len(), old_size);

@@ -1,6 +1,4 @@
-use anchor_lang::{
-    prelude::*, solana_program::program::invoke, solana_program::system_instruction::transfer,
-};
+use anchor_lang::{prelude::*, solana_program::program::invoke, solana_program::system_instruction::transfer};
 use anchor_spl::{
     token_2022::Token2022,
     token_interface::{transfer_hook_update, Mint, TransferHookUpdate},

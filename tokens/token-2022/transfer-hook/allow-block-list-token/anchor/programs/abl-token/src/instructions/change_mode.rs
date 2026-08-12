@@ -8,8 +8,8 @@ use anchor_spl::{
         Token2022,
     },
     token_interface::{
-        spl_token_metadata_interface::state::Field, token_metadata_update_field,
-        Mint as MintAccount, TokenMetadataUpdateField,
+        spl_token_metadata_interface::state::Field, token_metadata_update_field, Mint as MintAccount,
+        TokenMetadataUpdateField,
     },
 };
 
@@ -50,11 +50,7 @@ impl ChangeMode<'_> {
         token_metadata_update_field(cpi_ctx, Field::Key("AB".to_string()), args.mode.to_string())?;
 
         if args.mode == Mode::Mixed || self.has_threshold()? {
-            let threshold = if args.mode == Mode::Mixed {
-                args.threshold
-            } else {
-                0
-            };
+            let threshold = if args.mode == Mode::Mixed { args.threshold } else { 0 };
 
             let cpi_accounts = TokenMetadataUpdateField {
                 metadata: self.mint.to_account_info(),
@@ -64,11 +60,7 @@ impl ChangeMode<'_> {
             let cpi_program = self.token_program.key();
             let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-            token_metadata_update_field(
-                cpi_ctx,
-                Field::Key("threshold".to_string()),
-                threshold.to_string(),
-            )?;
+            token_metadata_update_field(cpi_ctx, Field::Key("threshold".to_string()), threshold.to_string())?;
         }
 
         let data = self.mint.to_account_info().data_len();
@@ -80,11 +72,7 @@ impl ChangeMode<'_> {
                     &self.mint.to_account_info().key(),
                     min_balance - self.mint.to_account_info().get_lamports(),
                 ),
-                &[
-                    self.authority.to_account_info(),
-                    self.mint.to_account_info(),
-                    self.system_program.to_account_info(),
-                ],
+                &[self.authority.to_account_info(), self.mint.to_account_info(), self.system_program.to_account_info()],
             )?;
         }
 
@@ -96,11 +84,6 @@ impl ChangeMode<'_> {
         let mint_data = mint_info.data.borrow();
         let mint = StateWithExtensions::<Mint>::unpack(&mint_data)?;
         let metadata = mint.get_variable_len_extension::<TokenMetadata>();
-        Ok(metadata.is_ok()
-            && metadata
-                .unwrap()
-                .additional_metadata
-                .iter()
-                .any(|(key, _)| key == "threshold"))
+        Ok(metadata.is_ok() && metadata.unwrap().additional_metadata.iter().any(|(key, _)| key == "threshold"))
     }
 }
