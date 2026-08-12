@@ -16,23 +16,10 @@ import { assert } from 'chai';
 import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/fundraiser.json';
 import type { Fundraiser } from '../target/types/fundraiser';
+import { expectAnchorError } from './utils';
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 const SECONDS_PER_DAY = 86400n;
-
-// Asserts that `promise` rejects with the given Anchor custom error code
-// (e.g. 'FundraiserNotEnded'), not just "something failed" - see the same
-// helper in tests/fundraiser.ts for why this matters.
-const expectAnchorError = async (promise: Promise<unknown>, code: string) => {
-    let caught: any;
-    try {
-        await promise;
-    } catch (error) {
-        caught = error;
-    }
-    assert.isDefined(caught, `expected the transaction to fail with ${code}`);
-    assert.strictEqual(caught?.error?.errorCode?.code, code, `expected ${code}, got: ${caught}`);
-};
 
 describe('fundraiser litesvm', () => {
     const client = new LiteSVM();
@@ -94,11 +81,8 @@ describe('fundraiser litesvm', () => {
     it('Initialize Fundaraiser', async () => {
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
-        // duration=1 (day). Unlike fundraiser.ts, this suite can warp its
-        // own clock deterministically, so it covers the full lifecycle:
-        // contribute while active, refund rejected while active, contribute
-        // rejected once the deadline passes, and refund succeeding once it
-        // has (see the tests below, in that order).
+        // duration=1 day. This suite can warp its own clock, so it covers
+        // the full lifecycle (see the tests below).
         const tx = await program.methods
             .initialize(new BN(30000000), 1)
             .accountsPartial({
@@ -164,12 +148,8 @@ describe('fundraiser litesvm', () => {
     });
 
     it('Contribute to Fundraiser - Robustness Test', async () => {
-        // Contributor already holds 2_000_000, and the per-contributor cap
-        // is 10% of the 30_000_000 target = 3_000_000. This 2_000_000
-        // attempt would push the total to 4_000_000, over the cap. Must run
-        // before the deadline warp below - once the deadline passes,
-        // contribute() rejects on the time check first, which would test
-        // the wrong thing.
+        // Per-contributor cap is 3_000_000 (10% of target); contributor
+        // holds 2_000_000 already. Must run before the deadline warp below.
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
         await expectAnchorError(
@@ -188,18 +168,9 @@ describe('fundraiser litesvm', () => {
         );
     });
 
-    // Confirms refund() is correctly gated on FundraiserNotEnded while the
-    // fundraiser is genuinely still active. Note this doesn't reproduce the
-    // original bug in isolation: with a realistic nonzero duration,
-    // contribute() itself was broken from the very first call (see the
-    // "Fundraiser closes..." test below for a direct, isolated repro of
-    // that half), so pre-fix this call actually fails with
-    // AccountNotInitialized instead (no Contributor account ever got
-    // created) - a different symptom of the same root cause, not the
-    // "refund wrongly succeeds" behavior that specifically required the
-    // original tests' degenerate duration=0 setup. Either way, this only
-    // passes once refund is correctly gated on FundraiserNotEnded
-    // specifically, so it still fails before the fix and passes after.
+    // Pre-fix this fails with AccountNotInitialized, not a wrongly-
+    // succeeding refund - contribute() was broken from its first call, so
+    // no Contributor account ever formed. Same bug, different symptom.
     it('Refund is rejected while the fundraiser is still active', async () => {
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
         const vaultBalanceBefore = tokenBalance(vault);
@@ -247,11 +218,8 @@ describe('fundraiser litesvm', () => {
         );
     });
 
-    // This is the other half of the original bug: contribute() used to only
-    // succeed AFTER the deadline (backwards). Warp to the exact boundary
-    // (elapsed_days == duration) rather than some point further out, so this
-    // pins the boundary itself - a boundary that's off by one in either
-    // direction would flip this test's result.
+    // Warps to the exact deadline boundary (not past it) to pin the
+    // off-by-one directly: contribute must reject exactly here.
     it('Fundraiser closes to contributions once the duration has elapsed', async () => {
         const fundraiserAccount = await program.account.fundraiser.fetch(fundraiser);
         const deadline =
@@ -260,21 +228,13 @@ describe('fundraiser litesvm', () => {
         const clock = client.getClock();
         clock.unixTimestamp = deadline;
         client.setClock(clock);
-        // Without this, the next contribute() call would build a
-        // byte-identical transaction to an earlier one (same instruction,
-        // accounts, and fee payer) and get silently rejected as
-        // already-processed rather than actually being evaluated.
+        // Avoids a duplicate-transaction rejection from an earlier identical call.
         client.expireBlockhash();
 
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
-        // 1_000_000, not 2_000_000: the contributor holds 2_000_000 already
-        // and the per-contributor cap is 3_000_000, so 2_000_000 would hit
-        // MaximumContributionsReached regardless of the time check - that
-        // would make this test pass whether or not the deadline fix is
-        // present. 1_000_000 keeps the cap check passing
-        // (2_000_000 + 1_000_000 = 3_000_000 <= 3_000_000), so the time
-        // check is the only thing that can reject it.
+        // 1_000_000 keeps the per-contributor cap check passing, so only
+        // the time check can reject this - proving it's the deadline.
         await expectAnchorError(
             program.methods
                 .contribute(new BN(1000000))
@@ -292,16 +252,13 @@ describe('fundraiser litesvm', () => {
     });
 
     it('Refund Contributions', async () => {
-        // Runs after the deadline warp above, so elapsed_days (1) >=
-        // duration (1) now holds and the target (30_000_000) was never met
-        // (only 2_000_000 was ever contributed) - the intended happy path.
+        // Runs after the deadline warp above, so refund's time check now passes.
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
         const contributorAccount = await program.account.contributor.fetch(contributor);
         console.log('\nContributor balance', contributorAccount.amount.toString());
 
-        // Same instruction/accounts/fee-payer shape as the earlier rejected
-        // refund attempt - same duplicate-transaction hazard as above.
+        // Same duplicate-transaction hazard as above.
         client.expireBlockhash();
 
         const tx = await program.methods
