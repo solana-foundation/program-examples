@@ -11,12 +11,14 @@ import {
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
-import { createCloseUserInstruction, createCreateUserInstruction } from '../ts';
+import { createCloseUserInstruction, createCreateUserInstruction, userDecoder } from '../ts';
 
 describe('Close Account!', () => {
     const svm = new LiteSVM();
+    const userName = 'Jacob';
     let programId: Address;
     let payer: KeyPairSigner;
     let testAccountAddress: Address;
@@ -34,7 +36,7 @@ describe('Close Account!', () => {
     });
 
     it('Create the account', async () => {
-        const ix = createCreateUserInstruction(testAccountAddress, payer, programId, 'Jacob');
+        const ix = createCreateUserInstruction(testAccountAddress, payer, programId, userName);
 
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
@@ -46,6 +48,11 @@ describe('Close Account!', () => {
 
         const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+
+        const account = svm.getAccount(testAccountAddress);
+        assert(account.exists);
+        assert.equal(account.programAddress, programId);
+        assert.equal(userDecoder.decode(account.data).name, userName);
     });
 
     it("An attacker cannot close another user's account", async () => {
@@ -88,5 +95,12 @@ describe('Close Account!', () => {
 
         const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
+
+        // Closing resizes the account to zero and hands ownership back to the
+        // System Program, leaving only the rent-exempt minimum for a 0-byte account.
+        const account = svm.getAccount(testAccountAddress);
+        assert(account.exists);
+        assert.equal(account.programAddress, SYSTEM_PROGRAM_ADDRESS);
+        assert.equal(account.data.length, 0);
     });
 });
