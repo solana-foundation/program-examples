@@ -1,6 +1,5 @@
 import * as anchor from '@anchor-lang/core';
 import {
-    AccountLayout,
     ASSOCIATED_TOKEN_PROGRAM_ID,
     createAssociatedTokenAccountInstruction,
     createInitializeMintInstruction,
@@ -13,6 +12,7 @@ import {
     TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { Keypair, PublicKey, SystemProgram, Transaction, type TransactionInstruction } from '@solana/web3.js';
+import { getTokenDecoder } from '@solana-program/token-2022';
 import { LiteSVMProvider } from 'anchor-litesvm';
 import { assert } from 'chai';
 import { LiteSVM } from 'litesvm';
@@ -206,7 +206,7 @@ describe('Transfer switch', () => {
         await expectRevert(provider.sendAndConfirm(transaction, [sender]));
 
         const recipientTokenAccountData = client.getAccount(recipientTokenAccount).data;
-        const recipientBalance = AccountLayout.decode(recipientTokenAccountData).amount;
+        const recipientBalance = getTokenDecoder().decode(recipientTokenAccountData).amount;
 
         assert(recipientBalance === BigInt(0), 'transfer was successful');
     });
@@ -255,7 +255,7 @@ describe('Transfer switch', () => {
 
         const recipientTokenAccountData = client.getAccount(recipientTokenAccount).data;
 
-        const recipientBalance = AccountLayout.decode(recipientTokenAccountData).amount;
+        const recipientBalance = getTokenDecoder().decode(recipientTokenAccountData).amount;
 
         assert(recipientBalance === bigIntAmount, 'transfer was not successful');
     });

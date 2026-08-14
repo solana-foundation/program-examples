@@ -6,6 +6,8 @@
   },
   "dependencies": {
     "@anchor-lang/core": "1.0.0-rc.5",
+    "@solana-program/token": "^0.15.0",
+    "@solana/kit": "^7.0.0",
     "@solana/spl-token": "^0.4.6",
     "@solana/web3.js": "^1.98.4"
   },

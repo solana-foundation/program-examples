@@ -1,6 +1,5 @@
 import * as anchor from '@anchor-lang/core';
 import {
-    AccountLayout,
     ASSOCIATED_TOKEN_PROGRAM_ID,
     createAssociatedTokenAccountInstruction,
     createInitializeMint2Instruction,
@@ -10,6 +9,7 @@ import {
     TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
+import { getTokenDecoder } from '@solana-program/token';
 import { LiteSVMProvider } from 'anchor-litesvm';
 import { assert } from 'chai';
 import { LiteSVM } from 'litesvm';
@@ -47,7 +47,7 @@ describe('fundraiser litesvm', () => {
     )[0];
 
     const tokenBalance = (account: anchor.web3.PublicKey) =>
-        AccountLayout.decode(client.getAccount(account).data).amount;
+        getTokenDecoder().decode(client.getAccount(account).data).amount;
 
     it('Test Preparation', async () => {
         client.airdrop(maker.publicKey, BigInt(anchor.web3.LAMPORTS_PER_SOL));

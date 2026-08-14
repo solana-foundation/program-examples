@@ -1,6 +1,5 @@
 import * as anchor from '@anchor-lang/core';
 import {
-    AccountLayout,
     createAssociatedTokenAccountInstruction,
     createInitializeMint2Instruction,
     createMintToInstruction,
@@ -9,6 +8,7 @@ import {
     TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { getTokenDecoder } from '@solana-program/token';
 import { LiteSVMProvider } from 'anchor-litesvm';
 import { expect } from 'chai';
 import { LiteSVM } from 'litesvm';
@@ -99,10 +99,10 @@ describe('External Delegate Token Master Tests', () => {
             .signers([authority])
             .rpc();
 
-        const recipientBalance = AccountLayout.decode(client.getAccount(recipientTokenAccount)!.data).amount;
+        const recipientBalance = getTokenDecoder().decode(client.getAccount(recipientTokenAccount)!.data).amount;
         expect(recipientBalance).to.equal(BigInt(250));
 
-        const userBalance = AccountLayout.decode(client.getAccount(userTokenAccount)!.data).amount;
+        const userBalance = getTokenDecoder().decode(client.getAccount(userTokenAccount)!.data).amount;
         expect(userBalance).to.equal(BigInt(1_000_000_000 - 250));
     });
 });

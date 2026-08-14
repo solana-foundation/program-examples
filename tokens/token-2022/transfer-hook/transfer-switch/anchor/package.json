@@ -2,7 +2,10 @@
   "type": "module",
   "dependencies": {
     "@anchor-lang/core": "1.0.0-rc.5",
+    "@solana-program/token-2022": "^0.15.0",
+    "@solana/kit": "^7.0.0",
     "@solana/spl-token": "^0.4.0",
+    "@solana/sysvars": "^7.0.0",
     "@solana/web3.js": "^1.98.4"
   },
   "devDependencies": {
