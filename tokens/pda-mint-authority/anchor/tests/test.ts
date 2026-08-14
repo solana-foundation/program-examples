@@ -1,7 +1,6 @@
 import * as anchor from '@anchor-lang/core';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
-import { BN } from 'bn.js';
 import type { TokenMinter } from '../target/types/token_minter';
 
 describe('NFT Minter', () => {
@@ -38,7 +37,7 @@ describe('NFT Minter', () => {
         const associatedTokenAccountAddress = getAssociatedTokenAddressSync(mintPDA, payer.publicKey);
 
         // Amount of tokens to mint.
-        const amount = new BN(100);
+        const amount = new anchor.BN(100);
 
         const transactionSignature = await program.methods
             .mintToken(amount)

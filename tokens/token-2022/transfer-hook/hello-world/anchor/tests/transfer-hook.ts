@@ -9,7 +9,6 @@ import {
     TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { Keypair, SendTransactionError, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
-import { BN } from 'bn.js';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import type { TransferHook } from '../target/types/transfer_hook';
@@ -140,7 +139,7 @@ describe('transfer-hook', () => {
 
     it('Try call transfer hook without transfer', async () => {
         const transferHookIx = await program.methods
-            .transferHook(new BN(1))
+            .transferHook(new anchor.BN(1))
             .accounts({
                 sourceToken: sourceTokenAccount,
                 mint: mint.publicKey,

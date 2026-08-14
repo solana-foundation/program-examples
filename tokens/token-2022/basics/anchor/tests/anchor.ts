@@ -1,7 +1,6 @@
 import type { Program } from '@anchor-lang/core';
 import * as anchor from '@anchor-lang/core';
 import { sendAndConfirmTransaction } from '@solana/web3.js';
-import BN from 'bn.js';
 import type { Anchor } from '../target/types/anchor.ts';
 
 describe('anchor', () => {
@@ -99,7 +98,7 @@ describe('anchor', () => {
         const tx = new anchor.web3.Transaction();
 
         const ix = await program.methods
-            .mintToken(new BN(200000000))
+            .mintToken(new anchor.BN(200000000))
             .accountsPartial({
                 mint: mint,
                 signer: wallet.publicKey,
@@ -119,7 +118,7 @@ describe('anchor', () => {
         const tx = new anchor.web3.Transaction();
 
         const ix = await program.methods
-            .transferToken(new BN(100))
+            .transferToken(new anchor.BN(100))
             .accountsPartial({
                 mint: mint,
                 signer: wallet.publicKey,

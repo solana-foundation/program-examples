@@ -10,7 +10,6 @@
     "@solana/web3.js": "^1.98.4"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.0",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "anchor-litesvm": "^0.2.1",

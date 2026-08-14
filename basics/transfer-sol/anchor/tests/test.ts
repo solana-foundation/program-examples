@@ -1,6 +1,5 @@
 import * as anchor from '@anchor-lang/core';
 import { Keypair, LAMPORTS_PER_SOL, SystemProgram, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
-import { BN } from 'bn.js';
 import { assert } from 'chai';
 import type { TransferSol } from '../target/types/transfer_sol.ts';
 
@@ -14,7 +13,7 @@ describe('Anchor: Transfer SOL', () => {
         const recipient = Keypair.generate();
 
         await program.methods
-            .transferSolWithCpi(new BN(LAMPORTS_PER_SOL))
+            .transferSolWithCpi(new anchor.BN(LAMPORTS_PER_SOL))
             .accounts({
                 payer: payer.publicKey,
                 recipient: recipient.publicKey,
@@ -41,7 +40,7 @@ describe('Anchor: Transfer SOL', () => {
 
         const recipientAccount = Keypair.generate();
         await program.methods
-            .transferSolWithProgram(new BN(LAMPORTS_PER_SOL))
+            .transferSolWithProgram(new anchor.BN(LAMPORTS_PER_SOL))
             .accounts({
                 payer: payerAccount.publicKey,
                 recipient: recipientAccount.publicKey,

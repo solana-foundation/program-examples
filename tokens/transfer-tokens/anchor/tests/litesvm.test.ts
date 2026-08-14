@@ -2,7 +2,6 @@ import * as anchor from '@anchor-lang/core';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import { LiteSVMProvider } from 'anchor-litesvm';
-import BN from 'bn.js';
 import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/transfer_tokens.json';
 import type { TransferTokens } from '../target/types/transfer_tokens';
@@ -54,7 +53,7 @@ describe('Transfer Tokens LiteSVM', () => {
 
     it('Mint tokens!', async () => {
         // Amount of tokens to mint.
-        const amount = new BN(100);
+        const amount = new anchor.BN(100);
 
         // Mint the tokens to the associated token account.
         const transactionSignature = await program.methods
@@ -74,7 +73,7 @@ describe('Transfer Tokens LiteSVM', () => {
 
     it('Transfer tokens!', async () => {
         // Amount of tokens to transfer.
-        const amount = new BN(50);
+        const amount = new anchor.BN(50);
 
         const transactionSignature = await program.methods
             .transferTokens(amount)

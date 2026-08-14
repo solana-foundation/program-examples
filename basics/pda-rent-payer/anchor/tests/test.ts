@@ -1,6 +1,5 @@
 import * as anchor from '@anchor-lang/core';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import BN from 'bn.js';
 import { assert } from 'chai';
 import type { PdaRentPayer } from '../target/types/pda_rent_payer.ts';
 
@@ -16,7 +15,7 @@ describe('PDA Rent-Payer', () => {
 
     it('Initialize the Rent Vault', async () => {
         // 1 SOL
-        const fundAmount = new BN(LAMPORTS_PER_SOL);
+        const fundAmount = new anchor.BN(LAMPORTS_PER_SOL);
 
         await program.methods
             .initRentVault(fundAmount)

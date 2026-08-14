@@ -10,7 +10,6 @@ import {
 } from '@solana/spl-token';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { LiteSVMProvider } from 'anchor-litesvm';
-import BN from 'bn.js';
 import { expect } from 'chai';
 import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/external_delegate_token_master.json';
@@ -88,7 +87,7 @@ describe('External Delegate Token Master Tests', () => {
         await provider.sendAndConfirm!(setupTx, [mintKeypair, authority]);
 
         await program.methods
-            .authorityTransfer(new BN(250))
+            .authorityTransfer(new anchor.BN(250))
             .accountsPartial({
                 userAccount: userAccount.publicKey,
                 authority: authority.publicKey,

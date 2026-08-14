@@ -6,7 +6,6 @@ import {
     mintTo,
 } from '@solana/spl-token';
 import { type Connection, Keypair, PublicKey, type Signer } from '@solana/web3.js';
-import { BN } from 'bn.js';
 
 export async function sleep(seconds: number) {
     new Promise(resolve => setTimeout(resolve, seconds * 1000));
@@ -98,7 +97,7 @@ export function createValues(defaults?: TestValuesDefaults): TestValues {
     // Making sure tokens are in the right order
     const mintAKeypair = Keypair.generate();
     let mintBKeypair = Keypair.generate();
-    while (new BN(mintBKeypair.publicKey.toBytes()).lt(new BN(mintAKeypair.publicKey.toBytes()))) {
+    while (new anchor.BN(mintBKeypair.publicKey.toBytes()).lt(new anchor.BN(mintAKeypair.publicKey.toBytes()))) {
         mintBKeypair = Keypair.generate();
     }
 
@@ -139,9 +138,9 @@ export function createValues(defaults?: TestValuesDefaults): TestValues {
         liquidityAccount: getAssociatedTokenAddressSync(mintLiquidity, admin.publicKey, true),
         holderAccountA: getAssociatedTokenAddressSync(mintAKeypair.publicKey, admin.publicKey, true),
         holderAccountB: getAssociatedTokenAddressSync(mintBKeypair.publicKey, admin.publicKey, true),
-        depositAmountA: new BN(4 * 10 ** 6),
-        depositAmountB: new BN(1 * 10 ** 6),
-        minimumLiquidity: new BN(100),
-        defaultSupply: new BN(100 * 10 ** 6),
+        depositAmountA: new anchor.BN(4 * 10 ** 6),
+        depositAmountB: new anchor.BN(1 * 10 ** 6),
+        minimumLiquidity: new anchor.BN(100),
+        defaultSupply: new anchor.BN(100 * 10 ** 6),
     };
 }

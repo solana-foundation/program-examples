@@ -1,6 +1,5 @@
 import type { Program } from '@anchor-lang/core';
 import * as anchor from '@anchor-lang/core';
-import { BN } from 'bn.js';
 import { assert } from 'chai';
 import type { Favorites } from '../target/types/favorites.ts';
 
@@ -15,7 +14,7 @@ describe('Anchor: Favorites', () => {
     const program = anchor.workspace.Favorites as Program<Favorites>;
 
     // Here's what we want to write to the blockchain
-    const favoriteNumber = new BN(23);
+    const favoriteNumber = new anchor.BN(23);
     const favoriteColor = 'purple';
     const favoriteHobbies = ['skiing', 'skydiving', 'biking'];
 

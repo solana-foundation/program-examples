@@ -9,7 +9,6 @@ import {
     mintTo,
     TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import BN from 'bn.js';
 import { assert } from 'chai';
 import type { Fundraiser } from '../target/types/fundraiser';
 import { expectAnchorError } from './utils';
@@ -83,7 +82,7 @@ describe('fundraiser', () => {
         // duration=1 day. No clock-warping here (real validator) - the
         // post-deadline happy path is covered in litesvm.test.ts instead.
         const tx = await program.methods
-            .initialize(new BN(30000000), 1)
+            .initialize(new anchor.BN(30000000), 1)
             .accountsPartial({
                 maker: maker.publicKey,
                 fundraiser,
@@ -105,7 +104,7 @@ describe('fundraiser', () => {
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
         const tx = await program.methods
-            .contribute(new BN(1000000))
+            .contribute(new anchor.BN(1000000))
             .accountsPartial({
                 contributor: provider.publicKey,
                 fundraiser,
@@ -128,7 +127,7 @@ describe('fundraiser', () => {
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
 
         const tx = await program.methods
-            .contribute(new BN(1000000))
+            .contribute(new anchor.BN(1000000))
             .accountsPartial({
                 contributor: provider.publicKey,
                 fundraiser,
@@ -155,7 +154,7 @@ describe('fundraiser', () => {
 
         await expectAnchorError(
             program.methods
-                .contribute(new BN(2000000))
+                .contribute(new anchor.BN(2000000))
                 .accountsPartial({
                     contributor: provider.publicKey,
                     fundraiser,

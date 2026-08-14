@@ -1,6 +1,5 @@
 import type { Program } from '@anchor-lang/core';
 import * as anchor from '@anchor-lang/core';
-import { BN } from 'bn.js';
 import { expect } from 'chai';
 import type { SwapExample } from '../target/types/swap_example';
 import { createValues, mintingTokens, type TestValues } from './utils';
@@ -63,9 +62,9 @@ describe('Swap', () => {
     });
 
     it('Swap from A to B', async () => {
-        const input = new BN(10 ** 6);
+        const input = new anchor.BN(10 ** 6);
         await program.methods
-            .swapExactTokensForTokens(true, input, new BN(100))
+            .swapExactTokensForTokens(true, input, new anchor.BN(100))
             .accountsPartial({
                 amm: values.ammKey,
                 pool: values.poolKey,
