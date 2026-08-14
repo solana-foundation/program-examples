@@ -1,6 +1,4 @@
 import {
-    AccountRole,
-    address,
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
@@ -15,27 +13,16 @@ import {
     signTransactionMessageWithSigners,
     unwrapOption,
 } from '@solana/kit';
-import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
-import {
-    ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-    findAssociatedTokenPda,
-    getMintDecoder,
-    getTokenDecoder,
-    TOKEN_PROGRAM_ADDRESS,
-} from '@solana-program/token';
+import { findAssociatedTokenPda, getMintDecoder, getTokenDecoder, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import {
-    borshSerialize,
-    CreateTokenArgsSchema,
-    MintNftArgsSchema,
-    MintSplArgsSchema,
-    MyInstruction,
-    TransferTokensArgsSchema,
-} from './instructions';
-
-const TOKEN_METADATA_PROGRAM_ID = address('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
-const SYSVAR_RENT_ADDRESS = address('SysvarRent111111111111111111111111111111111');
+    createCreateInstruction,
+    createMintNftInstruction,
+    createMintSplInstruction,
+    createTransferTokensInstruction,
+    TOKEN_METADATA_PROGRAM_ADDRESS,
+} from '../ts';
 
 const addressEncoder = getAddressEncoder();
 
@@ -50,7 +37,7 @@ describe('Transferring Tokens', () => {
     before(async () => {
         programId = (await generateKeyPairSigner()).address;
         svm.addProgramFromFile(programId, 'tests/fixtures/transfer_tokens_program.so');
-        svm.addProgramFromFile(TOKEN_METADATA_PROGRAM_ID, 'tests/fixtures/token_metadata.so');
+        svm.addProgramFromFile(TOKEN_METADATA_PROGRAM_ADDRESS, 'tests/fixtures/token_metadata.so');
 
         payer = await generateKeyPairSigner();
         svm.airdrop(payer.address, lamports(10_000_000_000n));
@@ -76,18 +63,18 @@ describe('Transferring Tokens', () => {
 
     async function findMetadataPda(mint: Address): Promise<Address> {
         const [metadataAddress] = await getProgramDerivedAddress({
-            programAddress: TOKEN_METADATA_PROGRAM_ID,
-            seeds: ['metadata', addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID), addressEncoder.encode(mint)],
+            programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
+            seeds: ['metadata', addressEncoder.encode(TOKEN_METADATA_PROGRAM_ADDRESS), addressEncoder.encode(mint)],
         });
         return metadataAddress;
     }
 
     async function findEditionPda(mint: Address): Promise<Address> {
         const [editionAddress] = await getProgramDerivedAddress({
-            programAddress: TOKEN_METADATA_PROGRAM_ID,
+            programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
             seeds: [
                 'metadata',
-                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID),
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ADDRESS),
                 addressEncoder.encode(mint),
                 'edition',
             ],
@@ -117,28 +104,17 @@ describe('Transferring Tokens', () => {
         symbol: string,
         uri: string,
     ) {
-        const instructionData = borshSerialize(CreateTokenArgsSchema, {
-            instruction: MyInstruction.Create,
-            token_title: title,
-            token_symbol: symbol,
-            token_uri: uri,
+        const ix = createCreateInstruction(
+            mintKeypair,
+            payer.address,
+            await findMetadataPda(mintKeypair.address),
+            payer,
+            programId,
+            title,
+            symbol,
+            uri,
             decimals,
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: mintKeypair.address, role: AccountRole.WRITABLE_SIGNER, signer: mintKeypair }, // Mint account
-                { address: payer.address, role: AccountRole.WRITABLE }, // Mint authority account
-                { address: await findMetadataPda(mintKeypair.address), role: AccountRole.WRITABLE }, // Metadata account
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
-                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
-                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
-                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        );
 
         await sendTransaction(ix);
     }
@@ -162,7 +138,7 @@ describe('Transferring Tokens', () => {
 
         const metadataInfo = svm.getAccount(await findMetadataPda(tokenMintKeypair.address));
         assert(metadataInfo.exists, 'metadata account not created');
-        assert(metadataInfo.programAddress === TOKEN_METADATA_PROGRAM_ID, 'metadata account has wrong owner');
+        assert(metadataInfo.programAddress === TOKEN_METADATA_PROGRAM_ADDRESS, 'metadata account has wrong owner');
     });
 
     it('Create an NFT!', async () => {
@@ -187,24 +163,14 @@ describe('Transferring Tokens', () => {
     it('Mint some tokens to your wallet!', async () => {
         const associatedTokenAccountAddress = await findAssociatedTokenAddress(tokenMintKeypair.address, payer.address);
 
-        const instructionData = borshSerialize(MintSplArgsSchema, {
-            instruction: MyInstruction.MintSpl,
-            quantity: BigInt(150),
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: tokenMintKeypair.address, role: AccountRole.WRITABLE }, // Mint account
-                { address: payer.address, role: AccountRole.WRITABLE }, // Mint authority account
-                { address: associatedTokenAccountAddress, role: AccountRole.WRITABLE }, // ATA
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
-                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
-                { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Associated token program
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        const ix = createMintSplInstruction(
+            tokenMintKeypair.address,
+            payer.address,
+            associatedTokenAccountAddress,
+            payer,
+            programId,
+            150n,
+        );
 
         await sendTransaction(ix);
 
@@ -220,27 +186,15 @@ describe('Transferring Tokens', () => {
         const editionAddress = await findEditionPda(nftMintKeypair.address);
         const associatedTokenAccountAddress = await findAssociatedTokenAddress(nftMintKeypair.address, payer.address);
 
-        const instructionData = borshSerialize(MintNftArgsSchema, {
-            instruction: MyInstruction.MintNft,
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: nftMintKeypair.address, role: AccountRole.WRITABLE }, // Mint account
-                { address: await findMetadataPda(nftMintKeypair.address), role: AccountRole.WRITABLE }, // Metadata account
-                { address: editionAddress, role: AccountRole.WRITABLE }, // Edition account
-                { address: payer.address, role: AccountRole.WRITABLE }, // Mint authority account
-                { address: associatedTokenAccountAddress, role: AccountRole.WRITABLE }, // ATA
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
-                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
-                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
-                { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Associated token program
-                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        const ix = createMintNftInstruction(
+            nftMintKeypair.address,
+            await findMetadataPda(nftMintKeypair.address),
+            editionAddress,
+            payer.address,
+            associatedTokenAccountAddress,
+            payer,
+            programId,
+        );
 
         await sendTransaction(ix);
 
@@ -248,7 +202,7 @@ describe('Transferring Tokens', () => {
 
         const editionInfo = svm.getAccount(editionAddress);
         assert(editionInfo.exists, 'edition account not created');
-        assert(editionInfo.programAddress === TOKEN_METADATA_PROGRAM_ID, 'edition account has wrong owner');
+        assert(editionInfo.programAddress === TOKEN_METADATA_PROGRAM_ADDRESS, 'edition account has wrong owner');
 
         const mintInfo = svm.getAccount(nftMintKeypair.address);
         assert(mintInfo.exists, 'mint account not found');
@@ -257,35 +211,22 @@ describe('Transferring Tokens', () => {
     });
 
     async function transferTokens(mint: Address, quantity: bigint) {
-        const fromAssociatedTokenAddress = await findAssociatedTokenAddress(mint, payer.address);
-        const toAssociatedTokenAddress = await findAssociatedTokenAddress(mint, recipientWallet.address);
-
-        const instructionData = borshSerialize(TransferTokensArgsSchema, {
-            instruction: MyInstruction.TransferTokens,
+        const ix = createTransferTokensInstruction(
+            mint,
+            await findAssociatedTokenAddress(mint, payer.address),
+            await findAssociatedTokenAddress(mint, recipientWallet.address),
+            payer,
+            recipientWallet,
+            payer,
+            programId,
             quantity,
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: mint, role: AccountRole.WRITABLE }, // Mint account
-                { address: fromAssociatedTokenAddress, role: AccountRole.WRITABLE }, // Owner Token account
-                { address: toAssociatedTokenAddress, role: AccountRole.WRITABLE }, // Recipient Token account
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Owner
-                { address: recipientWallet.address, role: AccountRole.WRITABLE_SIGNER, signer: recipientWallet }, // Recipient
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
-                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
-                { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Associated token program
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        );
 
         await sendTransaction(ix);
     }
 
     it('Transfer tokens to another wallet!', async () => {
-        await transferTokens(tokenMintKeypair.address, BigInt(15));
+        await transferTokens(tokenMintKeypair.address, 15n);
 
         const fromAta = await findAssociatedTokenAddress(tokenMintKeypair.address, payer.address);
         const toAta = await findAssociatedTokenAddress(tokenMintKeypair.address, recipientWallet.address);
@@ -294,7 +235,7 @@ describe('Transferring Tokens', () => {
     });
 
     it('Transfer NFT to another wallet!', async () => {
-        await transferTokens(nftMintKeypair.address, BigInt(1));
+        await transferTokens(nftMintKeypair.address, 1n);
 
         const fromAta = await findAssociatedTokenAddress(nftMintKeypair.address, payer.address);
         const toAta = await findAssociatedTokenAddress(nftMintKeypair.address, recipientWallet.address);

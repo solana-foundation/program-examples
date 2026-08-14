@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer';
 import {
     type Address,
     appendTransactionMessageInstruction,
@@ -14,12 +13,12 @@ import {
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import {
-    AddressInfo,
+    addressInfoDecoder,
     createCreateInstruction,
     createReallocateWithoutZeroInitInstruction,
     createReallocateZeroInitInstruction,
-    EnhancedAddressInfo,
-    WorkInfo,
+    enhancedAddressInfoDecoder,
+    workInfoDecoder,
 } from '../ts';
 
 describe('Realloc!', () => {
@@ -84,7 +83,7 @@ describe('Realloc!', () => {
     function printAddressInfo(address: Address): void {
         const account = svm.getAccount(address);
         if (account.exists) {
-            const addressInfo = AddressInfo.fromBuffer(Buffer.from(account.data));
+            const addressInfo = addressInfoDecoder.decode(account.data);
             console.log('Address info:');
             console.log(`   Name:       ${addressInfo.name}`);
             console.log(`   House Num:  ${addressInfo.house_number}`);
@@ -96,7 +95,7 @@ describe('Realloc!', () => {
     function printEnhancedAddressInfo(address: Address): void {
         const account = svm.getAccount(address);
         if (account.exists) {
-            const enhancedAddressInfo = EnhancedAddressInfo.fromBuffer(Buffer.from(account.data));
+            const enhancedAddressInfo = enhancedAddressInfoDecoder.decode(account.data);
             console.log('Enhanced Address info:');
             console.log(`   Name:       ${enhancedAddressInfo.name}`);
             console.log(`   House Num:  ${enhancedAddressInfo.house_number}`);
@@ -110,7 +109,7 @@ describe('Realloc!', () => {
     function printWorkInfo(address: Address): void {
         const account = svm.getAccount(address);
         if (account.exists) {
-            const workInfo = WorkInfo.fromBuffer(Buffer.from(account.data));
+            const workInfo = workInfoDecoder.decode(account.data);
             console.log('Work info:');
             console.log(`   Name:       ${workInfo.name}`);
             console.log(`   Position:   ${workInfo.position}`);

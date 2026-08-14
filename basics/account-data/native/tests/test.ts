@@ -1,6 +1,4 @@
-import { Buffer } from 'node:buffer';
 import {
-    AccountRole,
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
@@ -11,33 +9,18 @@ import {
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
-import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
-
-const AddressInfoSchema = {
-    struct: {
-        name: 'string',
-        house_number: 'u8',
-        street: 'string',
-        city: 'string',
-    },
-};
-
-type AddressInfo = {
-    name: string;
-    house_number: number;
-    street: string;
-    city: string;
-};
-
-function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-}
+import { type AddressInfo, addressInfoDecoder, createCreateAddressInfoInstruction } from '../ts';
 
 describe('Account Data!', () => {
     const svm = new LiteSVM();
+    const addressInfo: AddressInfo = {
+        name: 'Joe C',
+        houseNumber: 136,
+        street: 'Mile High Dr.',
+        city: 'Solana Beach',
+    };
     let programId: Address;
     let payer: KeyPairSigner;
     let addressInfoAccount: KeyPairSigner;
@@ -51,30 +34,7 @@ describe('Account Data!', () => {
     });
 
     it('Create the address info account', async () => {
-        console.log(`Program Address      : ${programId}`);
-        console.log(`Payer Address      : ${payer.address}`);
-        console.log(`Address Info Acct  : ${addressInfoAccount.address}`);
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                {
-                    address: addressInfoAccount.address,
-                    role: AccountRole.WRITABLE_SIGNER,
-                    signer: addressInfoAccount,
-                },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(
-                borshSerialize(AddressInfoSchema, {
-                    name: 'Joe C',
-                    house_number: 136,
-                    street: 'Mile High Dr.',
-                    city: 'Solana Beach',
-                }),
-            ),
-        };
+        const ix = createCreateAddressInfoInstruction(addressInfoAccount, payer, programId, addressInfo);
 
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
@@ -92,10 +52,6 @@ describe('Account Data!', () => {
         const accountInfo = svm.getAccount(addressInfoAccount.address);
         assert(accountInfo.exists, 'address info account not found');
 
-        const readAddressInfo = borsh.deserialize(AddressInfoSchema, Buffer.from(accountInfo.data)) as AddressInfo;
-        console.log(`Name     : ${readAddressInfo.name}`);
-        console.log(`House Num: ${readAddressInfo.house_number}`);
-        console.log(`Street   : ${readAddressInfo.street}`);
-        console.log(`City     : ${readAddressInfo.city}`);
+        assert.deepEqual(addressInfoDecoder.decode(accountInfo.data), addressInfo);
     });
 });

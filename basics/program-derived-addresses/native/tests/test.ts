@@ -1,7 +1,5 @@
 import assert from 'node:assert';
-import { Buffer } from 'node:buffer';
 import {
-    AccountRole,
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
@@ -16,8 +14,8 @@ import {
     signTransactionMessageWithSigners,
 } from '@solana/kit';
 import { getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
-import * as borsh from 'borsh';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import { createCreatePageVisitsInstruction, createIncrementPageVisitsInstruction, pageVisitsDecoder } from '../ts';
 
 describe('PDAs', () => {
     const svm = new LiteSVM();
@@ -32,20 +30,6 @@ describe('PDAs', () => {
         svm.airdrop(payer.address, lamports(1_000_000_000n));
         testUser = await generateKeyPairSigner();
     });
-
-    const PageVisitsSchema = {
-        struct: {
-            page_visits: 'u32',
-            bump: 'u8',
-        },
-    };
-
-    // Empty struct — just needs to serialize to zero bytes
-    const IncrementPageVisitsSchema = { struct: {} };
-
-    function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-        return Buffer.from(borsh.serialize(schema, data));
-    }
 
     async function sendTransaction(ix: Instruction) {
         const transactionMessage = pipe(
@@ -82,62 +66,31 @@ describe('PDAs', () => {
 
     it('Create the page visits tracking PDA', async () => {
         const [pageVisitsPda, pageVisitsBump] = await derivePageVisitsPda(testUser.address);
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: pageVisitsPda, role: AccountRole.WRITABLE },
-                { address: testUser.address, role: AccountRole.READONLY },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(
-                borshSerialize(PageVisitsSchema, {
-                    page_visits: 0,
-                    bump: pageVisitsBump,
-                }),
-            ),
-        };
+        const ix = createCreatePageVisitsInstruction(pageVisitsPda, testUser.address, payer, programId, pageVisitsBump);
 
         await sendTransaction(ix);
     });
 
     it('Visit the page!', async () => {
-        const [pageVisitsPda, _] = await derivePageVisitsPda(testUser.address);
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: pageVisitsPda, role: AccountRole.WRITABLE },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-            ],
-            data: new Uint8Array(borshSerialize(IncrementPageVisitsSchema, {})),
-        };
+        const [pageVisitsPda] = await derivePageVisitsPda(testUser.address);
+        const ix = createIncrementPageVisitsInstruction(pageVisitsPda, payer, programId);
 
         await sendTransaction(ix);
     });
 
     it('Visit the page!', async () => {
-        const [pageVisitsPda, _] = await derivePageVisitsPda(testUser.address);
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: pageVisitsPda, role: AccountRole.WRITABLE },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-            ],
-            data: new Uint8Array(borshSerialize(IncrementPageVisitsSchema, {})),
-        };
+        const [pageVisitsPda] = await derivePageVisitsPda(testUser.address);
+        const ix = createIncrementPageVisitsInstruction(pageVisitsPda, payer, programId);
 
         svm.expireBlockhash();
         await sendTransaction(ix);
     });
 
     it('Read page visits', async () => {
-        const [pageVisitsPda, _] = await derivePageVisitsPda(testUser.address);
+        const [pageVisitsPda] = await derivePageVisitsPda(testUser.address);
         const accountInfo = svm.getAccount(pageVisitsPda);
         assert(accountInfo.exists, 'page visits account not found');
-        const readPageVisits = borsh.deserialize(PageVisitsSchema, Buffer.from(accountInfo.data)) as {
-            page_visits: number;
-            bump: number;
-        };
-        console.log(`Number of page visits: ${readPageVisits.page_visits}`);
+        const readPageVisits = pageVisitsDecoder.decode(accountInfo.data);
+        console.log(`Number of page visits: ${readPageVisits.pageVisits}`);
     });
 });

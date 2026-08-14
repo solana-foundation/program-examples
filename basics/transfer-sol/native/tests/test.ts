@@ -14,7 +14,7 @@ import {
 import { getCreateAccountInstruction } from '@solana-program/system';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
-import { createTransferInstruction, InstructionType } from './instruction';
+import { createCpiTransferInstruction, createProgramTransferInstruction } from '../ts';
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
@@ -53,13 +53,7 @@ describe('transfer-sol', () => {
     it('Transfer between accounts using the system program', async () => {
         getBalances(payer.address, test1Recipient.address, 'Beginning');
 
-        const ix = createTransferInstruction(
-            payer,
-            test1Recipient.address,
-            programId,
-            InstructionType.CpiTransfer,
-            transferAmount,
-        );
+        const ix = createCpiTransferInstruction(payer, test1Recipient.address, programId, transferAmount);
 
         await sendTransaction([ix]);
 
@@ -83,11 +77,10 @@ describe('transfer-sol', () => {
     it('Transfer between accounts using our program', async () => {
         getBalances(test2Recipient1.address, test2Recipient2.address, 'Beginning');
 
-        const ix = createTransferInstruction(
+        const ix = createProgramTransferInstruction(
             test2Recipient1,
             test2Recipient2.address,
             programId,
-            InstructionType.ProgramTransfer,
             transferAmount,
         );
 
@@ -112,11 +105,10 @@ describe('transfer-sol', () => {
         // The attacker never has victimAccount's private key. They build the
         // instruction with victimAccount marked as a non-signer and only
         // sign with their own (unrelated) fee-payer key.
-        const legitIx = createTransferInstruction(
+        const legitIx = createProgramTransferInstruction(
             victimAccount,
             attackerRecipient.address,
             programId,
-            InstructionType.ProgramTransfer,
             transferAmount,
         );
         const attackIx = {

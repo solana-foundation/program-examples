@@ -1,6 +1,4 @@
-import { Buffer } from 'node:buffer';
 import {
-    AccountRole,
     type Address,
     appendTransactionMessageInstructions,
     createTransactionMessage,
@@ -11,9 +9,9 @@ import {
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import { type CarnivalInstructionData, createCarnivalInstruction } from '../ts';
 
 describe('Carnival', () => {
     const svm = new LiteSVM();
@@ -27,34 +25,8 @@ describe('Carnival', () => {
         svm.airdrop(payer.address, lamports(1_000_000_000n));
     });
 
-    const CarnivalInstructionSchema = {
-        struct: {
-            name: 'string',
-            height: 'u32',
-            ticket_count: 'u32',
-            attraction: 'string',
-            attraction_name: 'string',
-        },
-    };
-
-    type CarnivalInstruction = {
-        name: string;
-        height: number;
-        ticket_count: number;
-        attraction: string;
-        attraction_name: string;
-    };
-
-    function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-        return Buffer.from(borsh.serialize(schema, data));
-    }
-
-    async function sendCarnivalInstructions(instructionsList: CarnivalInstruction[]) {
-        const instructions = instructionsList.map(ix => ({
-            programAddress: programId,
-            accounts: [{ address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }],
-            data: new Uint8Array(borshSerialize(CarnivalInstructionSchema, ix)),
-        }));
+    async function sendCarnivalInstructions(instructionsList: CarnivalInstructionData[]) {
+        const instructions = instructionsList.map(data => createCarnivalInstruction(payer, programId, data));
 
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
@@ -73,30 +45,30 @@ describe('Carnival', () => {
             {
                 name: 'Jimmy',
                 height: 36,
-                ticket_count: 15,
+                ticketCount: 15,
                 attraction: 'ride',
-                attraction_name: 'Scrambler',
+                attractionName: 'Scrambler',
             },
             {
                 name: 'Mary',
                 height: 52,
-                ticket_count: 1,
+                ticketCount: 1,
                 attraction: 'ride',
-                attraction_name: 'Ferris Wheel',
+                attractionName: 'Ferris Wheel',
             },
             {
                 name: 'Alice',
                 height: 56,
-                ticket_count: 15,
+                ticketCount: 15,
                 attraction: 'ride',
-                attraction_name: 'Scrambler',
+                attractionName: 'Scrambler',
             },
             {
                 name: 'Bob',
                 height: 49,
-                ticket_count: 6,
+                ticketCount: 6,
                 attraction: 'ride',
-                attraction_name: 'Tilt-a-Whirl',
+                attractionName: 'Tilt-a-Whirl',
             },
         ]);
     });
@@ -106,30 +78,30 @@ describe('Carnival', () => {
             {
                 name: 'Jimmy',
                 height: 36,
-                ticket_count: 15,
+                ticketCount: 15,
                 attraction: 'game',
-                attraction_name: 'I Got It!',
+                attractionName: 'I Got It!',
             },
             {
                 name: 'Mary',
                 height: 52,
-                ticket_count: 1,
+                ticketCount: 1,
                 attraction: 'game',
-                attraction_name: 'Ring Toss',
+                attractionName: 'Ring Toss',
             },
             {
                 name: 'Alice',
                 height: 56,
-                ticket_count: 15,
+                ticketCount: 15,
                 attraction: 'game',
-                attraction_name: 'Ladder Climb',
+                attractionName: 'Ladder Climb',
             },
             {
                 name: 'Bob',
                 height: 49,
-                ticket_count: 6,
+                ticketCount: 6,
                 attraction: 'game',
-                attraction_name: 'Ring Toss',
+                attractionName: 'Ring Toss',
             },
         ]);
     });
@@ -139,30 +111,30 @@ describe('Carnival', () => {
             {
                 name: 'Jimmy',
                 height: 36,
-                ticket_count: 15,
+                ticketCount: 15,
                 attraction: 'food',
-                attraction_name: 'Taco Shack',
+                attractionName: 'Taco Shack',
             },
             {
                 name: 'Mary',
                 height: 52,
-                ticket_count: 1,
+                ticketCount: 1,
                 attraction: 'food',
-                attraction_name: "Larry's Pizza",
+                attractionName: "Larry's Pizza",
             },
             {
                 name: 'Alice',
                 height: 56,
-                ticket_count: 15,
+                ticketCount: 15,
                 attraction: 'food',
-                attraction_name: "Dough Boy's",
+                attractionName: "Dough Boy's",
             },
             {
                 name: 'Bob',
                 height: 49,
-                ticket_count: 6,
+                ticketCount: 6,
                 attraction: 'food',
-                attraction_name: "Dough Boy's",
+                attractionName: "Dough Boy's",
             },
         ]);
     });

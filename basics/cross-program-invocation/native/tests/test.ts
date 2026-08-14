@@ -1,29 +1,20 @@
-import { Buffer } from 'node:buffer';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
-    AccountRole,
     type Address,
     appendTransactionMessageInstruction,
     createKeyPairSignerFromBytes,
     createTransactionMessage,
     generateKeyPairSigner,
+    type Instruction,
     type KeyPairSigner,
     lamports,
     pipe,
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
-import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
-import * as borsh from 'borsh';
 import { LiteSVM, TransactionMetadata } from 'litesvm';
-
-const PowerStatusSchema = { struct: { is_on: 'u8' } };
-const SetPowerStatusSchema = { struct: { name: 'string' } };
-
-function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-}
+import { createInitializeInstruction, createPullLeverInstruction } from '../ts';
 
 async function programAddressFromKeypairFile(keypairPath: string): Promise<Address> {
     const bytes = Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, 'utf-8')));
@@ -59,17 +50,7 @@ describe('Native CPI Example', () => {
         powerAccount = await generateKeyPairSigner();
     });
 
-    it('Initialize the lever!', async () => {
-        const ix = {
-            programAddress: leverProgramId,
-            accounts: [
-                { address: powerAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: powerAccount },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(borshSerialize(PowerStatusSchema, { is_on: 1 })),
-        };
-
+    async function sendTransaction(ix: Instruction) {
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
             m => setTransactionMessageFeePayerSigner(payer, m),
@@ -82,53 +63,19 @@ describe('Native CPI Example', () => {
         if (!(res instanceof TransactionMetadata)) {
             throw new Error(`Transaction failed: ${JSON.stringify(res)}`);
         }
+    }
+
+    it('Initialize the lever!', async () => {
+        await sendTransaction(createInitializeInstruction(powerAccount, payer, leverProgramId, true));
     });
 
     it('Pull the lever!', async () => {
-        const ix = {
-            programAddress: handProgramId,
-            accounts: [
-                { address: powerAccount.address, role: AccountRole.WRITABLE },
-                { address: leverProgramId, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(borshSerialize(SetPowerStatusSchema, { name: 'Chris' })),
-        };
-
-        const transactionMessage = pipe(
-            createTransactionMessage({ version: 0 }),
-            m => setTransactionMessageFeePayerSigner(payer, m),
-            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
-            m => appendTransactionMessageInstruction(ix, m),
-        );
-        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
-
-        const res = svm.sendTransaction(signedTx);
-        if (!(res instanceof TransactionMetadata)) {
-            throw new Error(`Transaction failed: ${JSON.stringify(res)}`);
-        }
+        await sendTransaction(createPullLeverInstruction(powerAccount.address, leverProgramId, handProgramId, 'Chris'));
     });
 
     it('Pull it again!', async () => {
-        const ix = {
-            programAddress: handProgramId,
-            accounts: [
-                { address: powerAccount.address, role: AccountRole.WRITABLE },
-                { address: leverProgramId, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(borshSerialize(SetPowerStatusSchema, { name: 'Ashley' })),
-        };
-
-        const transactionMessage = pipe(
-            createTransactionMessage({ version: 0 }),
-            m => setTransactionMessageFeePayerSigner(payer, m),
-            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
-            m => appendTransactionMessageInstruction(ix, m),
+        await sendTransaction(
+            createPullLeverInstruction(powerAccount.address, leverProgramId, handProgramId, 'Ashley'),
         );
-        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
-
-        const res = svm.sendTransaction(signedTx);
-        if (!(res instanceof TransactionMetadata)) {
-            throw new Error(`Transaction failed: ${JSON.stringify(res)}`);
-        }
     });
 });

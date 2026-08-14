@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "@solana/kit": "^7.0.0",
-    "@solana-program/system": "^0.13.0",
-    "borsh": "^2.0.0"
+    "@solana-program/system": "^0.13.0"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",

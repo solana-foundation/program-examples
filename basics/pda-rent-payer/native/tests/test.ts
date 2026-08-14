@@ -1,6 +1,4 @@
-import { Buffer } from 'node:buffer';
 import {
-    AccountRole,
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
@@ -12,10 +10,9 @@ import {
     setTransactionMessageFeePayerSigner,
     signTransactionMessageWithSigners,
 } from '@solana/kit';
-import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
+import { createCreateNewAccountInstruction, createInitRentVaultInstruction } from '../ts';
 
 describe('PDA Rent-Payer', () => {
     const svm = new LiteSVM();
@@ -29,53 +26,17 @@ describe('PDA Rent-Payer', () => {
         svm.airdrop(payer.address, lamports(2_000_000_000n));
     });
 
-    const MyInstruction = {
-        InitRentVault: 0,
-        CreateNewAccount: 1,
-    } as const;
-
-    const InitRentVaultSchema = {
-        struct: {
-            instruction: 'u8',
-            fund_lamports: 'u64',
-        },
-    };
-
-    const CreateNewAccountSchema = {
-        struct: {
-            instruction: 'u8',
-        },
-    };
-
-    function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-        return Buffer.from(borsh.serialize(schema, data));
-    }
-
     async function deriveRentVaultPda() {
-        const pda = await getProgramDerivedAddress({
+        const [pda] = await getProgramDerivedAddress({
             programAddress: programId,
             seeds: ['rent_vault'],
         });
-        console.log(`PDA: ${pda[0]}`);
         return pda;
     }
 
     it('Initialize the Rent Vault', async () => {
-        const [rentVaultPda, _] = await deriveRentVaultPda();
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: rentVaultPda, role: AccountRole.WRITABLE },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(
-                borshSerialize(InitRentVaultSchema, {
-                    instruction: MyInstruction.InitRentVault,
-                    fund_lamports: 1000000000,
-                }),
-            ),
-        };
+        const rentVaultPda = await deriveRentVaultPda();
+        const ix = createInitRentVaultInstruction(rentVaultPda, payer, programId, 1_000_000_000n);
 
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
@@ -91,20 +52,8 @@ describe('PDA Rent-Payer', () => {
 
     it('Create a new account using the Rent Vault', async () => {
         const newAccount = await generateKeyPairSigner();
-        const [rentVaultPda, _] = await deriveRentVaultPda();
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: newAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: newAccount },
-                { address: rentVaultPda, role: AccountRole.WRITABLE },
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(
-                borshSerialize(CreateNewAccountSchema, {
-                    instruction: MyInstruction.CreateNewAccount,
-                }),
-            ),
-        };
+        const rentVaultPda = await deriveRentVaultPda();
+        const ix = createCreateNewAccountInstruction(newAccount, rentVaultPda, programId);
 
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
@@ -114,7 +63,6 @@ describe('PDA Rent-Payer', () => {
         );
         const signedTx = await signTransactionMessageWithSigners(transactionMessage);
 
-        // Now we process the transaction
         const result = svm.sendTransaction(signedTx);
         assert(!(result instanceof FailedTransactionMetadata), `transaction failed: ${result.toString()}`);
     });

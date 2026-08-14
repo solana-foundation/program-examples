@@ -1,6 +1,4 @@
 import {
-    AccountRole,
-    address,
     type Address,
     appendTransactionMessageInstruction,
     createTransactionMessage,
@@ -15,26 +13,15 @@ import {
     signTransactionMessageWithSigners,
     unwrapOption,
 } from '@solana/kit';
-import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
-import {
-    ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-    findAssociatedTokenPda,
-    getMintDecoder,
-    getTokenDecoder,
-    TOKEN_PROGRAM_ADDRESS,
-} from '@solana-program/token';
+import { findAssociatedTokenPda, getMintDecoder, getTokenDecoder, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import {
-    borshSerialize,
-    CreateTokenArgsSchema,
-    InitArgsSchema,
-    MintToArgsSchema,
-    NftMinterInstruction,
-} from './instructions';
-
-const TOKEN_METADATA_PROGRAM_ID = address('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
-const SYSVAR_RENT_ADDRESS = address('SysvarRent111111111111111111111111111111111');
+    createCreateInstruction,
+    createInitInstruction,
+    createMintInstruction,
+    TOKEN_METADATA_PROGRAM_ADDRESS,
+} from '../ts';
 
 const addressEncoder = getAddressEncoder();
 
@@ -51,7 +38,7 @@ describe('NFT Minter', () => {
     before(async () => {
         programId = (await generateKeyPairSigner()).address;
         svm.addProgramFromFile(programId, 'tests/fixtures/pda_mint_authority_native_program.so');
-        svm.addProgramFromFile(TOKEN_METADATA_PROGRAM_ID, 'tests/fixtures/token_metadata.so');
+        svm.addProgramFromFile(TOKEN_METADATA_PROGRAM_ADDRESS, 'tests/fixtures/token_metadata.so');
 
         payer = await generateKeyPairSigner();
         svm.airdrop(payer.address, lamports(10_000_000_000n));
@@ -64,19 +51,19 @@ describe('NFT Minter', () => {
         mintKeypair = await generateKeyPairSigner();
 
         [metadataAddress] = await getProgramDerivedAddress({
-            programAddress: TOKEN_METADATA_PROGRAM_ID,
+            programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
             seeds: [
                 'metadata',
-                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID),
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ADDRESS),
                 addressEncoder.encode(mintKeypair.address),
             ],
         });
 
         [editionAddress] = await getProgramDerivedAddress({
-            programAddress: TOKEN_METADATA_PROGRAM_ID,
+            programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
             seeds: [
                 'metadata',
-                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ID),
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ADDRESS),
                 addressEncoder.encode(mintKeypair.address),
                 'edition',
             ],
@@ -96,19 +83,7 @@ describe('NFT Minter', () => {
     }
 
     it('Init Mint Authority PDA', async () => {
-        const instructionData = borshSerialize(InitArgsSchema, {
-            instruction: NftMinterInstruction.Init,
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: mintAuthorityAddress, role: AccountRole.WRITABLE },
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        const ix = createInitInstruction(mintAuthorityAddress, payer, programId);
 
         await sendTransaction(ix);
 
@@ -119,28 +94,16 @@ describe('NFT Minter', () => {
     });
 
     it('Create an NFT!', async () => {
-        const instructionData = borshSerialize(CreateTokenArgsSchema, {
-            instruction: NftMinterInstruction.Create,
-            nft_title: 'Homer NFT',
-            nft_symbol: 'HOMR',
-            nft_uri:
-                'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: mintKeypair.address, role: AccountRole.WRITABLE_SIGNER, signer: mintKeypair }, // Mint account
-                { address: mintAuthorityAddress, role: AccountRole.WRITABLE }, // Mint authority account
-                { address: metadataAddress, role: AccountRole.WRITABLE }, // Metadata account
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
-                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
-                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
-                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        const ix = createCreateInstruction(
+            mintKeypair,
+            mintAuthorityAddress,
+            metadataAddress,
+            payer,
+            programId,
+            'Homer NFT',
+            'HOMR',
+            'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
+        );
 
         await sendTransaction(ix);
 
@@ -154,7 +117,7 @@ describe('NFT Minter', () => {
 
         const metadataInfo = svm.getAccount(metadataAddress);
         assert(metadataInfo.exists, 'metadata account not created');
-        assert(metadataInfo.programAddress === TOKEN_METADATA_PROGRAM_ID, 'metadata account has wrong owner');
+        assert(metadataInfo.programAddress === TOKEN_METADATA_PROGRAM_ADDRESS, 'metadata account has wrong owner');
     });
 
     it('Mint the NFT to your wallet!', async () => {
@@ -164,27 +127,15 @@ describe('NFT Minter', () => {
             tokenProgram: TOKEN_PROGRAM_ADDRESS,
         });
 
-        const instructionData = borshSerialize(MintToArgsSchema, {
-            instruction: NftMinterInstruction.Mint,
-        });
-
-        const ix = {
-            programAddress: programId,
-            accounts: [
-                { address: mintKeypair.address, role: AccountRole.WRITABLE }, // Mint account
-                { address: metadataAddress, role: AccountRole.WRITABLE }, // Metadata account
-                { address: editionAddress, role: AccountRole.WRITABLE }, // Edition account
-                { address: mintAuthorityAddress, role: AccountRole.WRITABLE }, // Mint authority account
-                { address: associatedTokenAccountAddress, role: AccountRole.WRITABLE }, // ATA
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // Payer
-                { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // Rent account
-                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // System program
-                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token program
-                { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Associated token program
-                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // Token metadata program
-            ],
-            data: new Uint8Array(instructionData),
-        };
+        const ix = createMintInstruction(
+            mintKeypair.address,
+            metadataAddress,
+            editionAddress,
+            mintAuthorityAddress,
+            associatedTokenAccountAddress,
+            payer,
+            programId,
+        );
 
         await sendTransaction(ix);
 
@@ -195,6 +146,6 @@ describe('NFT Minter', () => {
 
         const editionInfo = svm.getAccount(editionAddress);
         assert(editionInfo.exists, 'edition account not created');
-        assert(editionInfo.programAddress === TOKEN_METADATA_PROGRAM_ID, 'edition account has wrong owner');
+        assert(editionInfo.programAddress === TOKEN_METADATA_PROGRAM_ADDRESS, 'edition account has wrong owner');
     });
 });

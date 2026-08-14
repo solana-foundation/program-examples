@@ -1,33 +1,9 @@
-import { Buffer } from 'node:buffer';
-import * as borsh from 'borsh';
+import { addDecoderSizePrefix, getStructDecoder, getU8Decoder, getU32Decoder, getUtf8Decoder } from '@solana/kit';
 
-export const AddressInfoSchema = {
-    struct: {
-        name: 'string',
-        house_number: 'u8',
-        street: 'string',
-        city: 'string',
-    },
-} as const;
-
-export class AddressInfo {
-    name: string;
-    house_number: number;
-    street: string;
-    city: string;
-
-    constructor(props: { name: string; house_number: number; street: string; city: string }) {
-        this.name = props.name;
-        this.house_number = props.house_number;
-        this.street = props.street;
-        this.city = props.city;
-    }
-
-    toBuffer() {
-        return Buffer.from(borsh.serialize(AddressInfoSchema, this));
-    }
-
-    static fromBuffer(buffer: Buffer): AddressInfo {
-        return borsh.deserialize(AddressInfoSchema, buffer) as AddressInfo;
-    }
-}
+// Account data layout, matching the program's `AddressInfo` struct.
+export const addressInfoDecoder = getStructDecoder([
+    ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['house_number', getU8Decoder()],
+    ['street', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['city', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+]);

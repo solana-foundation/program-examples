@@ -9,7 +9,6 @@
   "dependencies": {
     "@solana/kit": "^7.0.0",
     "@solana-program/system": "^0.13.0",
-    "borsh": "^2.0.0",
     "litesvm": "^1.3.0"
   },
   "devDependencies": {
