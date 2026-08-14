@@ -1,7 +1,13 @@
-import { AccountRole, type Address, type KeyPairSigner } from '@solana/kit';
+import {
+    AccountRole,
+    type Address,
+    getStructEncoder,
+    getU8Encoder,
+    getU64Encoder,
+    type KeyPairSigner,
+} from '@solana/kit';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { ASSOCIATED_TOKEN_PROGRAM_ADDRESS, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
-import * as borsh from 'borsh';
 
 enum EscrowInstruction {
     MakeOffer = 0,
@@ -9,29 +15,22 @@ enum EscrowInstruction {
     RefundOffer = 2,
 }
 
-// Unlike the native example, the Pinocchio program receives the offer PDA bump
-// in the instruction data (and stores it) instead of deriving it on-chain.
-const MakeOfferSchema = {
-    struct: {
-        instruction: 'u8',
-        id: 'u64',
-        token_a_offered_amount: 'u64',
-        token_b_wanted_amount: 'u64',
-        bump: 'u8',
-    },
-};
+// Instruction data layout for the MakeOffer discriminator. Unlike the native
+// example, the Pinocchio program receives the offer PDA bump in the instruction
+// data (and stores it) instead of deriving it on-chain.
+const makeOfferEncoder = getStructEncoder([
+    ['instruction', getU8Encoder()],
+    ['id', getU64Encoder()],
+    ['token_a_offered_amount', getU64Encoder()],
+    ['token_b_wanted_amount', getU64Encoder()],
+    ['bump', getU8Encoder()],
+]);
 
-const TakeOfferSchema = {
-    struct: {
-        instruction: 'u8',
-    },
-};
+// Instruction data layout for the TakeOffer discriminator, which takes no args.
+const takeOfferEncoder = getStructEncoder([['instruction', getU8Encoder()]]);
 
-const RefundOfferSchema = {
-    struct: {
-        instruction: 'u8',
-    },
-};
+// Instruction data layout for the RefundOffer discriminator, which takes no args.
+const refundOfferEncoder = getStructEncoder([['instruction', getU8Encoder()]]);
 
 export function buildMakeOffer(props: {
     id: bigint;
@@ -47,7 +46,7 @@ export function buildMakeOffer(props: {
     payer: KeyPairSigner;
     programId: Address;
 }) {
-    const data = borsh.serialize(MakeOfferSchema, {
+    const data = makeOfferEncoder.encode({
         instruction: EscrowInstruction.MakeOffer,
         id: props.id,
         token_a_offered_amount: props.token_a_offered_amount,
@@ -86,7 +85,7 @@ export function buildTakeOffer(props: {
     payer: KeyPairSigner;
     programId: Address;
 }) {
-    const data = borsh.serialize(TakeOfferSchema, {
+    const data = takeOfferEncoder.encode({
         instruction: EscrowInstruction.TakeOffer,
     });
 
@@ -119,7 +118,7 @@ export function buildRefundOffer(props: {
     maker: KeyPairSigner;
     programId: Address;
 }) {
-    const data = borsh.serialize(RefundOfferSchema, {
+    const data = refundOfferEncoder.encode({
         instruction: EscrowInstruction.RefundOffer,
     });
 

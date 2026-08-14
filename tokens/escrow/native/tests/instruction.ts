@@ -1,7 +1,13 @@
-import { AccountRole, type Address, type TransactionSigner } from '@solana/kit';
+import {
+    AccountRole,
+    type Address,
+    getStructEncoder,
+    getU8Encoder,
+    getU64Encoder,
+    type TransactionSigner,
+} from '@solana/kit';
 import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { ASSOCIATED_TOKEN_PROGRAM_ADDRESS, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
-import * as borsh from 'borsh';
 
 enum EscrowInstruction {
     MakeOffer = 0,
@@ -9,30 +15,19 @@ enum EscrowInstruction {
     RefundOffer = 2,
 }
 
-const MakeOfferSchema = {
-    struct: {
-        instruction: 'u8',
-        id: 'u64',
-        token_a_offered_amount: 'u64',
-        token_b_wanted_amount: 'u64',
-    },
-};
+// Instruction data layout, matching the program's `EscrowInstruction::MakeOffer(MakeOffer)` variant.
+const makeOfferEncoder = getStructEncoder([
+    ['instruction', getU8Encoder()],
+    ['id', getU64Encoder()],
+    ['token_a_offered_amount', getU64Encoder()],
+    ['token_b_wanted_amount', getU64Encoder()],
+]);
 
-const TakeOfferSchema = {
-    struct: {
-        instruction: 'u8',
-    },
-};
+// Instruction data layout, matching the program's `EscrowInstruction::TakeOffer` variant.
+const takeOfferEncoder = getStructEncoder([['instruction', getU8Encoder()]]);
 
-const RefundOfferSchema = {
-    struct: {
-        instruction: 'u8',
-    },
-};
-
-function borshSerialize(schema: borsh.Schema, data: object): Uint8Array {
-    return borsh.serialize(schema, data);
-}
+// Instruction data layout, matching the program's `EscrowInstruction::RefundOffer` variant.
+const refundOfferEncoder = getStructEncoder([['instruction', getU8Encoder()]]);
 
 export function buildMakeOffer(props: {
     id: bigint;
@@ -47,7 +42,7 @@ export function buildMakeOffer(props: {
     payer: TransactionSigner;
     programId: Address;
 }) {
-    const data = borshSerialize(MakeOfferSchema, {
+    const data = makeOfferEncoder.encode({
         instruction: EscrowInstruction.MakeOffer,
         id: props.id,
         token_a_offered_amount: props.token_a_offered_amount,
@@ -85,7 +80,7 @@ export function buildTakeOffer(props: {
     payer: TransactionSigner;
     programId: Address;
 }) {
-    const data = borshSerialize(TakeOfferSchema, {
+    const data = takeOfferEncoder.encode({
         instruction: EscrowInstruction.TakeOffer,
     });
 
@@ -118,7 +113,7 @@ export function buildRefundOffer(props: {
     maker: TransactionSigner;
     programId: Address;
 }) {
-    const data = borshSerialize(RefundOfferSchema, {
+    const data = refundOfferEncoder.encode({
         instruction: EscrowInstruction.RefundOffer,
     });
 

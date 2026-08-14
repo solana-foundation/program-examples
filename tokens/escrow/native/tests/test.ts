@@ -1,9 +1,7 @@
-import { Buffer } from 'node:buffer';
 import {
     appendTransactionMessageInstruction,
     createTransactionMessage,
     generateKeyPairSigner,
-    getAddressDecoder,
     type Instruction,
     type KeyPairSigner,
     lamports,
@@ -20,16 +18,13 @@ import {
     TOKEN_PROGRAM_ADDRESS,
 } from '@solana-program/token';
 import { getCreateAccountInstruction } from '@solana-program/system';
-import * as borsh from 'borsh';
 import { assert } from 'chai';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
-import { type OfferRaw, OfferSchema } from './account';
+import { offerDecoder } from './account';
 import { buildMakeOffer, buildRefundOffer, buildTakeOffer } from './instruction';
 import { createValues, type TestValues, mintingTokens } from './utils';
 
 const LAMPORTS_PER_SOL = 1_000_000_000n;
-
-const addressDecoder = getAddressDecoder();
 
 describe('Escrow!', () => {
     const svm = new LiteSVM();
@@ -97,17 +92,16 @@ describe('Escrow!', () => {
 
         const offerInfo = svm.getAccount(values.offer);
         assert(offerInfo.exists, 'offer account not created');
-        const offer = borsh.deserialize(OfferSchema, Buffer.from(offerInfo.data)) as OfferRaw;
+        const offer = offerDecoder.decode(offerInfo.data);
 
         const vaultInfo = svm.getAccount(values.vault);
         assert(vaultInfo.exists, 'vault account not created');
         const vaultTokenAccount = getTokenDecoder().decode(vaultInfo.data);
 
         assert(offer.id.toString() === values.id.toString(), 'wrong id');
-        // borsh deserializes pubkeys as raw byte arrays, decode them into addresses for comparison
-        assert(addressDecoder.decode(offer.maker) === values.maker.address, 'maker key does not match');
-        assert(addressDecoder.decode(offer.token_mint_a) === values.mintAKeypair.address, 'wrong mint A');
-        assert(addressDecoder.decode(offer.token_mint_b) === values.mintBKeypair.address, 'wrong mint B');
+        assert(offer.maker === values.maker.address, 'maker key does not match');
+        assert(offer.token_mint_a === values.mintAKeypair.address, 'wrong mint A');
+        assert(offer.token_mint_b === values.mintBKeypair.address, 'wrong mint B');
         assert(offer.token_b_wanted_amount.toString() === values.amountB.toString(), 'unexpected amount B');
         assert(vaultTokenAccount.amount.toString() === values.amountA.toString(), 'unexpected amount A');
     });

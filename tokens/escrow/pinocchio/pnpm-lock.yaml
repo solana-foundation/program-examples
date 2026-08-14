@@ -27,9 +27,6 @@ importers:
       '@types/node':
         specifier: ^26.1.0
         version: 26.1.2
-      borsh:
-        specifier: ^2.0.0
-        version: 2.0.0
       chai:
         specifier: ^6.2.2
         version: 6.2.2
@@ -1033,9 +1030,6 @@ packages:
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
-
-  borsh@2.0.0:
-    resolution: {integrity: sha512-kc9+BgR3zz9+cjbwM8ODoUB4fs3X3I5A/HtX7LZKxCLaMrEeDFoBpnhZY//DTS1VZBSs6S5v46RZRbZjRFspEg==}
 
   brace-expansion@2.1.3:
     resolution: {integrity: sha512-DRdx5neNsG/QXbniLFWi2YmC/68oeOOmKz6zOjVk6ZS1ZLXgLIKqVEc6hWsmkjBbgii0SwaBTcJ5XKj5gzY/4A==}
@@ -2514,8 +2508,6 @@ snapshots:
   assertion-error@2.0.1: {}
 
   balanced-match@1.0.2: {}
-
-  borsh@2.0.0: {}
 
   brace-expansion@2.1.3:
     dependencies:

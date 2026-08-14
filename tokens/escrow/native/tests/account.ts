@@ -1,25 +1,11 @@
-import * as borsh from 'borsh';
+import { getAddressDecoder, getStructDecoder, getU8Decoder, getU64Decoder } from '@solana/kit';
 
-export const OfferSchema = {
-    struct: {
-        id: 'u64',
-        maker: { array: { type: 'u8', len: 32 } },
-        token_mint_a: { array: { type: 'u8', len: 32 } },
-        token_mint_b: { array: { type: 'u8', len: 32 } },
-        token_b_wanted_amount: 'u64',
-        bump: 'u8',
-    },
-};
-
-export type OfferRaw = {
-    id: bigint;
-    maker: Uint8Array;
-    token_mint_a: Uint8Array;
-    token_mint_b: Uint8Array;
-    token_b_wanted_amount: bigint;
-    bump: number;
-};
-
-export function borshSerialize(schema: borsh.Schema, data: object): Buffer {
-    return Buffer.from(borsh.serialize(schema, data));
-}
+// Account data layout, matching the program's `Offer` struct.
+export const offerDecoder = getStructDecoder([
+    ['id', getU64Decoder()],
+    ['maker', getAddressDecoder()],
+    ['token_mint_a', getAddressDecoder()],
+    ['token_mint_b', getAddressDecoder()],
+    ['token_b_wanted_amount', getU64Decoder()],
+    ['bump', getU8Decoder()],
+]);
