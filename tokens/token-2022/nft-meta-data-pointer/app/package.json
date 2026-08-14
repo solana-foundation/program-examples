@@ -13,7 +13,6 @@
     "typecheck": "pnpm run generate-client && tsc --noEmit"
   },
   "dependencies": {
-    "@chakra-ui/next-js": "^2.1.3",
     "@chakra-ui/react": "^2.6.1",
     "@magicblock-labs/gum-react-sdk": "^3.0.4",
     "@magicblock-labs/gum-sdk": "^3.0.5",
@@ -28,8 +27,6 @@
     "@types/node": "20.2.5",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
-    "browserify-sign": ">=4.2.2",
-    "crypto-js": ">=4.2.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.2.12",
     "framer-motion": "^10.12.16",

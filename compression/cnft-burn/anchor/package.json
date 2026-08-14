@@ -9,7 +9,7 @@
     "@metaplex-foundation/js": "^0.19.4",
     "@metaplex-foundation/mpl-bubblegum": "^0.7.0",
     "@metaplex-foundation/mpl-token-metadata": "^2.12.0",
-    "@metaplex-foundation/umi": "^0.9.0",
+    "@solana/kit": "^7.0.0",
     "@solana/spl-account-compression": "^0.2.0",
     "@solana/web3.js": "^1.98.4",
     "axios": "^1.6.5"

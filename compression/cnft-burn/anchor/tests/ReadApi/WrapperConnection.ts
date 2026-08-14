@@ -5,8 +5,8 @@ import type { Metadata, Mint, NftOriginalEdition, SplTokenCurrency } from '@meta
 import { amount, MetaplexError, Pda, toBigNumber } from '@metaplex-foundation/js';
 import { PROGRAM_ID as BUBBLEGUM_PROGRAM_ID } from '@metaplex-foundation/mpl-bubblegum';
 import { TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
+import { getU64Encoder } from '@solana/kit';
 import { Connection, PublicKey } from '@solana/web3.js';
-import BN from 'bn.js';
 import type {
     GetAssetProofRpcInput,
     GetAssetProofRpcResponse,
@@ -87,7 +87,7 @@ export const toMetadataFromReadApiAsset = (input: ReadApiAsset): Metadata => {
         address: Pda.find(BUBBLEGUM_PROGRAM_ID, [
             Buffer.from('asset', 'utf-8'),
             new PublicKey(input.compression.tree).toBuffer(),
-            Uint8Array.from(new BN(input.compression.leaf_id).toArray('le', 8)),
+            Uint8Array.from(getU64Encoder().encode(BigInt(input.compression.leaf_id))),
         ]),
         mintAddress: new PublicKey(input.id),
         updateAuthorityAddress: new PublicKey(updateAuthority?.address),
