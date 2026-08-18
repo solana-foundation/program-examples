@@ -5,3 +5,4 @@ Cargo.lock
 games/world-cup/
 games/gacha/pinocchio/idl/
 tokens/token-2022/transfer-hook/block-list/pinocchio/sdk/
+tokens/token-2022/transfer-hook/allow-block-list-token/idl/
