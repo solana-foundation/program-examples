@@ -1,13 +1,13 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/connector/react';
 import { redirect } from 'next/navigation';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '../solana/solana-provider';
 
 export default function ManageTokenInput() {
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
     const [tokenAddress, setTokenAddress] = React.useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -17,7 +17,7 @@ export default function ManageTokenInput() {
         }
     };
 
-    if (!publicKey) {
+    if (!account) {
         return (
             <div className="hero py-[64px]">
                 <div className="hero-content text-center">

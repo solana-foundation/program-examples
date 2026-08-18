@@ -1,8 +1,7 @@
 'use client';
 
-import { BN } from '@anchor-lang/core';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { useWallet } from '@solana/connector/react';
+import { address as toAddress, type Address } from '@solana/kit';
 import { useParams } from 'next/navigation';
 import React from 'react';
 import { Button } from '@/components/ui/button';
@@ -16,19 +15,19 @@ interface TokenInfo {
     uri: string | undefined;
     decimals: number;
     supply: number;
-    mintAuthority: PublicKey | null;
-    freezeAuthority: PublicKey | null;
-    permanentDelegate: PublicKey | null;
+    mintAuthority: Address | null;
+    freezeAuthority: Address | null;
+    permanentDelegate: Address | null;
     mode: string | null;
     threshold: string | null;
-    transferHookProgramId: PublicKey | null;
+    transferHookProgramId: Address | null;
     isTransferHookEnabled: boolean;
     isTransferHookSet: boolean;
 }
 
 function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
     const { attachToExistingToken } = useAblTokenProgram();
-    const tokenInfo = useGetToken(new PublicKey(tokenAddress));
+    const tokenInfo = useGetToken(toAddress(tokenAddress));
     return (
         <div className="bg-base-200 p-6 rounded-lg">
             <h2 className="text-2xl font-bold mb-4">Token Information</h2>
@@ -39,7 +38,7 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
                     <div>Symbol: {tokenInfo.data?.symbol}</div>
                     <div>Decimals: {tokenInfo.data?.decimals}</div>
                     <div>URI: {tokenInfo.data?.uri}</div>
-                    <div>Supply: {tokenInfo.data?.supply}</div>
+                    <div>Supply: {tokenInfo.data?.supply?.toString()}</div>
                     <div>Mint Authority: {tokenInfo.data?.mintAuthority?.toString()}</div>
                     <div>Freeze Authority: {tokenInfo.data?.freezeAuthority?.toString()}</div>
                     <div>Permanent Delegate: {tokenInfo.data?.permanentDelegate?.toString()}</div>
@@ -56,9 +55,7 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
                                     TxHook: Enabled.{' '}
                                     <Button
                                         onClick={() =>
-                                            attachToExistingToken
-                                                .mutateAsync({ mint: new PublicKey(tokenAddress) })
-                                                .then()
+                                            attachToExistingToken.mutateAsync({ mint: toAddress(tokenAddress) }).then()
                                         }
                                     >
                                         Set
@@ -78,20 +75,20 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
 }
 
 function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
     const { changeMode, mintTo } = useAblTokenProgram();
     const [mode, setMode] = React.useState<'Allow' | 'Block' | 'Mixed'>(tokenInfo.mode as 'Allow' | 'Block' | 'Mixed');
     const [threshold, setThreshold] = React.useState<string | undefined>(tokenInfo.threshold ?? undefined);
     const [destinationWallet, setDestinationWallet] = React.useState('');
 
     const handleApplyChanges = async () => {
-        if (!publicKey || !tokenInfo) return;
+        if (!account || !tokenInfo) return;
 
         try {
             await changeMode.mutateAsync({
                 mode,
-                threshold: threshold === undefined ? new BN(0) : new BN(threshold),
-                mint: new PublicKey(tokenInfo.address),
+                threshold: BigInt(threshold === undefined ? 0 : threshold),
+                mint: toAddress(tokenInfo.address),
             });
         } catch (err) {
             console.error('Failed to apply changes:', err);
@@ -101,13 +98,13 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
     const [mintAmount, setMintAmount] = React.useState('0');
 
     const handleMint = async () => {
-        if (!publicKey || !tokenInfo) return;
+        if (!account || !tokenInfo) return;
 
         try {
-            const recipient = destinationWallet.trim() ? new PublicKey(destinationWallet.trim()) : publicKey;
+            const recipient = destinationWallet.trim() ? toAddress(destinationWallet.trim()) : account;
             await mintTo.mutateAsync({
-                mint: new PublicKey(tokenInfo.address),
-                amount: new BN(mintAmount),
+                mint: toAddress(tokenInfo.address),
+                amount: BigInt(mintAmount || '0'),
                 recipient,
             });
             console.log('Minted successfully');
@@ -227,10 +224,10 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
 }
 
 export default function ManageTokenDetail() {
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
     const params = useParams();
     const tokenAddress = params?.address as string;
-    const tokenQuery = useGetToken(new PublicKey(tokenAddress));
+    const tokenQuery = useGetToken(toAddress(tokenAddress));
 
     const tokenInfo = React.useMemo(() => {
         if (!tokenQuery?.data || !tokenAddress) return null;
@@ -241,7 +238,7 @@ export default function ManageTokenDetail() {
         };
     }, [tokenQuery?.data, tokenAddress]);
 
-    if (!publicKey) {
+    if (!account) {
         return (
             <div className="hero py-[64px]">
                 <div className="hero-content text-center">

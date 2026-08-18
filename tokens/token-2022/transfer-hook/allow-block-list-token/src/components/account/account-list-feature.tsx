@@ -1,14 +1,14 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/connector/react';
 import { redirect } from 'next/navigation';
 import { WalletButton } from '../solana/solana-provider';
 
 export default function AccountListFeature() {
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
 
-    if (publicKey) {
-        return redirect(`/account/${publicKey.toString()}`);
+    if (account) {
+        return redirect(`/account/${account.toString()}`);
     }
 
     return (

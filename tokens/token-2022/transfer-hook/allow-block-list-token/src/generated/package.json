@@ -1,0 +1,22 @@
+{
+    "name": "js-client",
+    "version": "1.0.0",
+    "description": "",
+    "main": "src/index.ts",
+    "files": [
+        "./dist/src",
+        "./dist/types",
+        "./src/"
+    ],
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "peerDependencies": {
+        "@solana/kit": "^6.10.0"
+    },
+    "dependencies": {
+        "@solana/program-client-core": "^6.10.0"
+    }
+}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { useWallet } from '@solana/connector/react';
+import { address as toAddress, type Address } from '@solana/kit';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ellipsify } from '@/lib/utils';
@@ -11,7 +11,7 @@ import { WalletButton } from '../solana/solana-provider';
 import { useAblTokenProgram } from './abl-token-data-access';
 
 export default function AblTokenConfig() {
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
     const { programId, getConfig, getAbWallets } = useAblTokenProgram();
 
     const config = getConfig.data;
@@ -22,7 +22,7 @@ export default function AblTokenConfig() {
         abWallets = getAbWallets.data;
     }, [getAbWallets.refetch, getAbWallets.data]);
 
-    return publicKey ? (
+    return account ? (
         <div>
             <AppHero title="ABL Token Config" subtitle={''}>
                 <p className="mb-6">
@@ -34,7 +34,7 @@ export default function AblTokenConfig() {
                             <AblTokenConfigList abWallets={abWallets} />
                         </div>
                         <div className="mb-16">
-                            {config.authority.equals(publicKey) ? (
+                            {config.authority === account ? (
                                 <AblTokenConfigListChange onWalletListUpdate={handleWalletListUpdate} />
                             ) : (
                                 <div className="text-destructive font-semibold">
@@ -52,7 +52,7 @@ export default function AblTokenConfig() {
         <div className="max-w-4xl mx-auto">
             <div className="hero py-[64px]">
                 <div className="hero-content text-center">
-                    <WalletButton className="btn btn-primary" />
+                    <WalletButton />
                 </div>
             </div>
         </div>
@@ -61,10 +61,10 @@ export default function AblTokenConfig() {
 
 export function AblTokenConfigCreate() {
     const { initConfig, getConfig } = useAblTokenProgram();
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
 
     const handleCreate = async () => {
-        if (!publicKey) return;
+        if (!account) return;
         try {
             await initConfig.mutateAsync();
             // Refresh the config list
@@ -93,8 +93,8 @@ export function AblTokenConfigList({
 }: {
     abWallets:
         | {
-              publicKey: PublicKey;
-              account: { wallet: PublicKey; allowed: boolean };
+              publicKey: Address;
+              account: { wallet: Address; allowed: boolean };
           }[]
         | undefined;
 }) {
@@ -178,7 +178,7 @@ export function AblTokenConfigListChange({ onWalletListUpdate }: { onWalletListU
                 })
                 .filter(entry => {
                     try {
-                        new PublicKey(entry.address);
+                        toAddress(entry.address);
                         return ['allow', 'block', 'remove'].includes(entry.mode);
                     } catch {
                         return false;
@@ -237,7 +237,7 @@ export function AblTokenConfigListChange({ onWalletListUpdate }: { onWalletListU
             try {
                 await processBatchWallets.mutateAsync({
                     wallets: batch.map(w => ({
-                        wallet: new PublicKey(w.address),
+                        wallet: toAddress(w.address),
                         mode: w.mode,
                     })),
                 });

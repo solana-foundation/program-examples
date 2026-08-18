@@ -1,175 +1,189 @@
 'use client';
 
-import { Buffer } from 'node:buffer';
+import { useKitTransactionSigner, useWallet } from '@solana/connector/react';
+import { AccountRole, lamports, type Address } from '@solana/kit';
 import {
-    createAssociatedTokenAccountIdempotentInstruction,
-    createTransferCheckedInstruction,
-    getAssociatedTokenAddressSync,
-    getExtraAccountMetaAddress,
-    getMint,
-    getTransferHook,
-    TOKEN_2022_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import {
-    type Connection,
-    LAMPORTS_PER_SOL,
-    PublicKey,
-    SystemProgram,
-    Transaction,
-    TransactionMessage,
-    type TransactionSignature,
-    VersionedTransaction,
-} from '@solana/web3.js';
+    fetchMint,
+    findAssociatedTokenPda,
+    getCreateAssociatedTokenIdempotentInstructionAsync,
+    getTransferCheckedInstruction,
+    TOKEN_2022_PROGRAM_ADDRESS,
+    TOKEN_PROGRAM_ADDRESS,
+    type Extension,
+} from '@solana-program/token-2022';
+import { getTransferSolInstruction } from '@solana-program/system';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAnchorProvider } from '../solana/solana-provider';
+import { useSendInstruction } from '@/hooks/use-send-instruction';
+import { findAbWalletPda, findExtraMetasAccountPda } from '@/generated/pdas';
+import { useCluster, useClusterRpc } from '../cluster/cluster-data-access';
 import { useTransactionErrorToast, useTransactionToast } from '../use-transaction-toast';
 
-export function useGetBalance({ address }: { address: PublicKey }) {
-    const { connection } = useConnection();
+const LAMPORTS_PER_SOL = 1_000_000_000;
+
+function findExtension<TKind extends Extension['__kind']>(
+    extensions: Extension[] | undefined,
+    kind: TKind,
+): Extract<Extension, { __kind: TKind }> | undefined {
+    return extensions?.find((ext): ext is Extract<Extension, { __kind: TKind }> => ext.__kind === kind);
+}
+
+export function useGetBalance({ address }: { address: Address }) {
+    const { rpc } = useClusterRpc();
+    const { cluster } = useCluster();
 
     return useQuery({
-        queryKey: ['get-balance', { endpoint: connection.rpcEndpoint, address }],
-        queryFn: () => connection.getBalance(address),
+        queryKey: ['get-balance', { endpoint: cluster.endpoint, address }],
+        queryFn: async () => Number((await rpc.getBalance(address).send()).value),
     });
 }
 
-export function useGetSignatures({ address }: { address: PublicKey }) {
-    const { connection } = useConnection();
+export function useGetSignatures({ address }: { address: Address }) {
+    const { rpc } = useClusterRpc();
+    const { cluster } = useCluster();
 
     return useQuery({
-        queryKey: ['get-signatures', { endpoint: connection.rpcEndpoint, address }],
-        queryFn: () => connection.getSignaturesForAddress(address),
+        queryKey: ['get-signatures', { endpoint: cluster.endpoint, address }],
+        queryFn: () => rpc.getSignaturesForAddress(address).send(),
     });
 }
 
 export function useSendTokens() {
-    const { connection } = useConnection();
-    const { publicKey } = useWallet();
+    const { rpc } = useClusterRpc();
+    const { account } = useWallet();
+    const { signer } = useKitTransactionSigner();
+    const sendInstruction = useSendInstruction();
     const transactionToast = useTransactionToast();
-    const provider = useAnchorProvider();
     const transactionErrorToast = useTransactionErrorToast();
 
     return useMutation({
-        mutationFn: async (args: { mint: PublicKey; destination: PublicKey; amount: number }) => {
-            if (!publicKey) throw new Error('No public key found');
+        mutationFn: async (args: { mint: Address; destination: Address; amount: number }) => {
+            if (!signer || !account) throw new Error('No public key found');
             const { mint, destination, amount } = args;
-            const mintInfo = await getMint(connection, mint, 'confirmed', TOKEN_2022_PROGRAM_ID);
-            const ataDestination = getAssociatedTokenAddressSync(mint, destination, true, TOKEN_2022_PROGRAM_ID);
-            const ataSource = getAssociatedTokenAddressSync(mint, publicKey, true, TOKEN_2022_PROGRAM_ID);
-            const ix = createAssociatedTokenAccountIdempotentInstruction(
-                publicKey,
-                ataDestination,
-                destination,
-                mint,
-                TOKEN_2022_PROGRAM_ID,
-            );
-            const bi = BigInt(amount);
-            const decimals = mintInfo.decimals;
 
-            const ix3 = await createTransferCheckedInstruction(
-                ataSource,
-                mint,
-                ataDestination,
-                publicKey,
-                bi,
-                decimals,
-                undefined,
-                TOKEN_2022_PROGRAM_ID,
-            );
-
-            const transferHook = getTransferHook(mintInfo);
+            const mintAccount = await fetchMint(rpc, mint);
+            const decimals = mintAccount.data.decimals;
+            const extensions = mintAccount.data.extensions.__option === 'Some' ? mintAccount.data.extensions.value : [];
+            const transferHook = findExtension(extensions, 'TransferHook');
             if (!transferHook) throw new Error('bad token');
-            const extraMetas = getExtraAccountMetaAddress(mint, transferHook.programId);
 
-            // The hook checks both the sender and the receiver's allow/block
-            // status - the account order here must match the program's
-            // get_extra_account_metas() (source first, then destination).
-            const sourceSeeds = [Buffer.from('ab_wallet'), publicKey.toBuffer()];
-            const sourceAbWallet = PublicKey.findProgramAddressSync(sourceSeeds, transferHook.programId)[0];
-
-            const destinationSeeds = [Buffer.from('ab_wallet'), destination.toBuffer()];
-            const destinationAbWallet = PublicKey.findProgramAddressSync(destinationSeeds, transferHook.programId)[0];
-
-            ix3.keys.push({ pubkey: sourceAbWallet, isSigner: false, isWritable: false });
-            ix3.keys.push({ pubkey: destinationAbWallet, isSigner: false, isWritable: false });
-            ix3.keys.push({
-                pubkey: transferHook.programId,
-                isSigner: false,
-                isWritable: false,
+            const [ataDestination] = await findAssociatedTokenPda({
+                owner: destination,
+                mint,
+                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
             });
-            ix3.keys.push({ pubkey: extraMetas, isSigner: false, isWritable: false });
+            const [ataSource] = await findAssociatedTokenPda({
+                owner: account,
+                mint,
+                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+            });
 
-            const validateStateAccount = await connection.getAccountInfo(extraMetas, 'confirmed');
-            if (!validateStateAccount) throw new Error('validate-state-account not found');
+            const createAtaIx = await getCreateAssociatedTokenIdempotentInstructionAsync({
+                payer: signer,
+                owner: destination,
+                mint,
+                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+            });
 
-            const transaction = new Transaction();
-            transaction.add(ix, ix3);
-            transaction.feePayer = provider.wallet.publicKey;
-            transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            const transferIx = getTransferCheckedInstruction(
+                {
+                    source: ataSource,
+                    mint,
+                    destination: ataDestination,
+                    authority: signer,
+                    amount: BigInt(amount),
+                    decimals,
+                },
+                { programAddress: TOKEN_2022_PROGRAM_ADDRESS },
+            );
 
-            const signedTx = await provider.wallet.signTransaction(transaction);
+            // The hook checks both the sender's and the receiver's allow/block status, so the
+            // client must resolve and append both ab_wallet PDAs, in the same order the
+            // program's get_extra_account_metas() declares them: source, then destination.
+            // After that comes the transfer-hook program itself, then the extra-account-meta-
+            // list PDA — all readonly, non-signer.
+            const [sourceAbWalletPda] = await findAbWalletPda(
+                { wallet: account },
+                { programAddress: transferHook.programId },
+            );
+            const [destinationAbWalletPda] = await findAbWalletPda(
+                { wallet: destination },
+                { programAddress: transferHook.programId },
+            );
+            const [extraMetasPda] = await findExtraMetasAccountPda(
+                { mint },
+                { programAddress: transferHook.programId },
+            );
 
-            return connection.sendRawTransaction(signedTx.serialize());
+            const validateStateAccount = await rpc.getAccountInfo(extraMetasPda, { commitment: 'confirmed' }).send();
+            if (!validateStateAccount.value) throw new Error('validate-state-account not found');
+
+            const transferIxWithHookAccounts = {
+                ...transferIx,
+                accounts: [
+                    ...transferIx.accounts,
+                    { address: sourceAbWalletPda, role: AccountRole.READONLY },
+                    { address: destinationAbWalletPda, role: AccountRole.READONLY },
+                    { address: transferHook.programId, role: AccountRole.READONLY },
+                    { address: extraMetasPda, role: AccountRole.READONLY },
+                ],
+            };
+
+            return sendInstruction([createAtaIx, transferIxWithHookAccounts], signer);
         },
         onSuccess: signature => {
             transactionToast(signature);
         },
         onError: error => {
-            transactionErrorToast(error, connection);
+            transactionErrorToast(error);
         },
     });
 }
 
-export function useGetTokenAccounts({ address }: { address: PublicKey }) {
-    const { connection } = useConnection();
+export function useGetTokenAccounts({ address }: { address: Address }) {
+    const { rpc } = useClusterRpc();
+    const { cluster } = useCluster();
 
     return useQuery({
-        queryKey: ['get-token-accounts', { endpoint: connection.rpcEndpoint, address }],
+        queryKey: ['get-token-accounts', { endpoint: cluster.endpoint, address }],
         queryFn: async () => {
             const [tokenAccounts, token2022Accounts] = await Promise.all([
-                connection.getParsedTokenAccountsByOwner(address, {
-                    programId: TOKEN_PROGRAM_ID,
-                }),
-                connection.getParsedTokenAccountsByOwner(address, {
-                    programId: TOKEN_2022_PROGRAM_ID,
-                }),
+                rpc
+                    .getTokenAccountsByOwner(address, { programId: TOKEN_PROGRAM_ADDRESS }, { encoding: 'jsonParsed' })
+                    .send(),
+                rpc
+                    .getTokenAccountsByOwner(
+                        address,
+                        { programId: TOKEN_2022_PROGRAM_ADDRESS },
+                        { encoding: 'jsonParsed' },
+                    )
+                    .send(),
             ]);
             return [...tokenAccounts.value, ...token2022Accounts.value];
         },
     });
 }
 
-export function useTransferSol({ address }: { address: PublicKey }) {
-    const { connection } = useConnection();
-    // const transactionToast = useTransactionToast()
-    const wallet = useWallet();
+export function useTransferSol({ address }: { address: Address }) {
+    const { cluster } = useCluster();
+    const { signer } = useKitTransactionSigner();
+    const sendInstruction = useSendInstruction();
     const client = useQueryClient();
 
     return useMutation({
-        mutationKey: ['transfer-sol', { endpoint: connection.rpcEndpoint, address }],
-        mutationFn: async (input: { destination: PublicKey; amount: number }) => {
-            let signature: TransactionSignature = '';
+        mutationKey: ['transfer-sol', { endpoint: cluster.endpoint, address }],
+        mutationFn: async (input: { destination: Address; amount: number }) => {
+            if (!signer) throw new Error('Wallet not connected');
             try {
-                const { transaction, latestBlockhash } = await createTransaction({
-                    publicKey: address,
+                const ix = getTransferSolInstruction({
+                    source: signer,
                     destination: input.destination,
-                    amount: input.amount,
-                    connection,
+                    amount: lamports(BigInt(Math.round(input.amount * LAMPORTS_PER_SOL))),
                 });
-
-                // Send transaction and await for signature
-                signature = await wallet.sendTransaction(transaction, connection);
-
-                // Send transaction and await for signature
-                await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed');
-
+                const signature = await sendInstruction(ix, signer);
                 console.log(signature);
                 return signature;
             } catch (error: unknown) {
-                console.log('error', `Transaction failed! ${error}`, signature);
-
+                console.log('error', `Transaction failed! ${error}`);
                 return;
             }
         },
@@ -181,10 +195,10 @@ export function useTransferSol({ address }: { address: PublicKey }) {
             }
             return Promise.all([
                 client.invalidateQueries({
-                    queryKey: ['get-balance', { endpoint: connection.rpcEndpoint, address }],
+                    queryKey: ['get-balance', { endpoint: cluster.endpoint, address }],
                 }),
                 client.invalidateQueries({
-                    queryKey: ['get-signatures', { endpoint: connection.rpcEndpoint, address }],
+                    queryKey: ['get-signatures', { endpoint: cluster.endpoint, address }],
                 }),
             ]);
         },
@@ -195,76 +209,33 @@ export function useTransferSol({ address }: { address: PublicKey }) {
     });
 }
 
-export function useRequestAirdrop({ address }: { address: PublicKey }) {
-    const { connection } = useConnection();
-    // const transactionToast = useTransactionToast()
+export function useRequestAirdrop({ address }: { address: Address }) {
+    const { rpc } = useClusterRpc();
+    const { cluster } = useCluster();
     const client = useQueryClient();
 
     return useMutation({
-        mutationKey: ['airdrop', { endpoint: connection.rpcEndpoint, address }],
+        mutationKey: ['airdrop', { endpoint: cluster.endpoint, address }],
         mutationFn: async (amount: number = 1) => {
-            const [latestBlockhash, signature] = await Promise.all([
-                connection.getLatestBlockhash(),
-                connection.requestAirdrop(address, amount * LAMPORTS_PER_SOL),
-            ]);
-
-            await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed');
+            const signature = await rpc
+                .requestAirdrop(address, lamports(BigInt(Math.round(amount * LAMPORTS_PER_SOL))), {
+                    commitment: 'confirmed',
+                })
+                .send();
             return signature;
         },
-        onSuccess: signature => {
+        onSuccess: () => {
             // TODO: Add back Toast
             // transactionToast(signature)
-            console.log('Airdrop sent', signature);
+            console.log('Airdrop sent');
             return Promise.all([
                 client.invalidateQueries({
-                    queryKey: ['get-balance', { endpoint: connection.rpcEndpoint, address }],
+                    queryKey: ['get-balance', { endpoint: cluster.endpoint, address }],
                 }),
                 client.invalidateQueries({
-                    queryKey: ['get-signatures', { endpoint: connection.rpcEndpoint, address }],
+                    queryKey: ['get-signatures', { endpoint: cluster.endpoint, address }],
                 }),
             ]);
         },
     });
-}
-
-async function createTransaction({
-    publicKey,
-    destination,
-    amount,
-    connection,
-}: {
-    publicKey: PublicKey;
-    destination: PublicKey;
-    amount: number;
-    connection: Connection;
-}): Promise<{
-    transaction: VersionedTransaction;
-    latestBlockhash: { blockhash: string; lastValidBlockHeight: number };
-}> {
-    // Get the latest blockhash to use in our transaction
-    const latestBlockhash = await connection.getLatestBlockhash();
-
-    // Create instructions to send, in this case a simple transfer
-    const instructions = [
-        SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: destination,
-            lamports: amount * LAMPORTS_PER_SOL,
-        }),
-    ];
-
-    // Create a new TransactionMessage with version and compile it to legacy
-    const messageLegacy = new TransactionMessage({
-        payerKey: publicKey,
-        recentBlockhash: latestBlockhash.blockhash,
-        instructions,
-    }).compileToLegacyMessage();
-
-    // Create a new VersionedTransaction which supports legacy and v0
-    const transaction = new VersionedTransaction(messageLegacy);
-
-    return {
-        transaction,
-        latestBlockhash,
-    };
 }

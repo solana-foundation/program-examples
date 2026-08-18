@@ -12,3 +12,9 @@
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Anchor IDL copied verbatim from `anchor build` output; regenerated on every
+# `pnpm run generate-client`, never hand-edited.
+/idl
+# Codama-generated Kit client; already formatted by the renderer itself.
+/src/generated

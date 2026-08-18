@@ -1,6 +1,6 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/connector/react';
 import { ellipsify } from '@/lib/utils';
 import { AppHero } from '../app-hero';
 import { ExplorerLink } from '../cluster/cluster-ui';
@@ -9,10 +9,10 @@ import { useAblTokenProgram } from './abl-token-data-access';
 import { AblTokenCreate, AblTokenProgram } from './abl-token-ui';
 
 export default function AblTokenFeature() {
-    const { publicKey } = useWallet();
+    const { account } = useWallet();
     const { programId } = useAblTokenProgram();
 
-    return publicKey ? (
+    return account ? (
         <div>
             <AppHero title="ABL Token" subtitle={'Run the program by clicking the "Run program" button.'}>
                 <p className="mb-6">
@@ -26,7 +26,7 @@ export default function AblTokenFeature() {
         <div className="max-w-4xl mx-auto">
             <div className="hero py-[64px]">
                 <div className="hero-content text-center">
-                    <WalletButton className="btn btn-primary" />
+                    <WalletButton />
                 </div>
             </div>
         </div>

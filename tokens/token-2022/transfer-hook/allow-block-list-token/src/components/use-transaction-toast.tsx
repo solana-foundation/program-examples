@@ -1,4 +1,4 @@
-import type { Connection, SendTransactionError } from '@solana/web3.js';
+import { isSolanaError, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE } from '@solana/kit';
 import { toast } from 'sonner';
 import { ExplorerLink } from './cluster/cluster-ui';
 
@@ -11,8 +11,13 @@ export function useTransactionToast() {
 }
 
 export function useTransactionErrorToast() {
-    return async (error: Error, connection: Connection) => {
-        const logs = await (error as SendTransactionError).getLogs(connection);
+    return (error: unknown) => {
+        // Preflight simulation failures carry the program's simulation logs in the
+        // SolanaError's context, the kit equivalent of web3.js's
+        // `SendTransactionError.getLogs(connection)`.
+        const logs = isSolanaError(error, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)
+            ? ((error.context as { logs?: readonly string[] }).logs ?? [])
+            : [];
         const anchorError = logs.find(l => l.startsWith('Program log: AnchorError occurred'));
         if (anchorError) {
             if (anchorError.includes('WalletBlocked')) {

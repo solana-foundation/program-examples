@@ -1,9 +1,9 @@
 'use client';
 
-import { Connection, clusterApiUrl } from '@solana/web3.js';
+import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
 import { atom, useAtomValue, useSetAtom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import { createContext, type ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, useContext, useMemo } from 'react';
 
 export interface SolanaCluster {
     name: string;
@@ -20,18 +20,18 @@ export enum ClusterNetwork {
 }
 
 // By default, we don't configure the mainnet-beta cluster
-// The endpoint provided by clusterApiUrl('mainnet-beta') does not allow access from the browser due to CORS restrictions
+// The default public mainnet-beta RPC does not allow access from the browser due to CORS restrictions
 // To use the mainnet-beta cluster, provide a custom endpoint
 export const defaultClusters: SolanaCluster[] = [
     {
         name: 'devnet',
-        endpoint: clusterApiUrl('devnet'),
+        endpoint: 'https://api.devnet.solana.com',
         network: ClusterNetwork.Devnet,
     },
     { name: 'local', endpoint: 'http://localhost:8899' },
     {
         name: 'testnet',
-        endpoint: clusterApiUrl('testnet'),
+        endpoint: 'https://api.testnet.solana.com',
         network: ClusterNetwork.Testnet,
     },
 ];
@@ -77,7 +77,9 @@ export function ClusterProvider({ children }: { children: ReactNode }) {
         clusters: clusters.sort((a, b) => (a.name > b.name ? 1 : -1)),
         addCluster: (cluster: SolanaCluster) => {
             try {
-                new Connection(cluster.endpoint);
+                // createSolanaRpc parses the endpoint eagerly, so this throws on a malformed URL
+                // the same way `new Connection(cluster.endpoint)` used to.
+                createSolanaRpc(cluster.endpoint);
                 setClusters([...clusters, cluster]);
             } catch (err) {
                 console.error(`${err}`);
@@ -94,6 +96,31 @@ export function ClusterProvider({ children }: { children: ReactNode }) {
 
 export function useCluster() {
     return useContext(Context);
+}
+
+// The local validator serves its websocket subscriptions on port 8900, not the HTTP
+// RPC port (8899); every other cluster serves subscriptions on the same host as HTTP.
+function deriveWebsocketUrl(endpoint: string): string {
+    if (endpoint.includes('localhost') || endpoint.includes('127.0.0.1')) {
+        return endpoint.replace(/^http/, 'ws').replace(/:8899/, ':8900');
+    }
+    return endpoint.replace(/^http/, 'ws');
+}
+
+/**
+ * Derives kit's RPC + RPC-subscriptions clients from the active cluster's endpoint. Every
+ * part of the app that talks to a cluster should read from this hook so that switching
+ * clusters (via `setCluster`) moves them all together.
+ */
+export function useClusterRpc() {
+    const { cluster } = useCluster();
+    return useMemo(
+        () => ({
+            rpc: createSolanaRpc(cluster.endpoint),
+            rpcSubscriptions: createSolanaRpcSubscriptions(deriveWebsocketUrl(cluster.endpoint)),
+        }),
+        [cluster.endpoint],
+    );
 }
 
 function getClusterUrlParam(cluster: SolanaCluster): string {

@@ -1,6 +1,6 @@
 'use client';
 
-import { PublicKey } from '@solana/web3.js';
+import { address as toAddress, type Address } from '@solana/kit';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { ellipsify } from '@/lib/utils';
@@ -10,12 +10,12 @@ import { AccountBalance, AccountButtons, AccountTokens, AccountTransactions } fr
 
 export default function AccountDetailFeature() {
     const params = useParams();
-    const address = useMemo(() => {
+    const address = useMemo<Address | undefined>(() => {
         if (!params.address) {
             return;
         }
         try {
-            return new PublicKey(params.address);
+            return toAddress(params.address as string);
         } catch (e) {
             console.log(`Invalid public key`, e);
         }
