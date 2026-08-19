@@ -365,8 +365,33 @@
           }
         },
         {
+          "name": "wallet"
+        },
+        {
           "name": "ab_wallet",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  98,
+                  95,
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet"
+              }
+            ]
+          }
         },
         {
           "name": "system_program",

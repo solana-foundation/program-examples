@@ -19,6 +19,10 @@ void (async () => {
         codama.accept(
             renderVisitor(generatedDir, {
                 deleteFolderBeforeRendering: true,
+                dependencyVersions: {
+                    '@solana/kit': '^7.1.0',
+                    '@solana/program-client-core': '^7.1.0',
+                },
                 formatCode: true,
                 generatedFolder: '.',
             }),

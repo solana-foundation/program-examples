@@ -32,8 +32,12 @@ import {
     type WritableAccount,
     type WritableSignerAccount,
 } from '@solana/kit';
-import { getAccountMetaFactory, type ResolvedInstructionAccount } from '@solana/program-client-core';
-import { findConfigPda } from '../pdas';
+import {
+    getAccountMetaFactory,
+    getAddressFromResolvedInstructionAccount,
+    type ResolvedInstructionAccount,
+} from '@solana/program-client-core';
+import { findAbWalletPda, findConfigPda } from '../pdas';
 import { ABL_TOKEN_PROGRAM_ADDRESS } from '../programs';
 
 export const REMOVE_WALLET_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([26, 151, 38, 109, 151, 162, 104, 28]);
@@ -46,6 +50,7 @@ export type RemoveWalletInstruction<
     TProgram extends string = typeof ABL_TOKEN_PROGRAM_ADDRESS,
     TAccountAuthority extends string | AccountMeta<string> = string,
     TAccountConfig extends string | AccountMeta<string> = string,
+    TAccountWallet extends string | AccountMeta<string> = string,
     TAccountAbWallet extends string | AccountMeta<string> = string,
     TAccountSystemProgram extends string | AccountMeta<string> = '11111111111111111111111111111111',
     TRemainingAccounts extends readonly AccountMeta<string>[] = [],
@@ -57,6 +62,7 @@ export type RemoveWalletInstruction<
                 ? WritableSignerAccount<TAccountAuthority> & AccountSignerMeta<TAccountAuthority>
                 : TAccountAuthority,
             TAccountConfig extends string ? ReadonlyAccount<TAccountConfig> : TAccountConfig,
+            TAccountWallet extends string ? ReadonlyAccount<TAccountWallet> : TAccountWallet,
             TAccountAbWallet extends string ? WritableAccount<TAccountAbWallet> : TAccountAbWallet,
             TAccountSystemProgram extends string ? ReadonlyAccount<TAccountSystemProgram> : TAccountSystemProgram,
             ...TRemainingAccounts,
@@ -88,26 +94,42 @@ export function getRemoveWalletInstructionDataCodec(): FixedSizeCodec<
 export type RemoveWalletAsyncInput<
     TAccountAuthority extends string = string,
     TAccountConfig extends string = string,
+    TAccountWallet extends string = string,
     TAccountAbWallet extends string = string,
     TAccountSystemProgram extends string = string,
 > = {
     authority: TransactionSigner<TAccountAuthority>;
     config?: Address<TAccountConfig>;
-    abWallet: Address<TAccountAbWallet>;
+    wallet: Address<TAccountWallet>;
+    abWallet?: Address<TAccountAbWallet>;
     systemProgram?: Address<TAccountSystemProgram>;
 };
 
 export async function getRemoveWalletInstructionAsync<
     TAccountAuthority extends string,
     TAccountConfig extends string,
+    TAccountWallet extends string,
     TAccountAbWallet extends string,
     TAccountSystemProgram extends string,
     TProgramAddress extends Address = typeof ABL_TOKEN_PROGRAM_ADDRESS,
 >(
-    input: RemoveWalletAsyncInput<TAccountAuthority, TAccountConfig, TAccountAbWallet, TAccountSystemProgram>,
+    input: RemoveWalletAsyncInput<
+        TAccountAuthority,
+        TAccountConfig,
+        TAccountWallet,
+        TAccountAbWallet,
+        TAccountSystemProgram
+    >,
     config?: { programAddress?: TProgramAddress },
 ): Promise<
-    RemoveWalletInstruction<TProgramAddress, TAccountAuthority, TAccountConfig, TAccountAbWallet, TAccountSystemProgram>
+    RemoveWalletInstruction<
+        TProgramAddress,
+        TAccountAuthority,
+        TAccountConfig,
+        TAccountWallet,
+        TAccountAbWallet,
+        TAccountSystemProgram
+    >
 > {
     // Program address.
     const programAddress = config?.programAddress ?? ABL_TOKEN_PROGRAM_ADDRESS;
@@ -116,6 +138,7 @@ export async function getRemoveWalletInstructionAsync<
     const originalAccounts = {
         authority: { value: input.authority ?? null, isWritable: true },
         config: { value: input.config ?? null, isWritable: false },
+        wallet: { value: input.wallet ?? null, isWritable: false },
         abWallet: { value: input.abWallet ?? null, isWritable: true },
         systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     };
@@ -124,6 +147,11 @@ export async function getRemoveWalletInstructionAsync<
     // Resolve default values.
     if (!accounts.config.value) {
         accounts.config.value = await findConfigPda();
+    }
+    if (!accounts.abWallet.value) {
+        accounts.abWallet.value = await findAbWalletPda({
+            wallet: getAddressFromResolvedInstructionAccount('wallet', accounts.wallet.value),
+        });
     }
     if (!accounts.systemProgram.value) {
         accounts.systemProgram.value =
@@ -135,6 +163,7 @@ export async function getRemoveWalletInstructionAsync<
         accounts: [
             getAccountMeta('authority', accounts.authority),
             getAccountMeta('config', accounts.config),
+            getAccountMeta('wallet', accounts.wallet),
             getAccountMeta('abWallet', accounts.abWallet),
             getAccountMeta('systemProgram', accounts.systemProgram),
         ],
@@ -144,6 +173,7 @@ export async function getRemoveWalletInstructionAsync<
         TProgramAddress,
         TAccountAuthority,
         TAccountConfig,
+        TAccountWallet,
         TAccountAbWallet,
         TAccountSystemProgram
     >);
@@ -152,11 +182,13 @@ export async function getRemoveWalletInstructionAsync<
 export type RemoveWalletInput<
     TAccountAuthority extends string = string,
     TAccountConfig extends string = string,
+    TAccountWallet extends string = string,
     TAccountAbWallet extends string = string,
     TAccountSystemProgram extends string = string,
 > = {
     authority: TransactionSigner<TAccountAuthority>;
     config: Address<TAccountConfig>;
+    wallet: Address<TAccountWallet>;
     abWallet: Address<TAccountAbWallet>;
     systemProgram?: Address<TAccountSystemProgram>;
 };
@@ -164,16 +196,24 @@ export type RemoveWalletInput<
 export function getRemoveWalletInstruction<
     TAccountAuthority extends string,
     TAccountConfig extends string,
+    TAccountWallet extends string,
     TAccountAbWallet extends string,
     TAccountSystemProgram extends string,
     TProgramAddress extends Address = typeof ABL_TOKEN_PROGRAM_ADDRESS,
 >(
-    input: RemoveWalletInput<TAccountAuthority, TAccountConfig, TAccountAbWallet, TAccountSystemProgram>,
+    input: RemoveWalletInput<
+        TAccountAuthority,
+        TAccountConfig,
+        TAccountWallet,
+        TAccountAbWallet,
+        TAccountSystemProgram
+    >,
     config?: { programAddress?: TProgramAddress },
 ): RemoveWalletInstruction<
     TProgramAddress,
     TAccountAuthority,
     TAccountConfig,
+    TAccountWallet,
     TAccountAbWallet,
     TAccountSystemProgram
 > {
@@ -184,6 +224,7 @@ export function getRemoveWalletInstruction<
     const originalAccounts = {
         authority: { value: input.authority ?? null, isWritable: true },
         config: { value: input.config ?? null, isWritable: false },
+        wallet: { value: input.wallet ?? null, isWritable: false },
         abWallet: { value: input.abWallet ?? null, isWritable: true },
         systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     };
@@ -200,6 +241,7 @@ export function getRemoveWalletInstruction<
         accounts: [
             getAccountMeta('authority', accounts.authority),
             getAccountMeta('config', accounts.config),
+            getAccountMeta('wallet', accounts.wallet),
             getAccountMeta('abWallet', accounts.abWallet),
             getAccountMeta('systemProgram', accounts.systemProgram),
         ],
@@ -209,6 +251,7 @@ export function getRemoveWalletInstruction<
         TProgramAddress,
         TAccountAuthority,
         TAccountConfig,
+        TAccountWallet,
         TAccountAbWallet,
         TAccountSystemProgram
     >);
@@ -222,8 +265,9 @@ export type ParsedRemoveWalletInstruction<
     accounts: {
         authority: TAccountMetas[0];
         config: TAccountMetas[1];
-        abWallet: TAccountMetas[2];
-        systemProgram: TAccountMetas[3];
+        wallet: TAccountMetas[2];
+        abWallet: TAccountMetas[3];
+        systemProgram: TAccountMetas[4];
     };
     data: RemoveWalletInstructionData;
 };
@@ -233,10 +277,10 @@ export function parseRemoveWalletInstruction<TProgram extends string, TAccountMe
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedRemoveWalletInstruction<TProgram, TAccountMetas> {
-    if (instruction.accounts.length < 4) {
+    if (instruction.accounts.length < 5) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,
-            expectedAccountMetas: 4,
+            expectedAccountMetas: 5,
         });
     }
     let accountIndex = 0;
@@ -250,6 +294,7 @@ export function parseRemoveWalletInstruction<TProgram extends string, TAccountMe
         accounts: {
             authority: getNextAccount(),
             config: getNextAccount(),
+            wallet: getNextAccount(),
             abWallet: getNextAccount(),
             systemProgram: getNextAccount(),
         },

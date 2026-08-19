@@ -27,16 +27,19 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
       '@solana-program/token-2022':
-        specifier: ^0.14.1
-        version: 0.14.1(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))(@solana/sysvars@7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+        specifier: ^0.15.0
+        version: 0.15.0(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))(@solana/sysvars@7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
       '@solana/connector':
         specifier: ^0.2.6
         version: 0.2.6(@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(react-native@0.82.0(@babel/core@7.28.4)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10))(react@19.2.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      '@solana/instruction-plans':
+        specifier: ^7.1.0
+        version: 7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/kit':
-        specifier: ^7.0.0
+        specifier: ^7.1.0
         version: 7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@solana/program-client-core':
-        specifier: ^7.0.0
+        specifier: ^7.1.0
         version: 7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/web3.js':
         specifier: ^1.98.4
@@ -117,6 +120,9 @@ importers:
       eslint-config-next:
         specifier: 15.3.1
         version: 15.3.1(eslint@9.37.0(jiti@2.6.1))(typescript@5.9.3)
+      litesvm:
+        specifier: ^1.3.0
+        version: 1.3.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       mocha:
         specifier: ^11.7.5
         version: 11.7.6
@@ -1264,21 +1270,32 @@ packages:
     peerDependencies:
       '@solana/kit': ^7.0.0
 
+  '@solana-program/system@0.12.2':
+    resolution: {integrity: sha512-MaBeOxlvTruQhA7UYkOb3hVTEHPPagOtd+PvTm6a8rGgvEAP0kD4BbC37NceOaR4ABNqdaCmD5OMVRKgrE6KAg==}
+    peerDependencies:
+      '@solana/kit': ^6.4.0
+
   '@solana-program/system@0.13.0':
     resolution: {integrity: sha512-Id6QQxCG7ByImXPD5X/c3Ag2kySD+49aJ9waIkfxyUFyokhMQgxYQAx2rKuaygaBlaBQY6VVfBS46pqxZV+99A==}
     peerDependencies:
       '@solana/kit': ^7.0.0
 
-  '@solana-program/token-2022@0.14.1':
-    resolution: {integrity: sha512-8yDF8xgEYU3HyfT4o7nLKHKMWQr3r2+1zBFojWYMkRyVh6YjuPO6Sxzf+p9trvL9Ddwp0d8SvqmMdYeErBZROA==}
+  '@solana-program/token-2022@0.15.0':
+    resolution: {integrity: sha512-Q9vR9kzP+l9AVWt2Uj5nH44BrnotiLFmX3AYDgsFQfuTla9n66RokNPGaSrCMUvQS0xRBv/u9BhH4p39qdB9Hw==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
       '@solana/kit': ^7.0.0
       '@solana/sysvars': ^7.0.0
-      '@solana/zk-sdk': ^0.4.2
+      '@solana/zk-sdk': ^0.5.1
     peerDependenciesMeta:
       '@solana/zk-sdk':
         optional: true
+
+  '@solana-program/token@0.14.0':
+    resolution: {integrity: sha512-zpLMr6JZndlsQCQvrm0gezfwdr1lmzOGqN6v2WIYXjtDmbF+xg6zh/MAp2UFHRpv3uDmylEdjtQo05pa2OeaYg==}
+    engines: {node: '>=24.0.0'}
+    peerDependencies:
+      '@solana/kit': ^6.5.0
 
   '@solana-program/zk-elgamal-proof@0.3.2':
     resolution: {integrity: sha512-bCiRVKtqYZpajgC2RVypZL4A0xHjQYVEsVSNMTtPJ1jjE5KOUvsXhnngGMYShK6BHv+fQP4F8QKvEVW/HOSFAg==}
@@ -3891,6 +3908,50 @@ packages:
     resolution: {integrity: sha512-xi6IyHML+c9+Q3W0S4fCQJOym42pyurFiJUHEcEyHS0CeKzia4yZDEsLlqOFykxOdHpNy0NmvVO31vcSqAxJCg==}
     engines: {node: '>= 12.0.0'}
 
+  litesvm-darwin-arm64@1.3.0:
+    resolution: {integrity: sha512-fj6cV/ofjMXdl5CwjyyLTQnZObfVH5HYDScQ6O44iRqxASmgEyEh4sC8a7M0YZ1rcli9nu2cWl5ARGura89I7Q==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [darwin]
+
+  litesvm-darwin-x64@1.3.0:
+    resolution: {integrity: sha512-ZYEddnc+tAn8sVYpzvww0oHFiekbCSv+0OZiA6eUDtcSx9uzeRDmPPQ9eI6vgyews2LefBDSENmUb70GHY6Cqg==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [darwin]
+
+  litesvm-linux-arm64-gnu@1.3.0:
+    resolution: {integrity: sha512-kmmKeef96pJI4AJGCvjzMCW6QHuzFrMF1i6dE6OcrtWHaz0Ag+TFaKOU35H1bjH/fDBwoJUV9UbaIbdWht81tA==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  litesvm-linux-arm64-musl@1.3.0:
+    resolution: {integrity: sha512-FO9p6rx+/3h7R3CU7lkOebL+jy8UEDngSrENHu7pj9EOr78QVyE3Fm0O+WMnwXpMoCSgW0XLhu1cI9NHAbzCTA==}
+    engines: {node: '>= 20'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  litesvm-linux-x64-gnu@1.3.0:
+    resolution: {integrity: sha512-yXC8ZAdIei9JQ2xw5/BocOTu/7EqZuFPyhgENQ1mYDhjNpoyUbIuGCWnqtria14mDda0aV9yVev8plGUrUpjUw==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  litesvm-linux-x64-musl@1.3.0:
+    resolution: {integrity: sha512-oedromp1gTjShXmKmxZ1FYtnfM824vRcrPSPvGM0CrqJqKK61m1+tFwNRAVsDlpmWKvO/zsz90ctbgAUo/3TXg==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  litesvm@1.3.0:
+    resolution: {integrity: sha512-tMu9sBIqSbF1gQluXEUtGmXPfZlMc10tOoBVeDokgK77nl/CcuC506sEoFKM5Rq58Dkb070lBMVBLc43TbMUzQ==}
+    engines: {node: '>= 20'}
+
   locate-path@5.0.0:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
     engines: {node: '>=8'}
@@ -6115,17 +6176,26 @@ snapshots:
     dependencies:
       '@solana/kit': 7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
 
+  '@solana-program/system@0.12.2(@solana/kit@6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/kit': 6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+
   '@solana-program/system@0.13.0(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/kit': 7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
 
-  '@solana-program/token-2022@0.14.1(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))(@solana/sysvars@7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
+  '@solana-program/token-2022@0.15.0(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))(@solana/sysvars@7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:
       '@noble/curves': 1.9.7
       '@solana-program/record': 0.3.0(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
       '@solana-program/zk-elgamal-proof': 0.3.2(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
       '@solana/kit': 7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@solana/sysvars': 7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+
+  '@solana-program/token@0.14.0(@solana/kit@6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana-program/system': 0.12.2(@solana/kit@6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
+      '@solana/kit': 6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
 
   '@solana-program/zk-elgamal-proof@0.3.2(@solana/kit@7.1.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))':
     dependencies:
@@ -9124,6 +9194,42 @@ snapshots:
       lightningcss-linux-x64-musl: 1.30.1
       lightningcss-win32-arm64-msvc: 1.30.1
       lightningcss-win32-x64-msvc: 1.30.1
+
+  litesvm-darwin-arm64@1.3.0:
+    optional: true
+
+  litesvm-darwin-x64@1.3.0:
+    optional: true
+
+  litesvm-linux-arm64-gnu@1.3.0:
+    optional: true
+
+  litesvm-linux-arm64-musl@1.3.0:
+    optional: true
+
+  litesvm-linux-x64-gnu@1.3.0:
+    optional: true
+
+  litesvm-linux-x64-musl@1.3.0:
+    optional: true
+
+  litesvm@1.3.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10):
+    dependencies:
+      '@solana-program/system': 0.12.2(@solana/kit@6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
+      '@solana-program/token': 0.14.0(@solana/kit@6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10))
+      '@solana/kit': 6.10.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+    optionalDependencies:
+      litesvm-darwin-arm64: 1.3.0
+      litesvm-darwin-x64: 1.3.0
+      litesvm-linux-arm64-gnu: 1.3.0
+      litesvm-linux-arm64-musl: 1.3.0
+      litesvm-linux-x64-gnu: 1.3.0
+      litesvm-linux-x64-musl: 1.3.0
+    transitivePeerDependencies:
+      - bufferutil
+      - fastestsmallesttextencoderdecoder
+      - typescript
+      - utf-8-validate
 
   locate-path@5.0.0:
     dependencies:

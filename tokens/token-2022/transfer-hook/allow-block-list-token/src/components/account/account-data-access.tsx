@@ -1,54 +1,52 @@
 'use client';
 
-import { useKitTransactionSigner, useWallet } from '@solana/connector/react';
-import { AccountRole, lamports, type Address } from '@solana/kit';
+import { useKitTransactionSigner, useSolanaClient, useWallet } from '@solana/connector/react';
+import { airdropFactory, lamports, type Address } from '@solana/kit';
 import {
     fetchMint,
     findAssociatedTokenPda,
     getCreateAssociatedTokenIdempotentInstructionAsync,
-    getTransferCheckedInstruction,
+    getTransferCheckedWithTransferHookInstructionAsync,
     TOKEN_2022_PROGRAM_ADDRESS,
     TOKEN_PROGRAM_ADDRESS,
-    type Extension,
 } from '@solana-program/token-2022';
 import { getTransferSolInstruction } from '@solana-program/system';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSendInstruction } from '@/hooks/use-send-instruction';
-import { findAbWalletPda, findExtraMetasAccountPda } from '@/generated/pdas';
-import { useCluster, useClusterRpc } from '../cluster/cluster-data-access';
+import { useCluster } from '../cluster/cluster-data-access';
 import { useTransactionErrorToast, useTransactionToast } from '../use-transaction-toast';
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
-function findExtension<TKind extends Extension['__kind']>(
-    extensions: Extension[] | undefined,
-    kind: TKind,
-): Extract<Extension, { __kind: TKind }> | undefined {
-    return extensions?.find((ext): ext is Extract<Extension, { __kind: TKind }> => ext.__kind === kind);
-}
-
+// `useGetBalance`/`useGetTokenAccounts`/`useGetSignatures` back the generic `/account/[address]`
+// page, which needs to read ANY address, not just the connected wallet's - connector's
+// `useBalance`/`useTokens`/`useTransactions` don't take an address parameter (they're scoped to
+// the connected wallet only), so they aren't a fit here. `useSolanaClient` still replaces the
+// custom RPC-construction hook that used to live in cluster-data-access.tsx.
 export function useGetBalance({ address }: { address: Address }) {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
 
     return useQuery({
+        enabled: client !== null,
         queryKey: ['get-balance', { endpoint: cluster.endpoint, address }],
-        queryFn: async () => Number((await rpc.getBalance(address).send()).value),
+        queryFn: async () => Number((await client!.rpc.getBalance(address).send()).value),
     });
 }
 
 export function useGetSignatures({ address }: { address: Address }) {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
 
     return useQuery({
+        enabled: client !== null,
         queryKey: ['get-signatures', { endpoint: cluster.endpoint, address }],
-        queryFn: () => rpc.getSignaturesForAddress(address).send(),
+        queryFn: () => client!.rpc.getSignaturesForAddress(address).send(),
     });
 }
 
 export function useSendTokens() {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { account } = useWallet();
     const { signer } = useKitTransactionSigner();
     const sendInstruction = useSendInstruction();
@@ -57,25 +55,14 @@ export function useSendTokens() {
 
     return useMutation({
         mutationFn: async (args: { mint: Address; destination: Address; amount: number }) => {
-            if (!signer || !account) throw new Error('No public key found');
+            if (!signer || !account || !client) throw new Error('No public key found');
             const { mint, destination, amount } = args;
 
-            const mintAccount = await fetchMint(rpc, mint);
-            const decimals = mintAccount.data.decimals;
-            const extensions = mintAccount.data.extensions.__option === 'Some' ? mintAccount.data.extensions.value : [];
-            const transferHook = findExtension(extensions, 'TransferHook');
-            if (!transferHook) throw new Error('bad token');
-
-            const [ataDestination] = await findAssociatedTokenPda({
-                owner: destination,
-                mint,
-                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
-            });
-            const [ataSource] = await findAssociatedTokenPda({
-                owner: account,
-                mint,
-                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
-            });
+            const [mintAccount, [ataDestination], [ataSource]] = await Promise.all([
+                fetchMint(client.rpc, mint),
+                findAssociatedTokenPda({ owner: destination, mint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
+                findAssociatedTokenPda({ owner: account, mint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
+            ]);
 
             const createAtaIx = await getCreateAssociatedTokenIdempotentInstructionAsync({
                 payer: signer,
@@ -84,51 +71,23 @@ export function useSendTokens() {
                 tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
             });
 
-            const transferIx = getTransferCheckedInstruction(
+            // Resolves the hook's extra accounts (both sender's and receiver's ab_wallet PDAs)
+            // by reading the mint's on-chain extra-account-metas list, instead of hardcoding
+            // this program's PDA seed convention client-side.
+            const transferIx = await getTransferCheckedWithTransferHookInstructionAsync(
+                client,
                 {
                     source: ataSource,
                     mint,
                     destination: ataDestination,
                     authority: signer,
                     amount: BigInt(amount),
-                    decimals,
+                    decimals: mintAccount.data.decimals,
                 },
-                { programAddress: TOKEN_2022_PROGRAM_ADDRESS },
+                { tokenProgram: TOKEN_2022_PROGRAM_ADDRESS },
             );
 
-            // The hook checks both the sender's and the receiver's allow/block status, so the
-            // client must resolve and append both ab_wallet PDAs, in the same order the
-            // program's get_extra_account_metas() declares them: source, then destination.
-            // After that comes the transfer-hook program itself, then the extra-account-meta-
-            // list PDA — all readonly, non-signer.
-            const [sourceAbWalletPda] = await findAbWalletPda(
-                { wallet: account },
-                { programAddress: transferHook.programId },
-            );
-            const [destinationAbWalletPda] = await findAbWalletPda(
-                { wallet: destination },
-                { programAddress: transferHook.programId },
-            );
-            const [extraMetasPda] = await findExtraMetasAccountPda(
-                { mint },
-                { programAddress: transferHook.programId },
-            );
-
-            const validateStateAccount = await rpc.getAccountInfo(extraMetasPda, { commitment: 'confirmed' }).send();
-            if (!validateStateAccount.value) throw new Error('validate-state-account not found');
-
-            const transferIxWithHookAccounts = {
-                ...transferIx,
-                accounts: [
-                    ...transferIx.accounts,
-                    { address: sourceAbWalletPda, role: AccountRole.READONLY },
-                    { address: destinationAbWalletPda, role: AccountRole.READONLY },
-                    { address: transferHook.programId, role: AccountRole.READONLY },
-                    { address: extraMetasPda, role: AccountRole.READONLY },
-                ],
-            };
-
-            return sendInstruction([createAtaIx, transferIxWithHookAccounts], signer);
+            return sendInstruction([createAtaIx, transferIx], signer);
         },
         onSuccess: signature => {
             transactionToast(signature);
@@ -140,17 +99,18 @@ export function useSendTokens() {
 }
 
 export function useGetTokenAccounts({ address }: { address: Address }) {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
 
     return useQuery({
+        enabled: client !== null,
         queryKey: ['get-token-accounts', { endpoint: cluster.endpoint, address }],
         queryFn: async () => {
             const [tokenAccounts, token2022Accounts] = await Promise.all([
-                rpc
+                client!.rpc
                     .getTokenAccountsByOwner(address, { programId: TOKEN_PROGRAM_ADDRESS }, { encoding: 'jsonParsed' })
                     .send(),
-                rpc
+                client!.rpc
                     .getTokenAccountsByOwner(
                         address,
                         { programId: TOKEN_2022_PROGRAM_ADDRESS },
@@ -173,6 +133,12 @@ export function useTransferSol({ address }: { address: Address }) {
         mutationKey: ['transfer-sol', { endpoint: cluster.endpoint, address }],
         mutationFn: async (input: { destination: Address; amount: number }) => {
             if (!signer) throw new Error('Wallet not connected');
+            // The connected wallet is the only account we can actually sign for - this hook is
+            // only meaningful when the page being viewed (`address`) is the connected wallet's
+            // own account.
+            if (signer.address !== address) {
+                throw new Error('Connected wallet does not match the account being viewed');
+            }
             try {
                 const ix = getTransferSolInstruction({
                     source: signer,
@@ -210,29 +176,31 @@ export function useTransferSol({ address }: { address: Address }) {
 }
 
 export function useRequestAirdrop({ address }: { address: Address }) {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
-    const client = useQueryClient();
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationKey: ['airdrop', { endpoint: cluster.endpoint, address }],
         mutationFn: async (amount: number = 1) => {
-            const signature = await rpc
-                .requestAirdrop(address, lamports(BigInt(Math.round(amount * LAMPORTS_PER_SOL))), {
-                    commitment: 'confirmed',
-                })
-                .send();
-            return signature;
+            if (!client) throw new Error('Solana client not ready');
+            const airdrop = airdropFactory({ rpc: client.rpc, rpcSubscriptions: client.rpcSubscriptions });
+            // Requests and confirms in one call, unlike a bare `rpc.requestAirdrop(...).send()`.
+            return airdrop({
+                commitment: 'confirmed',
+                recipientAddress: address,
+                lamports: lamports(BigInt(Math.round(amount * LAMPORTS_PER_SOL))),
+            });
         },
         onSuccess: () => {
             // TODO: Add back Toast
             // transactionToast(signature)
             console.log('Airdrop sent');
             return Promise.all([
-                client.invalidateQueries({
+                queryClient.invalidateQueries({
                     queryKey: ['get-balance', { endpoint: cluster.endpoint, address }],
                 }),
-                client.invalidateQueries({
+                queryClient.invalidateQueries({
                     queryKey: ['get-signatures', { endpoint: cluster.endpoint, address }],
                 }),
             ]);

@@ -1,5 +1,6 @@
 'use client';
 
+import { useSolanaClient, useTransactionPreparer } from '@solana/connector/react';
 import {
     appendTransactionMessageInstructions,
     assertIsTransactionWithBlockhashLifetime,
@@ -8,38 +9,43 @@ import {
     pipe,
     sendAndConfirmTransactionFactory,
     setTransactionMessageFeePayerSigner,
-    setTransactionMessageLifetimeUsingBlockhash,
     signTransactionMessageWithSigners,
     type Instruction,
     type TransactionSigner,
 } from '@solana/kit';
 import { useMemo } from 'react';
-import { useClusterRpc } from '@/components/cluster/cluster-data-access';
 
 /**
- * Signs and sends one or more instructions with the connected wallet, reading the RPC
- * (and its websocket subscriptions) from the active cluster so it moves with whatever
- * cluster the user has selected.
+ * Signs and sends one or more instructions with the connected wallet.
+ *
+ * `useTransactionPreparer` (from @solana/connector) fetches the blockhash and sets a
+ * simulation-derived compute unit limit; `client.rpc`/`client.rpcSubscriptions` (from
+ * `useSolanaClient`) come from the same cluster the wallet connector is using, so both
+ * move together when the user switches clusters.
  */
 export function useSendInstruction() {
-    const { rpc, rpcSubscriptions } = useClusterRpc();
+    const { client } = useSolanaClient();
+    const { prepare } = useTransactionPreparer();
     const sendAndConfirm = useMemo(
-        () => sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions }),
-        [rpc, rpcSubscriptions],
+        () =>
+            client
+                ? sendAndConfirmTransactionFactory({ rpc: client.rpc, rpcSubscriptions: client.rpcSubscriptions })
+                : null,
+        [client],
     );
 
     return async (ix: Instruction | Instruction[], feePayer: TransactionSigner): Promise<string> => {
-        const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-        const instructions = Array.isArray(ix) ? ix : [ix];
+        if (!sendAndConfirm) throw new Error('Solana client not ready');
 
+        const instructions = Array.isArray(ix) ? ix : [ix];
         const transactionMessage = pipe(
             createTransactionMessage({ version: 0 }),
             tx => setTransactionMessageFeePayerSigner(feePayer, tx),
-            tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
             tx => appendTransactionMessageInstructions(instructions, tx),
         );
 
-        const signedTransaction = await signTransactionMessageWithSigners(transactionMessage);
+        const prepared = await prepare(transactionMessage);
+        const signedTransaction = await signTransactionMessageWithSigners(prepared);
         assertIsTransactionWithBlockhashLifetime(signedTransaction);
         await sendAndConfirm(signedTransaction, { commitment: 'confirmed' });
         return getSignatureFromTransaction(signedTransaction);

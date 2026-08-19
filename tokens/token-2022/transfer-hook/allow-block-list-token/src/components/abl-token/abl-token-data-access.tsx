@@ -1,6 +1,6 @@
 'use client';
 
-import { useKitTransactionSigner } from '@solana/connector/react';
+import { useKitTransactionSigner, useSolanaClient } from '@solana/connector/react';
 import {
     address as toAddress,
     generateKeyPairSigner,
@@ -9,14 +9,8 @@ import {
     type Address,
     type Base58EncodedBytes,
 } from '@solana/kit';
-import {
-    fetchMint,
-    findAssociatedTokenPda,
-    getCreateAssociatedTokenIdempotentInstructionAsync,
-    getMintToCheckedInstruction,
-    TOKEN_2022_PROGRAM_ADDRESS,
-    type Extension,
-} from '@solana-program/token-2022';
+import { fetchMint, getMintToATAInstructionPlanAsync, type Extension } from '@solana-program/token-2022';
+import { assertIsSingleInstructionPlan, flattenInstructionPlan } from '@solana/instruction-plans';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
@@ -30,10 +24,10 @@ import {
     getInitWalletInstructionAsync,
     getRemoveWalletInstructionAsync,
 } from '@/generated/instructions';
-import { findAbWalletPda, findConfigPda } from '@/generated/pdas';
+import { findConfigPda } from '@/generated/pdas';
 import { ABL_TOKEN_PROGRAM_ADDRESS } from '@/generated/programs';
 import { Mode } from '@/generated/types';
-import { ClusterNetwork, useCluster, useClusterRpc, type SolanaCluster } from '../cluster/cluster-data-access';
+import { ClusterNetwork, useCluster, type SolanaCluster } from '../cluster/cluster-data-access';
 import { useTransactionToast } from '../use-transaction-toast';
 
 function findExtension<TKind extends Extension['__kind']>(
@@ -59,14 +53,15 @@ function programIdForCluster(cluster: SolanaCluster): Address {
 }
 
 export function useHasTransferHookEnabled(mint: Address) {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
     const programId = useMemo(() => programIdForCluster(cluster), [cluster]);
 
     return useQuery({
+        enabled: client !== null,
         queryKey: ['has-transfer-hook', { cluster, mint }],
         queryFn: async () => {
-            const mintAccount = await fetchMint(rpc, mint);
+            const mintAccount = await fetchMint(client!.rpc, mint);
             const transferHook = findExtension(mintExtensions(mintAccount), 'TransferHook');
             return transferHook !== undefined && transferHook.programId === programId;
         },
@@ -74,14 +69,15 @@ export function useHasTransferHookEnabled(mint: Address) {
 }
 
 export function useGetToken(mint: Address) {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
     const programId = useMemo(() => programIdForCluster(cluster), [cluster]);
 
     return useQuery({
+        enabled: client !== null,
         queryKey: ['get-token', { endpoint: cluster.endpoint, mint }],
         queryFn: async () => {
-            const mintAccount = await fetchMint(rpc, mint);
+            const mintAccount = await fetchMint(client!.rpc, mint);
             const extensions = mintExtensions(mintAccount);
 
             const metadata = findExtension(extensions, 'TokenMetadata');
@@ -119,7 +115,7 @@ export function useGetToken(mint: Address) {
 }
 
 export function useAblTokenProgram() {
-    const { rpc } = useClusterRpc();
+    const { client } = useSolanaClient();
     const { cluster } = useCluster();
     const transactionToast = useTransactionToast();
     const { signer } = useKitTransactionSigner();
@@ -127,8 +123,10 @@ export function useAblTokenProgram() {
     const programId = useMemo(() => programIdForCluster(cluster), [cluster]);
 
     const getProgramAccount = useQuery({
+        enabled: client !== null,
         queryKey: ['get-program-account', { cluster }],
-        queryFn: () => rpc.getAccountInfo(programId, { encoding: 'jsonParsed', commitment: 'confirmed' }).send(),
+        queryFn: () =>
+            client!.rpc.getAccountInfo(programId, { encoding: 'jsonParsed', commitment: 'confirmed' }).send(),
     });
 
     const initToken = useMutation({
@@ -157,7 +155,7 @@ export function useAblTokenProgram() {
                     mintAuthority: args.mintAuthority,
                     freezeAuthority: args.freezeAuthority,
                     permanentDelegate: args.permanentDelegate,
-                    transferHookAuthority: args.mintAuthority,
+                    transferHookAuthority: args.transferHookAuthority,
                     mode: modeEnum,
                     threshold: args.threshold,
                     name: args.name,
@@ -233,12 +231,8 @@ export function useAblTokenProgram() {
             const instructions = await Promise.all(
                 args.wallets.map(async wallet => {
                     if (wallet.mode === 'remove') {
-                        const [abWalletPda] = await findAbWalletPda(
-                            { wallet: wallet.wallet },
-                            { programAddress: programId },
-                        );
                         return getRemoveWalletInstructionAsync(
-                            { authority: signer, abWallet: abWalletPda },
+                            { authority: signer, wallet: wallet.wallet },
                             { programAddress: programId },
                         );
                     }
@@ -261,9 +255,8 @@ export function useAblTokenProgram() {
         mutationKey: ['abl-token', 'change-mode', { cluster }],
         mutationFn: async (args: { wallet: Address }) => {
             if (!signer) throw new Error('Wallet not connected');
-            const [abWalletPda] = await findAbWalletPda({ wallet: args.wallet }, { programAddress: programId });
             const ix = await getRemoveWalletInstructionAsync(
-                { authority: signer, abWallet: abWalletPda },
+                { authority: signer, wallet: args.wallet },
                 { programAddress: programId },
             );
             return sendInstruction(ix, signer);
@@ -284,18 +277,20 @@ export function useAblTokenProgram() {
     });
 
     const getConfig = useQuery({
+        enabled: client !== null,
         queryKey: ['get-config', { cluster }],
         queryFn: async () => {
             const [configPda] = await findConfigPda({ programAddress: programId });
-            return (await fetchConfig(rpc, configPda)).data;
+            return (await fetchConfig(client!.rpc, configPda)).data;
         },
     });
 
     const getAbWallets = useQuery({
+        enabled: client !== null,
         queryKey: ['get-ab-wallets', { cluster }],
         queryFn: async () => {
             const discriminatorBase58 = getBase58Decoder().decode(A_B_WALLET_DISCRIMINATOR) as Base58EncodedBytes;
-            const accounts = await rpc
+            const accounts = await client!.rpc
                 .getProgramAccounts(programId, {
                     encoding: 'base64',
                     filters: [{ memcmp: { offset: BigInt(0), bytes: discriminatorBase58, encoding: 'base58' } }],
@@ -312,32 +307,26 @@ export function useAblTokenProgram() {
     const mintTo = useMutation({
         mutationKey: ['abl-token', 'mint-to', { cluster }],
         mutationFn: async (args: { mint: Address; amount: bigint; recipient: Address }) => {
-            if (!signer) throw new Error('Wallet not connected');
-            const mintAccount = await fetchMint(rpc, args.mint);
-            const [ata] = await findAssociatedTokenPda({
-                owner: args.recipient,
-                mint: args.mint,
-                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
-            });
+            if (!signer || !client) throw new Error('Wallet not connected');
+            const mintAccount = await fetchMint(client.rpc, args.mint);
 
-            const createAtaIx = await getCreateAssociatedTokenIdempotentInstructionAsync({
+            // Bundles the idempotent-create-ATA and mint-to instructions in one call instead of
+            // assembling each manually. Minting isn't a transfer, so it never goes through
+            // tx_hook - no extra-account resolution needed here, unlike `useSendTokens`.
+            const plan = await getMintToATAInstructionPlanAsync({
                 payer: signer,
                 owner: args.recipient,
                 mint: args.mint,
-                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+                mintAuthority: signer,
+                amount: args.amount,
+                decimals: mintAccount.data.decimals,
             });
-            const mintToIx = getMintToCheckedInstruction(
-                {
-                    mint: args.mint,
-                    token: ata,
-                    mintAuthority: signer,
-                    amount: args.amount,
-                    decimals: mintAccount.data.decimals,
-                },
-                { programAddress: TOKEN_2022_PROGRAM_ADDRESS },
-            );
+            const instructions = flattenInstructionPlan(plan).map(single => {
+                assertIsSingleInstructionPlan(single);
+                return single.instruction;
+            });
 
-            return sendInstruction([createAtaIx, mintToIx], signer);
+            return sendInstruction(instructions, signer);
         },
         onSuccess: signature => {
             transactionToast(signature);

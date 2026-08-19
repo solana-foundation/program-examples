@@ -1,5 +1,6 @@
 'use client';
 
+import { useSolanaClient } from '@solana/connector/react';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { AppAlert } from '@/components/app-alert';
@@ -10,7 +11,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useCluster, useClusterRpc } from './cluster-data-access';
+import { useCluster } from './cluster-data-access';
 
 export function ExplorerLink({ path, label, className }: { path: string; label: string; className?: string }) {
     const { getExplorerUrl } = useCluster();
@@ -28,11 +29,12 @@ export function ExplorerLink({ path, label, className }: { path: string; label: 
 
 export function ClusterChecker({ children }: { children: ReactNode }) {
     const { cluster } = useCluster();
-    const { rpc } = useClusterRpc();
+    const { client, ready } = useSolanaClient();
 
     const query = useQuery({
+        enabled: ready && client !== null,
         queryKey: ['version', { cluster, endpoint: cluster.endpoint }],
-        queryFn: () => rpc.getVersion().send(),
+        queryFn: () => client!.rpc.getVersion().send(),
         retry: 1,
     });
     if (query.isLoading) {
