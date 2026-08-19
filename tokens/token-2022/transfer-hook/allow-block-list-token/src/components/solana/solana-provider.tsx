@@ -26,6 +26,15 @@ import {
 import { ellipsify } from '@/lib/utils';
 import { ClusterNetwork, useCluster, type SolanaCluster } from '../cluster/cluster-data-access';
 
+function isLocalEndpoint(endpoint: string): boolean {
+    try {
+        const { hostname } = new URL(endpoint);
+        return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+    } catch {
+        return false;
+    }
+}
+
 function connectorNetworkFor(cluster: SolanaCluster): 'devnet' | 'localnet' | 'mainnet' | 'testnet' {
     switch (cluster.network) {
         case ClusterNetwork.Devnet:
@@ -35,7 +44,7 @@ function connectorNetworkFor(cluster: SolanaCluster): 'devnet' | 'localnet' | 'm
         case ClusterNetwork.Mainnet:
             return 'mainnet';
         default:
-            return cluster.name === 'local' ? 'localnet' : 'devnet';
+            return isLocalEndpoint(cluster.endpoint) ? 'localnet' : 'devnet';
     }
 }
 
@@ -161,10 +170,10 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
         });
     }, [cluster]);
 
-    // Keyed on the active cluster so switching clusters (via our own ClusterProvider)
-    // reinitializes the wallet connector with the right chain instead of going stale.
+    // Keyed on the endpoint so switching clusters reinitializes the wallet connector against
+    // the new chain instead of reusing the previous one's session.
     return (
-        <AppProvider key={cluster.name} connectorConfig={connectorConfig}>
+        <AppProvider key={cluster.endpoint} connectorConfig={connectorConfig}>
             {children}
         </AppProvider>
     );

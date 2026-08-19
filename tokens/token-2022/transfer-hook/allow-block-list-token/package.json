@@ -20,7 +20,6 @@
         "typecheck": "pnpm run generate-client && tsc --noEmit"
     },
     "dependencies": {
-        "@anchor-lang/core": "1.0.0-rc.5",
         "@radix-ui/react-dialog": "^1.1.14",
         "@radix-ui/react-dropdown-menu": "^2.1.15",
         "@radix-ui/react-label": "^2.1.7",
@@ -31,7 +30,6 @@
         "@solana/instruction-plans": "^7.1.0",
         "@solana/kit": "^7.1.0",
         "@solana/program-client-core": "^7.1.0",
-        "@solana/web3.js": "^1.98.4",
         "@tanstack/react-query": "^5.82.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

@@ -18,10 +18,9 @@ import { useMemo } from 'react';
 /**
  * Signs and sends one or more instructions with the connected wallet.
  *
- * `useTransactionPreparer` (from @solana/connector) fetches the blockhash and sets a
- * simulation-derived compute unit limit; `client.rpc`/`client.rpcSubscriptions` (from
- * `useSolanaClient`) come from the same cluster the wallet connector is using, so both
- * move together when the user switches clusters.
+ * `useTransactionPreparer` (from @solana/connector) attaches the latest blockhash, and
+ * `client.rpc`/`client.rpcSubscriptions` (from `useSolanaClient`) point at the cluster the
+ * wallet connector is configured for, so sending follows the user's cluster selection.
  */
 export function useSendInstruction() {
     const { client } = useSolanaClient();

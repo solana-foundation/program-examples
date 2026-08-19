@@ -1,5 +1,6 @@
 'use client';
 
+import { lamportsToSol } from '@solana/connector';
 import { useWallet } from '@solana/connector/react';
 import { address as toAddress, type Address } from '@solana/kit';
 import { useQueryClient } from '@tanstack/react-query';
@@ -46,7 +47,7 @@ export function AccountBalanceCheck({ address }: { address: Address }) {
     const mutation = useRequestAirdrop({ address });
     const query = useGetBalance({ address });
 
-    if (query.isLoading) {
+    if (query.isPending) {
         return null;
     }
     if (query.isError || !query.data) {
@@ -290,7 +291,7 @@ export function AccountTransactions({ address }: { address: Address }) {
 }
 
 function BalanceSol({ balance }: { balance: number }) {
-    return <span>{Math.round((balance / 1_000_000_000) * 100000) / 100000}</span>;
+    return <span>{Math.round(lamportsToSol(balance) * 100000) / 100000}</span>;
 }
 
 function ModalReceive({ address }: { address: Address }) {
@@ -336,6 +337,10 @@ function ModalSend({ address }: { address: Address }) {
 
     if (!address || !account) {
         return <div>Wallet not connected</div>;
+    }
+    // Sending debits the connected wallet, so it is only offered on that wallet's own page.
+    if (account !== address) {
+        return null;
     }
 
     return (

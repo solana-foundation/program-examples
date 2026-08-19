@@ -2,7 +2,6 @@
 
 import { useKitTransactionSigner, useSolanaClient } from '@solana/connector/react';
 import {
-    address as toAddress,
     generateKeyPairSigner,
     getBase58Decoder,
     parseBase64RpcAccount,
@@ -11,8 +10,7 @@ import {
 } from '@solana/kit';
 import { fetchMint, getMintToATAInstructionPlanAsync, type Extension } from '@solana-program/token-2022';
 import { assertIsSingleInstructionPlan, flattenInstructionPlan } from '@solana/instruction-plans';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSendInstruction } from '@/hooks/use-send-instruction';
 import { A_B_WALLET_DISCRIMINATOR, decodeABWallet, fetchConfig } from '@/generated/accounts';
@@ -27,7 +25,7 @@ import {
 import { findConfigPda } from '@/generated/pdas';
 import { ABL_TOKEN_PROGRAM_ADDRESS } from '@/generated/programs';
 import { Mode } from '@/generated/types';
-import { ClusterNetwork, useCluster, type SolanaCluster } from '../cluster/cluster-data-access';
+import { useCluster } from '../cluster/cluster-data-access';
 import { useTransactionToast } from '../use-transaction-toast';
 
 function findExtension<TKind extends Extension['__kind']>(
@@ -41,37 +39,9 @@ function mintExtensions(mint: Awaited<ReturnType<typeof fetchMint>>): Extension[
     return mint.data.extensions.__option === 'Some' ? mint.data.extensions.value : [];
 }
 
-// The program deployed to devnet/testnet was built from a keypair that no longer matches
-// this repo's `declare_id!` — the Anchor.toml keypair is intentionally left mismatched
-// (see AGENTS.md), so devnet/testnet keep pointing at the address they were actually
-// deployed under instead of the IDL's local `address` field.
-function programIdForCluster(cluster: SolanaCluster): Address {
-    if (cluster.network === ClusterNetwork.Devnet || cluster.network === ClusterNetwork.Testnet) {
-        return toAddress('6z68wfurCMYkZG51s1Et9BJEd9nJGUusjHXNt4dGbNNF');
-    }
-    return ABL_TOKEN_PROGRAM_ADDRESS;
-}
-
-export function useHasTransferHookEnabled(mint: Address) {
-    const { client } = useSolanaClient();
-    const { cluster } = useCluster();
-    const programId = useMemo(() => programIdForCluster(cluster), [cluster]);
-
-    return useQuery({
-        enabled: client !== null,
-        queryKey: ['has-transfer-hook', { cluster, mint }],
-        queryFn: async () => {
-            const mintAccount = await fetchMint(client!.rpc, mint);
-            const transferHook = findExtension(mintExtensions(mintAccount), 'TransferHook');
-            return transferHook !== undefined && transferHook.programId === programId;
-        },
-    });
-}
-
 export function useGetToken(mint: Address) {
     const { client } = useSolanaClient();
     const { cluster } = useCluster();
-    const programId = useMemo(() => programIdForCluster(cluster), [cluster]);
 
     return useQuery({
         enabled: client !== null,
@@ -88,7 +58,7 @@ export function useGetToken(mint: Address) {
 
             const transferHook = findExtension(extensions, 'TransferHook');
             const isTransferHookEnabled = transferHook !== undefined;
-            const isTransferHookSet = transferHook?.programId === programId;
+            const isTransferHookSet = transferHook?.programId === ABL_TOKEN_PROGRAM_ADDRESS;
             const transferHookProgramId = transferHook?.programId ?? null;
 
             return {
@@ -120,13 +90,15 @@ export function useAblTokenProgram() {
     const transactionToast = useTransactionToast();
     const { signer } = useKitTransactionSigner();
     const sendInstruction = useSendInstruction();
-    const programId = useMemo(() => programIdForCluster(cluster), [cluster]);
+    const queryClient = useQueryClient();
 
     const getProgramAccount = useQuery({
         enabled: client !== null,
         queryKey: ['get-program-account', { cluster }],
         queryFn: () =>
-            client!.rpc.getAccountInfo(programId, { encoding: 'jsonParsed', commitment: 'confirmed' }).send(),
+            client!.rpc
+                .getAccountInfo(ABL_TOKEN_PROGRAM_ADDRESS, { encoding: 'jsonParsed', commitment: 'confirmed' })
+                .send(),
     });
 
     const initToken = useMutation({
@@ -147,23 +119,20 @@ export function useAblTokenProgram() {
             const modeEnum = args.mode === 'allow' ? Mode.Allow : args.mode === 'block' ? Mode.Block : Mode.Mixed;
             const mint = await generateKeyPairSigner();
 
-            const ix = await getInitMintInstructionAsync(
-                {
-                    payer: signer,
-                    mint,
-                    decimals: args.decimals,
-                    mintAuthority: args.mintAuthority,
-                    freezeAuthority: args.freezeAuthority,
-                    permanentDelegate: args.permanentDelegate,
-                    transferHookAuthority: args.transferHookAuthority,
-                    mode: modeEnum,
-                    threshold: args.threshold,
-                    name: args.name,
-                    symbol: args.symbol,
-                    uri: args.uri,
-                },
-                { programAddress: programId },
-            );
+            const ix = await getInitMintInstructionAsync({
+                payer: signer,
+                mint,
+                decimals: args.decimals,
+                mintAuthority: args.mintAuthority,
+                freezeAuthority: args.freezeAuthority,
+                permanentDelegate: args.permanentDelegate,
+                transferHookAuthority: args.transferHookAuthority,
+                mode: modeEnum,
+                threshold: args.threshold,
+                name: args.name,
+                symbol: args.symbol,
+                uri: args.uri,
+            });
 
             const signature = await sendInstruction(ix, signer);
             return { signature, mintAddress: mint.address };
@@ -179,10 +148,7 @@ export function useAblTokenProgram() {
         mutationKey: ['abl-token', 'attach-to-existing-token', { cluster }],
         mutationFn: async (args: { mint: Address }) => {
             if (!signer) throw new Error('Wallet not connected');
-            const ix = await getAttachToMintInstructionAsync(
-                { payer: signer, mint: args.mint },
-                { programAddress: programId },
-            );
+            const ix = await getAttachToMintInstructionAsync({ payer: signer, mint: args.mint });
             return sendInstruction(ix, signer);
         },
         onSuccess: signature => {
@@ -196,10 +162,12 @@ export function useAblTokenProgram() {
         mutationFn: async (args: { mode: string; threshold: bigint; mint: Address }) => {
             if (!signer) throw new Error('Wallet not connected');
             const modeEnum = args.mode === 'Allow' ? Mode.Allow : args.mode === 'Block' ? Mode.Block : Mode.Mixed;
-            const ix = getChangeModeInstruction(
-                { authority: signer, mint: args.mint, mode: modeEnum, threshold: args.threshold },
-                { programAddress: programId },
-            );
+            const ix = getChangeModeInstruction({
+                authority: signer,
+                mint: args.mint,
+                mode: modeEnum,
+                threshold: args.threshold,
+            });
             return sendInstruction(ix, signer);
         },
         onSuccess: signature => {
@@ -209,17 +177,19 @@ export function useAblTokenProgram() {
     });
 
     const initWallet = useMutation({
-        mutationKey: ['abl-token', 'change-mode', { cluster }],
+        mutationKey: ['abl-token', 'init-wallet', { cluster }],
         mutationFn: async (args: { wallet: Address; allowed: boolean }) => {
             if (!signer) throw new Error('Wallet not connected');
-            const ix = await getInitWalletInstructionAsync(
-                { authority: signer, wallet: args.wallet, allowed: args.allowed },
-                { programAddress: programId },
-            );
+            const ix = await getInitWalletInstructionAsync({
+                authority: signer,
+                wallet: args.wallet,
+                allowed: args.allowed,
+            });
             return sendInstruction(ix, signer);
         },
         onSuccess: signature => {
             transactionToast(signature);
+            return queryClient.invalidateQueries({ queryKey: ['get-ab-wallets', { cluster }] });
         },
         onError: () => toast.error('Failed to run program'),
     });
@@ -231,15 +201,13 @@ export function useAblTokenProgram() {
             const instructions = await Promise.all(
                 args.wallets.map(async wallet => {
                     if (wallet.mode === 'remove') {
-                        return getRemoveWalletInstructionAsync(
-                            { authority: signer, wallet: wallet.wallet },
-                            { programAddress: programId },
-                        );
+                        return getRemoveWalletInstructionAsync({ authority: signer, wallet: wallet.wallet });
                     }
-                    return getInitWalletInstructionAsync(
-                        { authority: signer, wallet: wallet.wallet, allowed: wallet.mode === 'allow' },
-                        { programAddress: programId },
-                    );
+                    return getInitWalletInstructionAsync({
+                        authority: signer,
+                        wallet: wallet.wallet,
+                        allowed: wallet.mode === 'allow',
+                    });
                 }),
             );
 
@@ -247,22 +215,21 @@ export function useAblTokenProgram() {
         },
         onSuccess: signature => {
             transactionToast(signature);
+            return queryClient.invalidateQueries({ queryKey: ['get-ab-wallets', { cluster }] });
         },
         onError: () => toast.error('Failed to run program'),
     });
 
     const removeWallet = useMutation({
-        mutationKey: ['abl-token', 'change-mode', { cluster }],
+        mutationKey: ['abl-token', 'remove-wallet', { cluster }],
         mutationFn: async (args: { wallet: Address }) => {
             if (!signer) throw new Error('Wallet not connected');
-            const ix = await getRemoveWalletInstructionAsync(
-                { authority: signer, wallet: args.wallet },
-                { programAddress: programId },
-            );
+            const ix = await getRemoveWalletInstructionAsync({ authority: signer, wallet: args.wallet });
             return sendInstruction(ix, signer);
         },
         onSuccess: signature => {
             transactionToast(signature);
+            return queryClient.invalidateQueries({ queryKey: ['get-ab-wallets', { cluster }] });
         },
         onError: () => toast.error('Failed to run program'),
     });
@@ -271,7 +238,7 @@ export function useAblTokenProgram() {
         mutationKey: ['abl-token', 'init-config', { cluster }],
         mutationFn: async () => {
             if (!signer) throw new Error('Wallet not connected');
-            const ix = await getInitConfigInstructionAsync({ payer: signer }, { programAddress: programId });
+            const ix = await getInitConfigInstructionAsync({ payer: signer });
             return sendInstruction(ix, signer);
         },
     });
@@ -280,7 +247,7 @@ export function useAblTokenProgram() {
         enabled: client !== null,
         queryKey: ['get-config', { cluster }],
         queryFn: async () => {
-            const [configPda] = await findConfigPda({ programAddress: programId });
+            const [configPda] = await findConfigPda();
             return (await fetchConfig(client!.rpc, configPda)).data;
         },
     });
@@ -291,7 +258,7 @@ export function useAblTokenProgram() {
         queryFn: async () => {
             const discriminatorBase58 = getBase58Decoder().decode(A_B_WALLET_DISCRIMINATOR) as Base58EncodedBytes;
             const accounts = await client!.rpc
-                .getProgramAccounts(programId, {
+                .getProgramAccounts(ABL_TOKEN_PROGRAM_ADDRESS, {
                     encoding: 'base64',
                     filters: [{ memcmp: { offset: BigInt(0), bytes: discriminatorBase58, encoding: 'base58' } }],
                 })
@@ -310,9 +277,8 @@ export function useAblTokenProgram() {
             if (!signer || !client) throw new Error('Wallet not connected');
             const mintAccount = await fetchMint(client.rpc, args.mint);
 
-            // Bundles the idempotent-create-ATA and mint-to instructions in one call instead of
-            // assembling each manually. Minting isn't a transfer, so it never goes through
-            // tx_hook - no extra-account resolution needed here, unlike `useSendTokens`.
+            // Plans the idempotent-create-ATA and mint-to instructions together. Minting is not
+            // a transfer, so tx_hook never runs and no extra-account resolution is required.
             const plan = await getMintToATAInstructionPlanAsync({
                 payer: signer,
                 owner: args.recipient,
@@ -335,7 +301,7 @@ export function useAblTokenProgram() {
     });
 
     return {
-        programId,
+        programId: ABL_TOKEN_PROGRAM_ADDRESS,
         getProgramAccount,
         initToken,
         changeMode,

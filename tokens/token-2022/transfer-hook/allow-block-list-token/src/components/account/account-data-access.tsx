@@ -1,7 +1,8 @@
 'use client';
 
+import { LAMPORTS_PER_SOL } from '@solana/connector';
 import { useKitTransactionSigner, useSolanaClient, useWallet } from '@solana/connector/react';
-import { airdropFactory, lamports, type Address } from '@solana/kit';
+import { airdropFactory, fetchEncodedAccount, lamports, type Address } from '@solana/kit';
 import {
     fetchMint,
     findAssociatedTokenPda,
@@ -13,16 +14,12 @@ import {
 import { getTransferSolInstruction } from '@solana-program/system';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSendInstruction } from '@/hooks/use-send-instruction';
+import { findExtraMetasAccountPda } from '@/generated/pdas';
 import { useCluster } from '../cluster/cluster-data-access';
 import { useTransactionErrorToast, useTransactionToast } from '../use-transaction-toast';
 
-const LAMPORTS_PER_SOL = 1_000_000_000;
-
-// `useGetBalance`/`useGetTokenAccounts`/`useGetSignatures` back the generic `/account/[address]`
-// page, which needs to read ANY address, not just the connected wallet's - connector's
-// `useBalance`/`useTokens`/`useTransactions` don't take an address parameter (they're scoped to
-// the connected wallet only), so they aren't a fit here. `useSolanaClient` still replaces the
-// custom RPC-construction hook that used to live in cluster-data-access.tsx.
+// These read an arbitrary address, so they can't use connector's `useBalance`/`useTokens`/
+// `useTransactions`, which are scoped to the connected wallet and take no address.
 export function useGetBalance({ address }: { address: Address }) {
     const { client } = useSolanaClient();
     const { cluster } = useCluster();
@@ -64,16 +61,37 @@ export function useSendTokens() {
                 findAssociatedTokenPda({ owner: account, mint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
             ]);
 
-            const createAtaIx = await getCreateAssociatedTokenIdempotentInstructionAsync({
-                payer: signer,
-                owner: destination,
-                mint,
-                tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
-            });
+            const extensions = mintAccount.data.extensions.__option === 'Some' ? mintAccount.data.extensions.value : [];
+            const transferHook = extensions.find(extension => extension.__kind === 'TransferHook');
+            if (!transferHook) throw new Error('This mint has no transfer hook, so it is not an allow/block token');
 
-            // Resolves the hook's extra accounts (both sender's and receiver's ab_wallet PDAs)
-            // by reading the mint's on-chain extra-account-metas list, instead of hardcoding
-            // this program's PDA seed convention client-side.
+            const [extraMetasPda] = await findExtraMetasAccountPda(
+                { mint },
+                { programAddress: transferHook.programId },
+            );
+            const extraMetasAccount = await fetchEncodedAccount(client.rpc, extraMetasPda);
+            if (!extraMetasAccount.exists) {
+                throw new Error(`Transfer hook validation account ${extraMetasPda} not found — attach the mint first`);
+            }
+
+            // The hook derives the receiver's ab_wallet PDA from the owner field stored in the
+            // destination token account, so that account has to exist on chain before the
+            // transfer instruction can be assembled. Creating it in the same transaction is too
+            // late: resolution happens here, client-side, against current chain state.
+            const destinationTokenAccount = await fetchEncodedAccount(client.rpc, ataDestination);
+            if (!destinationTokenAccount.exists) {
+                const createAtaIx = await getCreateAssociatedTokenIdempotentInstructionAsync({
+                    payer: signer,
+                    owner: destination,
+                    mint,
+                    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+                });
+                await sendInstruction(createAtaIx, signer);
+            }
+
+            // Reads the mint's on-chain extra-account-metas list to resolve the accounts the
+            // hook's Execute CPI needs — both the sender's and the receiver's ab_wallet PDAs,
+            // the hook program, and its validation account.
             const transferIx = await getTransferCheckedWithTransferHookInstructionAsync(
                 client,
                 {
@@ -87,7 +105,7 @@ export function useSendTokens() {
                 { tokenProgram: TOKEN_2022_PROGRAM_ADDRESS },
             );
 
-            return sendInstruction([createAtaIx, transferIx], signer);
+            return sendInstruction(transferIx, signer);
         },
         onSuccess: signature => {
             transactionToast(signature);
@@ -128,37 +146,27 @@ export function useTransferSol({ address }: { address: Address }) {
     const { signer } = useKitTransactionSigner();
     const sendInstruction = useSendInstruction();
     const client = useQueryClient();
+    const transactionToast = useTransactionToast();
+    const transactionErrorToast = useTransactionErrorToast();
 
     return useMutation({
         mutationKey: ['transfer-sol', { endpoint: cluster.endpoint, address }],
         mutationFn: async (input: { destination: Address; amount: number }) => {
             if (!signer) throw new Error('Wallet not connected');
-            // The connected wallet is the only account we can actually sign for - this hook is
-            // only meaningful when the page being viewed (`address`) is the connected wallet's
-            // own account.
+            // Only the connected wallet can sign, so this hook applies solely to the page
+            // showing that wallet's own account.
             if (signer.address !== address) {
                 throw new Error('Connected wallet does not match the account being viewed');
             }
-            try {
-                const ix = getTransferSolInstruction({
-                    source: signer,
-                    destination: input.destination,
-                    amount: lamports(BigInt(Math.round(input.amount * LAMPORTS_PER_SOL))),
-                });
-                const signature = await sendInstruction(ix, signer);
-                console.log(signature);
-                return signature;
-            } catch (error: unknown) {
-                console.log('error', `Transaction failed! ${error}`);
-                return;
-            }
+            const ix = getTransferSolInstruction({
+                source: signer,
+                destination: input.destination,
+                amount: lamports(BigInt(Math.round(input.amount * LAMPORTS_PER_SOL))),
+            });
+            return sendInstruction(ix, signer);
         },
         onSuccess: signature => {
-            if (signature) {
-                // TODO: Add back Toast
-                // transactionToast(signature)
-                console.log('Transaction sent', signature);
-            }
+            transactionToast(signature);
             return Promise.all([
                 client.invalidateQueries({
                     queryKey: ['get-balance', { endpoint: cluster.endpoint, address }],
@@ -169,8 +177,7 @@ export function useTransferSol({ address }: { address: Address }) {
             ]);
         },
         onError: error => {
-            // TODO: Add Toast
-            console.error(`Transaction failed! ${error}`);
+            transactionErrorToast(error);
         },
     });
 }
@@ -185,7 +192,7 @@ export function useRequestAirdrop({ address }: { address: Address }) {
         mutationFn: async (amount: number = 1) => {
             if (!client) throw new Error('Solana client not ready');
             const airdrop = airdropFactory({ rpc: client.rpc, rpcSubscriptions: client.rpcSubscriptions });
-            // Requests and confirms in one call, unlike a bare `rpc.requestAirdrop(...).send()`.
+            // `airdropFactory` requests the airdrop and waits for confirmation.
             return airdrop({
                 commitment: 'confirmed',
                 recipientAddress: address,

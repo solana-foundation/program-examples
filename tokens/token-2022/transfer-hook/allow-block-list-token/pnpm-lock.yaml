@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@anchor-lang/core':
-        specifier: 1.0.0-rc.5
-        version: 1.0.0-rc.5(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@radix-ui/react-dialog':
         specifier: ^1.1.14
         version: 1.1.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -41,9 +38,6 @@ importers:
       '@solana/program-client-core':
         specifier: ^7.1.0
         version: 7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
-      '@solana/web3.js':
-        specifier: ^1.98.4
-        version: 1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@tanstack/react-query':
         specifier: ^5.82.0
         version: 5.90.3(react@19.2.0)
@@ -143,20 +137,6 @@ packages:
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
-    engines: {node: '>=10'}
-
-  '@anchor-lang/borsh@1.1.2':
-    resolution: {integrity: sha512-ilYszz4tZjBc2Kszdq/HIaiYozZuAl8ESUI/PvrHl5PvgaD5WPThVe44aDRcDDDY5Cz2Rdbqa+rlGwWW5i25cQ==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      '@solana/web3.js': ^1.69.1
-
-  '@anchor-lang/core@1.0.0-rc.5':
-    resolution: {integrity: sha512-4iPy4RiEFn6obzYY7zx8IaGAXz2fvJ0uCTF6agAcUBjGNZeypfEb4ZZh6TfLnJy78Lh06JeB7XGqKsaBCMEmQA==}
-    engines: {node: '>=17'}
-
-  '@anchor-lang/errors@1.1.2':
-    resolution: {integrity: sha512-+l5fLYF79t7LAYz+YbjjLzmjj6U1za6Q0cH4GBMWx4vUijlPTkm9Oj/cyDPLJG6Hsx+VFxceh7/+qbca5nnEmg==}
     engines: {node: '>=10'}
 
   '@babel/code-frame@7.27.1':
@@ -2781,9 +2761,6 @@ packages:
   bn.js@5.2.2:
     resolution: {integrity: sha512-v2YAxEmKaBLahNwE1mjp4WON6huMNeuDvagFZW+ASCuA/ku0bXR9hSMw0XpiqMoA3+rmnyck/tPRSFQkoC9Cuw==}
 
-  bn.js@5.2.5:
-    resolution: {integrity: sha512-Vq886eXykuP5E6HcKSSStP3bJgrE6In5WKxVUvJ8XGpWWYs2xZHWqUwzCtGgEtBcxyd57KBFDPFoUfNzdaHCNg==}
-
   borsh@0.7.0:
     resolution: {integrity: sha512-CLCsZGIBCFnPtkNnieW/a8wmreDmfUtjU2m9yHrzPXIlNbqVs0AQrSatSG6vdNYUqdc83tkQi2eHfF98ubzQLA==}
 
@@ -2813,10 +2790,6 @@ packages:
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
-
-  buffer-layout@1.2.2:
-    resolution: {integrity: sha512-kWSuLN694+KTk8SrYvCqwP2WcgQjoRCiF5b4QDvkkz8EmgD+aWAIceGFKMIAdmF/pH+vpgNV3d3kAKorcdAmWA==}
-    engines: {node: '>=4.5'}
 
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
@@ -2947,9 +2920,6 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
-
-  cross-fetch@3.2.0:
-    resolution: {integrity: sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -3267,9 +3237,6 @@ packages:
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
     engines: {node: '>=6'}
-
-  eventemitter3@4.0.7:
-    resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
@@ -4277,9 +4244,6 @@ packages:
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
-  pako@2.2.0:
-    resolution: {integrity: sha512-zJq6RP/5q+TO2OpFV3FHzlPnFjmkb7Nc99a5SNjJE+uu/PkpChs+NIZSSzbBoD+6kjiISXjfYdwj1ZRQ81dz/w==}
-
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
@@ -4741,9 +4705,6 @@ packages:
       babel-plugin-macros:
         optional: true
 
-  superstruct@0.15.5:
-    resolution: {integrity: sha512-4AOeU+P5UuE/4nOUkmcQdW5y7i9ndt1cQd/3iUe+LTz3RxESf/W/5lg4B74HbDMMv8PHnPnGCQFH45kBcrQYoQ==}
-
   superstruct@2.0.2:
     resolution: {integrity: sha512-uV+TFRZdXsqXTL2pRvujROjdZQ4RAlBUS5BTh9IGm+jTqQntYThciG/qu57Gs69yjnVUSqdxF9YLmSnpupBW9A==}
     engines: {node: '>=14.0.0'}
@@ -4803,9 +4764,6 @@ packages:
   toidentifier@1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
-
-  toml@3.0.0:
-    resolution: {integrity: sha512-y/mWCZinnvxjTKYhJ+pYxwD0mRLVvOtdS2Awbgxln6iEnt4rk0yBxeSBHkGJcPucRiG0e55mwWp+g/05rsrd6w==}
 
   tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
@@ -5071,35 +5029,6 @@ packages:
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
-
-  '@anchor-lang/borsh@1.1.2(@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
-      bn.js: 5.2.5
-      buffer-layout: 1.2.2
-
-  '@anchor-lang/core@1.0.0-rc.5(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@anchor-lang/borsh': 1.1.2(@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10))
-      '@anchor-lang/errors': 1.1.2
-      '@noble/hashes': 1.8.0
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)
-      bn.js: 5.2.2
-      bs58: 4.0.1
-      buffer-layout: 1.2.2
-      camelcase: 6.3.0
-      cross-fetch: 3.2.0
-      eventemitter3: 4.0.7
-      pako: 2.2.0
-      superstruct: 0.15.5
-      toml: 3.0.0
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
-
-  '@anchor-lang/errors@1.1.2': {}
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -6267,11 +6196,13 @@ snapshots:
   '@solana/buffer-layout@4.0.1':
     dependencies:
       buffer: 6.0.3
+    optional: true
 
   '@solana/codecs-core@2.3.0(typescript@5.9.3)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.3)
       typescript: 5.9.3
+    optional: true
 
   '@solana/codecs-core@5.5.1(typescript@5.9.3)':
     dependencies:
@@ -6320,6 +6251,7 @@ snapshots:
       '@solana/codecs-core': 2.3.0(typescript@5.9.3)
       '@solana/errors': 2.3.0(typescript@5.9.3)
       typescript: 5.9.3
+    optional: true
 
   '@solana/codecs-numbers@5.5.1(typescript@5.9.3)':
     dependencies:
@@ -6438,6 +6370,7 @@ snapshots:
       chalk: 5.6.2
       commander: 14.0.2
       typescript: 5.9.3
+    optional: true
 
   '@solana/errors@5.5.1(typescript@5.9.3)':
     dependencies:
@@ -7311,6 +7244,7 @@ snapshots:
       - encoding
       - typescript
       - utf-8-validate
+    optional: true
 
   '@solana/webcrypto-ed25519-polyfill@7.1.0(typescript@5.9.3)':
     dependencies:
@@ -7327,6 +7261,7 @@ snapshots:
   '@swc/helpers@0.5.17':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@tailwindcss/node@4.1.14':
     dependencies:
@@ -7441,6 +7376,7 @@ snapshots:
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 22.18.10
+    optional: true
 
   '@types/deep-eql@4.0.2': {}
 
@@ -7466,7 +7402,8 @@ snapshots:
 
   '@types/mocha@10.0.10': {}
 
-  '@types/node@12.20.55': {}
+  '@types/node@12.20.55':
+    optional: true
 
   '@types/node@22.18.10':
     dependencies:
@@ -7482,15 +7419,18 @@ snapshots:
 
   '@types/stack-utils@2.0.3': {}
 
-  '@types/uuid@8.3.4': {}
+  '@types/uuid@8.3.4':
+    optional: true
 
   '@types/ws@7.4.7':
     dependencies:
       '@types/node': 22.18.10
+    optional: true
 
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 22.18.10
+    optional: true
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -7704,6 +7644,7 @@ snapshots:
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
+    optional: true
 
   ajv@6.12.6:
     dependencies:
@@ -7892,20 +7833,21 @@ snapshots:
   base-x@3.0.11:
     dependencies:
       safe-buffer: 5.2.1
+    optional: true
 
   base64-js@1.5.1: {}
 
   baseline-browser-mapping@2.8.16: {}
 
-  bn.js@5.2.2: {}
-
-  bn.js@5.2.5: {}
+  bn.js@5.2.2:
+    optional: true
 
   borsh@0.7.0:
     dependencies:
       bn.js: 5.2.2
       bs58: 4.0.1
       text-encoding-utf-8: 1.0.2
+    optional: true
 
   brace-expansion@1.1.12:
     dependencies:
@@ -7933,6 +7875,7 @@ snapshots:
   bs58@4.0.1:
     dependencies:
       base-x: 3.0.11
+    optional: true
 
   bser@2.1.1:
     dependencies:
@@ -7940,12 +7883,11 @@ snapshots:
 
   buffer-from@1.1.2: {}
 
-  buffer-layout@1.2.2: {}
-
   buffer@6.0.3:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
+    optional: true
 
   bufferutil@4.0.9:
     dependencies:
@@ -8077,12 +8019,6 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  cross-fetch@3.2.0:
-    dependencies:
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
-
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -8143,7 +8079,8 @@ snapshots:
       has-property-descriptors: 1.0.2
       object-keys: 1.1.1
 
-  delay@5.0.0: {}
+  delay@5.0.0:
+    optional: true
 
   depd@2.0.0: {}
 
@@ -8291,11 +8228,13 @@ snapshots:
       is-date-object: 1.1.0
       is-symbol: 1.1.1
 
-  es6-promise@4.2.8: {}
+  es6-promise@4.2.8:
+    optional: true
 
   es6-promisify@5.0.0:
     dependencies:
       es6-promise: 4.2.8
+    optional: true
 
   esbuild@0.28.1:
     optionalDependencies:
@@ -8537,13 +8476,13 @@ snapshots:
 
   event-target-shim@5.0.1: {}
 
-  eventemitter3@4.0.7: {}
-
-  eventemitter3@5.0.1: {}
+  eventemitter3@5.0.1:
+    optional: true
 
   exponential-backoff@3.1.3: {}
 
-  eyes@0.1.8: {}
+  eyes@0.1.8:
+    optional: true
 
   fast-deep-equal@3.1.3: {}
 
@@ -8567,7 +8506,8 @@ snapshots:
 
   fast-levenshtein@2.0.6: {}
 
-  fast-stable-stringify@1.0.0: {}
+  fast-stable-stringify@1.0.0:
+    optional: true
 
   fastestsmallesttextencoderdecoder@1.0.22:
     optional: true
@@ -8783,8 +8723,10 @@ snapshots:
   humanize-ms@1.2.1:
     dependencies:
       ms: 2.1.3
+    optional: true
 
-  ieee754@1.2.1: {}
+  ieee754@1.2.1:
+    optional: true
 
   ignore@5.3.2: {}
 
@@ -8951,6 +8893,7 @@ snapshots:
   isomorphic-ws@4.0.1(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
     dependencies:
       ws: 7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+    optional: true
 
   istanbul-lib-coverage@3.2.2: {}
 
@@ -8996,6 +8939,7 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   jest-environment-node@29.7.0:
     dependencies:
@@ -9107,7 +9051,8 @@ snapshots:
       jsonify: 0.0.1
       object-keys: 1.1.1
 
-  json-stringify-safe@5.0.1: {}
+  json-stringify-safe@5.0.1:
+    optional: true
 
   json5@1.0.2:
     dependencies:
@@ -9562,6 +9507,7 @@ snapshots:
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
+    optional: true
 
   node-gyp-build@4.8.4:
     optional: true
@@ -9671,8 +9617,6 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
-
-  pako@2.2.0: {}
 
   parent-module@1.0.1:
     dependencies:
@@ -9926,6 +9870,7 @@ snapshots:
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 5.0.10
+    optional: true
 
   run-parallel@1.2.0:
     dependencies:
@@ -10132,11 +10077,13 @@ snapshots:
       es-errors: 1.3.0
       internal-slot: 1.1.0
 
-  stream-chain@2.2.5: {}
+  stream-chain@2.2.5:
+    optional: true
 
   stream-json@1.9.1:
     dependencies:
       stream-chain: 2.2.5
+    optional: true
 
   streamsearch@1.1.0: {}
 
@@ -10221,9 +10168,8 @@ snapshots:
     optionalDependencies:
       '@babel/core': 7.28.4
 
-  superstruct@0.15.5: {}
-
-  superstruct@2.0.2: {}
+  superstruct@2.0.2:
+    optional: true
 
   supports-color@7.2.0:
     dependencies:
@@ -10262,7 +10208,8 @@ snapshots:
       glob: 7.2.3
       minimatch: 3.1.2
 
-  text-encoding-utf-8@1.0.2: {}
+  text-encoding-utf-8@1.0.2:
+    optional: true
 
   throat@5.0.0: {}
 
@@ -10279,9 +10226,8 @@ snapshots:
 
   toidentifier@1.0.1: {}
 
-  toml@3.0.0: {}
-
-  tr46@0.0.3: {}
+  tr46@0.0.3:
+    optional: true
 
   ts-api-utils@2.1.0(typescript@5.9.3):
     dependencies:
@@ -10416,7 +10362,8 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
-  uuid@8.3.2: {}
+  uuid@8.3.2:
+    optional: true
 
   vlq@1.0.1: {}
 
@@ -10424,7 +10371,8 @@ snapshots:
     dependencies:
       makeerror: 1.0.12
 
-  webidl-conversions@3.0.1: {}
+  webidl-conversions@3.0.1:
+    optional: true
 
   whatwg-fetch@3.6.20: {}
 
@@ -10432,6 +10380,7 @@ snapshots:
     dependencies:
       tr46: 0.0.3
       webidl-conversions: 3.0.1
+    optional: true
 
   which-boxed-primitive@1.1.1:
     dependencies:

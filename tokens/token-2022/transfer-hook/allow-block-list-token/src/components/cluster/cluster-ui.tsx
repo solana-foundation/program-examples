@@ -37,7 +37,7 @@ export function ClusterChecker({ children }: { children: ReactNode }) {
         queryFn: () => client!.rpc.getVersion().send(),
         retry: 1,
     });
-    if (query.isLoading) {
+    if (query.isPending) {
         return null;
     }
     if (query.isError || !query.data) {

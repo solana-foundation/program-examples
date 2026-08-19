@@ -38,6 +38,12 @@ Compile the program (make sure to replace your program ID):
 Compile the UI:
 `yarn run build`
 
+The UI talks to the program through a Codama-generated client under `src/generated`, rebuilt by
+`pnpm run generate-client` (which `dev` and `build` run for you). It reads the IDL emitted by
+`anchor build` when one is present, falling back to the committed copy in `idl/`, so a program ID
+change picks up automatically — commit the refreshed `idl/abl_token.json` and `src/generated` when
+the change is meant to be permanent.
+
 Serve the UI:
 `yarn run dev`
 

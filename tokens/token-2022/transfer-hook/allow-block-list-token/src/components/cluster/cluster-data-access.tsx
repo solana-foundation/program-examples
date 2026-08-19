@@ -76,8 +76,8 @@ export function ClusterProvider({ children }: { children: ReactNode }) {
         clusters: clusters.sort((a, b) => (a.name > b.name ? 1 : -1)),
         addCluster: (cluster: SolanaCluster) => {
             try {
-                // `createSolanaRpc` doesn't parse its endpoint eagerly - it accepts any string
-                // without throwing - so `new URL` is the actual validation here.
+                // Rejects a malformed endpoint before it is persisted; the RPC client itself
+                // accepts any string and would only fail later, at request time.
                 new URL(cluster.endpoint);
                 setClusters([...clusters, cluster]);
             } catch (err) {

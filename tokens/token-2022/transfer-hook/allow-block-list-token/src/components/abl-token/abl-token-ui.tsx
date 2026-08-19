@@ -197,7 +197,7 @@ export function AblTokenCreate() {
 export function AblTokenProgram() {
     const { getProgramAccount } = useAblTokenProgram();
 
-    if (getProgramAccount.isLoading) {
+    if (getProgramAccount.isPending) {
         return <span className="loading loading-spinner loading-lg"></span>;
     }
     if (!getProgramAccount.data?.value) {
@@ -211,7 +211,13 @@ export function AblTokenProgram() {
     }
     return (
         <div className={'space-y-6'}>
-            <pre>{JSON.stringify(getProgramAccount.data.value, null, 2)}</pre>
+            <pre>
+                {JSON.stringify(
+                    getProgramAccount.data.value,
+                    (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
+                    2,
+                )}
+            </pre>
         </div>
     );
 }

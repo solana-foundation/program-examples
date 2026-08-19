@@ -22,13 +22,10 @@ import {
 import { findAbWalletPda, findConfigPda } from '../../src/generated/pdas';
 import { ABL_TOKEN_PROGRAM_ADDRESS } from '../../src/generated/programs';
 
-// The Codama-generated Kit client is what the webapp actually talks to, so these tests
-// exercise it directly against a LiteSVM instance loaded with the built program - proving
-// the generated instruction builders, PDA derivation, and account decoders are wired up
-// correctly, which the Rust-side unit/litesvm tests (which never touch the TS client) don't
-// cover. There's no local validator available in this project's `anchor test` flow (the
-// custom [scripts] test command replaces Anchor's normal build+validator+deploy pipeline
-// entirely), so a real RPC connection isn't an option here.
+// Exercises the Codama-generated Kit client - the same client the webapp uses - against a
+// LiteSVM instance loaded with the built program, covering the generated instruction
+// builders, PDA derivation, and account decoders. LiteSVM keeps the suite independent of a
+// validator, whose ephemeral program id would not match the client's `declare_id!`.
 const PROGRAM_SO = path.join(__dirname, '..', 'target', 'deploy', 'abl_token.so');
 
 describe('abl-token (Kit client, via LiteSVM)', () => {
@@ -92,9 +89,8 @@ describe('abl-token (Kit client, via LiteSVM)', () => {
         assert.equal(decoded.data.wallet, wallet.address);
         assert.isTrue(decoded.data.allowed);
 
-        // `getRemoveWalletInstructionAsync` used to require the caller to pre-derive and pass
-        // the `ab_wallet` PDA by hand; now that the Rust account declares its own seeds, it
-        // resolves `ab_wallet` from `wallet` the same way `getInitWalletInstructionAsync` does.
+        // `ab_wallet` is resolved from `wallet` by the generated client, using the seeds the
+        // Rust account declares.
         const removeIx = await getRemoveWalletInstructionAsync(
             { authority, wallet: wallet.address },
             { programAddress: ABL_TOKEN_PROGRAM_ADDRESS },
