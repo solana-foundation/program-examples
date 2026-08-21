@@ -10,28 +10,33 @@ use pinocchio_system::instructions::CreateAccount;
 use pinocchio_token::instructions::{InitializeMint2, MintTo};
 
 use crate::instructions::{
-    build_metadata_data, create_master_edition_cpi, create_metadata_cpi, AUTHORITY_SEED, MINT_SIZE, TOKEN_DECIMALS,
+    build_metadata_data, create_master_edition_cpi, create_metadata_cpi, AUTHORITY_SEED, COLLECTION_AUTHORITY_LEN,
+    COLLECTION_AUTHORITY_SEED, MINT_SIZE, TOKEN_DECIMALS,
 };
 
 /// Creates a collection NFT: a 0-decimal mint whose authority is the program's
 /// `[b"authority"]` PDA, with Metaplex metadata (marked as a sized collection)
-/// and a master edition. The single token is minted to the user's ATA.
+/// and a master edition. The single token is minted to the user's ATA. Also
+/// creates a `collection_authority` account recording `user` as this
+/// collection's creator, so `verify_collection` can later confirm only they
+/// may verify members of it.
 ///
 /// Accounts:
 ///   0. `[signer, writable]` user (payer)
 ///   1. `[signer, writable]` mint account (a fresh keypair)
 ///   2. `[]`                 mint authority PDA (`[b"authority"]`, also update authority)
-///   3. `[writable]`         metadata account (Metaplex PDA)
-///   4. `[writable]`         master edition account (Metaplex PDA)
-///   5. `[writable]`         user's associated token account (the destination)
-///   6. `[]`                 system program
-///   7. `[]`                 token program
-///   8. `[]`                 associated token program
-///   9. `[]`                 token metadata program
+///   3. `[writable]`         collection authority PDA (`[b"collection_authority", mint]`)
+///   4. `[writable]`         metadata account (Metaplex PDA)
+///   5. `[writable]`         master edition account (Metaplex PDA)
+///   6. `[writable]`         user's associated token account (the destination)
+///   7. `[]`                 system program
+///   8. `[]`                 token program
+///   9. `[]`                 associated token program
+///   10. `[]`                token metadata program
 ///
 /// Instruction data: none.
 pub fn create_collection(program_id: &Address, accounts: &mut [AccountView]) -> ProgramResult {
-    let [user, mint, mint_authority, metadata, master_edition, destination, system_program, token_program, _associated_token_program, _token_metadata_program] =
+    let [user, mint, mint_authority, collection_authority, metadata, master_edition, destination, system_program, token_program, _associated_token_program, _token_metadata_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -49,12 +54,37 @@ pub fn create_collection(program_id: &Address, accounts: &mut [AccountView]) -> 
         return Err(ProgramError::InvalidSeeds);
     }
 
+    let (collection_authority_pda, collection_authority_bump) =
+        Address::find_program_address(&[COLLECTION_AUTHORITY_SEED, mint.address().as_ref()], program_id);
+    if collection_authority.address() != &collection_authority_pda {
+        return Err(ProgramError::InvalidSeeds);
+    }
+
     // Create and initialize the mint, with the PDA as mint/freeze authority.
     // Rent-exempt minimum is read from the Rent sysvar.
     let rent = Rent::get()?;
     let lamports = rent.try_minimum_balance(MINT_SIZE)?;
     log!("Creating mint account");
     CreateAccount { from: user, to: mint, lamports, space: MINT_SIZE as u64, owner: &pinocchio_token::ID }.invoke()?;
+
+    log!("Creating collection authority account");
+    let collection_authority_bump_bytes = [collection_authority_bump];
+    let collection_authority_seeds = [
+        Seed::from(COLLECTION_AUTHORITY_SEED),
+        Seed::from(mint.address().as_ref()),
+        Seed::from(&collection_authority_bump_bytes),
+    ];
+    let collection_authority_signers = [Signer::from(&collection_authority_seeds)];
+    let collection_authority_lamports = rent.try_minimum_balance(COLLECTION_AUTHORITY_LEN)?;
+    CreateAccount {
+        from: user,
+        to: collection_authority,
+        lamports: collection_authority_lamports,
+        space: COLLECTION_AUTHORITY_LEN as u64,
+        owner: program_id,
+    }
+    .invoke_signed(&collection_authority_signers)?;
+    collection_authority.try_borrow_mut()?.copy_from_slice(user.address().as_ref());
 
     log!("Initializing mint account");
     InitializeMint2 {
