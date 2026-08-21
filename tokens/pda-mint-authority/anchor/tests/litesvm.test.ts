@@ -1,10 +1,22 @@
 import * as anchor from '@anchor-lang/core';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
-import { PublicKey } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { assert } from 'chai';
 import { LiteSVMProvider } from 'anchor-litesvm';
 import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/token_minter.json';
 import type { TokenMinter } from '../target/types/token_minter';
+
+const expectAnchorError = async (promise: Promise<unknown>, code: string) => {
+    let caught: any;
+    try {
+        await promise;
+    } catch (error) {
+        caught = error;
+    }
+    assert.isDefined(caught, `expected the transaction to fail with ${code}`);
+    assert.strictEqual(caught?.error?.errorCode?.code, code, `expected ${code}, got: ${caught}`);
+};
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 const METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
@@ -59,5 +71,23 @@ describe('NFT Minter', () => {
         console.log('Success!');
         console.log(`   Associated Token Account Address: ${associatedTokenAccountAddress}`);
         console.log(`   Transaction Signature: ${transactionSignature}`);
+    });
+
+    it('rejects mint_token from a wallet that did not create the token', async () => {
+        const outsider = Keypair.generate();
+        client.airdrop(outsider.publicKey, BigInt(LAMPORTS_PER_SOL));
+        const outsiderAta = getAssociatedTokenAddressSync(mintPDA, outsider.publicKey);
+
+        await expectAnchorError(
+            program.methods
+                .mintToken(new anchor.BN(100))
+                .accountsPartial({
+                    payer: outsider.publicKey,
+                    associatedTokenAccount: outsiderAta,
+                })
+                .signers([outsider])
+                .rpc(),
+            'Unauthorized',
+        );
     });
 });

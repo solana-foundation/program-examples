@@ -1,4 +1,5 @@
 use {
+    crate::{errors::TokenMinterError, state::MintConfig},
     anchor_lang::prelude::*,
     anchor_spl::{
         associated_token::AssociatedToken,
@@ -19,6 +20,14 @@ pub struct MintToken<'info> {
     )]
     pub mint_account: Account<'info, Mint>,
 
+    // Only the wallet recorded as admin at create_token time may mint.
+    #[account(
+        seeds = [b"mint_config"],
+        bump,
+        constraint = mint_config.admin == payer.key() @ TokenMinterError::Unauthorized,
+    )]
+    pub mint_config: Account<'info, MintConfig>,
+
     // Create Associated Token Account, if needed
     // This is the account that will hold the minted tokens
     #[account(
@@ -37,10 +46,7 @@ pub struct MintToken<'info> {
 pub fn mint_token(ctx: Context<MintToken>, amount: u64) -> Result<()> {
     msg!("Minting token to associated token account...");
     msg!("Mint: {}", &ctx.accounts.mint_account.key());
-    msg!(
-        "Token Address: {}",
-        &ctx.accounts.associated_token_account.key()
-    );
+    msg!("Token Address: {}", &ctx.accounts.associated_token_account.key());
 
     // PDA signer seeds
     let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];

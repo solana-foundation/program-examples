@@ -1,11 +1,11 @@
 // In this example the same PDA is used as both the address of the mint account and the mint authority
 // This is to demonstrate that the same PDA can be used for both the address of an account and CPI signing
 use {
+    crate::state::MintConfig,
     anchor_lang::prelude::*,
     anchor_spl::{
         metadata::{
-            create_metadata_accounts_v3, mpl_token_metadata::types::DataV2,
-            CreateMetadataAccountsV3, Metadata,
+            create_metadata_accounts_v3, mpl_token_metadata::types::DataV2, CreateMetadataAccountsV3, Metadata,
         },
         token::{Mint, Token},
     },
@@ -38,6 +38,17 @@ pub struct CreateToken<'info> {
         seeds::program = token_metadata_program.key(),
     )]
     pub metadata_account: UncheckedAccount<'info>,
+
+    // Records who is allowed to mint, since the mint authority PDA itself signs
+    // unconditionally for whoever calls the mint instruction.
+    #[account(
+        init,
+        payer = payer,
+        space = MintConfig::LEN,
+        seeds = [b"mint_config"],
+        bump,
+    )]
+    pub mint_config: Account<'info, MintConfig>,
 
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,
@@ -85,6 +96,8 @@ pub fn create_token(
         true,  // Update authority is signer
         None,  // Collection details
     )?;
+
+    ctx.accounts.mint_config.admin = ctx.accounts.payer.key();
 
     msg!("Token created successfully.");
 
