@@ -95,6 +95,13 @@ describe('Swap', () => {
 
     it('Swap from B to A', async () => {
         const input = new anchor.BN(3 * 10 ** 6);
+
+        // Mirror the on-chain constant-product formula exactly, so this
+        // asserts the precise output amount rather than a broad range.
+        const feeAmount = input.mul(new anchor.BN(values.fee)).div(new anchor.BN(10000));
+        const taxedInput = input.sub(feeAmount);
+        const expectedOutput = taxedInput.mul(values.depositAmountA).div(values.depositAmountB.add(taxedInput));
+
         await program.methods
             .swapExactTokensForTokens(false, input, new anchor.BN(100))
             .accountsPartial({
@@ -117,11 +124,8 @@ describe('Swap', () => {
         expect(traderTokenAccountB.value.amount).to.equal(
             values.defaultSupply.sub(values.depositAmountB).sub(input).toString(),
         );
-        expect(Number(traderTokenAccountA.value.amount)).to.be.greaterThan(
-            values.defaultSupply.sub(values.depositAmountA).toNumber(),
-        );
-        expect(Number(traderTokenAccountA.value.amount)).to.be.lessThan(
-            values.defaultSupply.sub(values.depositAmountA).add(input).toNumber(),
+        expect(traderTokenAccountA.value.amount).to.equal(
+            values.defaultSupply.sub(values.depositAmountA).add(expectedOutput).toString(),
         );
     });
 });
