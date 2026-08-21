@@ -48,7 +48,7 @@ const buildTransferDigest = (
     userTokenAccountKey: PublicKey,
     recipientTokenAccountKey: PublicKey,
     amount: anchor.BN,
-    nonce: anchor.BN
+    nonce: anchor.BN,
 ): Uint8Array =>
     keccak_256(
         Buffer.concat([
@@ -59,7 +59,7 @@ const buildTransferDigest = (
             recipientTokenAccountKey.toBuffer(),
             amount.toArrayLike(Buffer, 'le', 8),
             nonce.toArrayLike(Buffer, 'le', 8),
-        ])
+        ]),
     );
 
 const signDigest = (digest: Uint8Array, privateKey: Uint8Array): Buffer => {
@@ -136,7 +136,7 @@ describe('External Delegate Token Master Tests', () => {
             createInitializeMint2Instruction(mint, 6, authority.publicKey, null),
             createAssociatedTokenAccountInstruction(wallet.publicKey, userTokenAccount, userPda, mint),
             createAssociatedTokenAccountInstruction(wallet.publicKey, recipientTokenAccount, recipient.publicKey, mint),
-            createMintToInstruction(mint, userTokenAccount, authority.publicKey, 1_000_000_000)
+            createMintToInstruction(mint, userTokenAccount, authority.publicKey, 1_000_000_000),
         );
         await provider.sendAndConfirm!(setupTx, [mintKeypair, authority]);
 
@@ -197,9 +197,9 @@ describe('External Delegate Token Master Tests', () => {
                     wallet.publicKey,
                     recipientTokenAccount,
                     recipient.publicKey,
-                    mint
+                    mint,
                 ),
-                createMintToInstruction(mint, userTokenAccount, authority.publicKey, 1_000_000_000)
+                createMintToInstruction(mint, userTokenAccount, authority.publicKey, 1_000_000_000),
             );
             await provider.sendAndConfirm!(setupTx, [mintKeypair, authority]);
         });
@@ -212,7 +212,7 @@ describe('External Delegate Token Master Tests', () => {
                 userTokenAccount,
                 recipientTokenAccount,
                 amount,
-                nonce
+                nonce,
             );
             const signature = signDigest(digest, ethPrivateKey);
 
@@ -261,7 +261,7 @@ describe('External Delegate Token Master Tests', () => {
                     })
                     .signers([authority])
                     .rpc(),
-                'InvalidSignature'
+                'InvalidSignature',
             );
         });
 
@@ -273,7 +273,7 @@ describe('External Delegate Token Master Tests', () => {
                 userTokenAccount,
                 recipientTokenAccount,
                 signedAmount,
-                nonce
+                nonce,
             );
             const signature = signDigest(digest, ethPrivateKey);
             const submittedAmount = new anchor.BN(999);
@@ -291,7 +291,7 @@ describe('External Delegate Token Master Tests', () => {
                     })
                     .signers([authority])
                     .rpc(),
-                'InvalidSignature'
+                'InvalidSignature',
             );
         });
 
@@ -303,7 +303,7 @@ describe('External Delegate Token Master Tests', () => {
                 userTokenAccount,
                 recipientTokenAccount,
                 amount,
-                nonce
+                nonce,
             );
             const signature = signDigest(digest, otherEthPrivateKey);
 
@@ -320,7 +320,7 @@ describe('External Delegate Token Master Tests', () => {
                     })
                     .signers([authority])
                     .rpc(),
-                'InvalidSignature'
+                'InvalidSignature',
             );
         });
     });
