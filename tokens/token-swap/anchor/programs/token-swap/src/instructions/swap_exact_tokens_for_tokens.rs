@@ -26,10 +26,10 @@ pub fn swap_exact_tokens_for_tokens(
     };
 
     // Apply trading fee, used to compute the output.
-    // u128 avoids overflow when input * fee approaches u64::MAX.
+    // u128 + checked math avoids overflow when input * fee approaches u64::MAX.
     let amm = &ctx.accounts.amm;
-    let fee_amount = ((input as u128) * (amm.fee as u128) / 10000) as u64;
-    let taxed_input = input - fee_amount;
+    let fee_amount = (input as u128).checked_mul(amm.fee as u128).unwrap().checked_div(10000).unwrap() as u64;
+    let taxed_input = input.checked_sub(fee_amount).unwrap();
 
     let pool_a = &ctx.accounts.pool_account_a;
     let pool_b = &ctx.accounts.pool_account_b;
