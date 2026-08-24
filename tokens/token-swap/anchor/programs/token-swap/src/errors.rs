@@ -16,4 +16,7 @@ pub enum TutorialError {
 
     #[msg("Invariant does not hold")]
     InvariantViolated,
+
+    #[msg("Math overflowed")]
+    MathOverflow,
 }
