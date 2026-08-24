@@ -21,7 +21,7 @@ export function createTransferTokensInstruction(
     fromAssociatedTokenAccount: Address,
     toAssociatedTokenAccount: Address,
     owner: TransactionSigner,
-    recipient: TransactionSigner,
+    recipient: Address,
     payer: TransactionSigner,
     programId: Address,
     quantity: bigint,
@@ -33,7 +33,9 @@ export function createTransferTokensInstruction(
             { address: fromAssociatedTokenAccount, role: AccountRole.WRITABLE },
             { address: toAssociatedTokenAccount, role: AccountRole.WRITABLE },
             { address: owner.address, role: AccountRole.WRITABLE_SIGNER, signer: owner },
-            { address: recipient.address, role: AccountRole.WRITABLE_SIGNER, signer: recipient },
+            // Recipient just needs to be named, not to sign — receiving tokens
+            // must never require the recipient's approval.
+            { address: recipient, role: AccountRole.READONLY },
             { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
             { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
             { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },

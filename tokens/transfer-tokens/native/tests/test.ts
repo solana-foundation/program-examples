@@ -216,7 +216,7 @@ describe('Transferring Tokens', () => {
             await findAssociatedTokenAddress(mint, payer.address),
             await findAssociatedTokenAddress(mint, recipientWallet.address),
             payer,
-            recipientWallet,
+            recipientWallet.address,
             payer,
             programId,
             quantity,
