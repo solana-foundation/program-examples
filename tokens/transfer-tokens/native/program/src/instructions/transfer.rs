@@ -62,10 +62,8 @@ pub fn transfer_tokens(accounts: &[AccountInfo], args: TransferTokensArgs) -> Pr
             from_associated_token_account.key,
             to_associated_token_account.key,
             owner.key,
-            // Empty: `owner` is a plain wallet authority, not a multisig account.
-            // A non-empty list here marks `owner` as non-signer and instead
-            // requires each listed pubkey to co-sign as a multisig member — which
-            // wrongly forced the recipient to sign just to receive tokens.
+            // Empty: `owner` is a single signer, not a multisig — a non-empty
+            // list here wrongly required the recipient to also sign.
             &[],
             args.quantity,
         )?,
