@@ -40,11 +40,16 @@ pub struct Initialize<'info> {
 impl<'info> Initialize<'info> {
     pub fn initialize(&mut self, amount: u64, duration: u16, bumps: &InitializeBumps) -> Result<()> {
 
-        // Check if the amount to raise meets the minimum amount required
-        require!(
-            amount >= MIN_AMOUNT_TO_RAISE * 10_u64.pow(self.mint_to_raise.decimals as u32),
-            FundraiserError::InvalidAmount
-        );
+        // Check if the amount to raise meets the minimum amount required.
+        // Checked throughout: decimals is mint-controlled, and 3 * 10^decimals
+        // leaves u64 at 19 decimals. If the minimum is not representable then
+        // no target can reach it, so reject rather than panic.
+        let min_amount_to_raise = 10_u64
+            .checked_pow(self.mint_to_raise.decimals as u32)
+            .and_then(|one_token| MIN_AMOUNT_TO_RAISE.checked_mul(one_token))
+            .ok_or(FundraiserError::InvalidAmount)?;
+
+        require!(amount >= min_amount_to_raise, FundraiserError::InvalidAmount);
 
         // Initialize the fundraiser account
         self.fundraiser.set_inner(Fundraiser {

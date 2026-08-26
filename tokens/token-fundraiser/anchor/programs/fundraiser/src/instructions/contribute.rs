@@ -56,11 +56,14 @@ pub struct Contribute<'info> {
 impl<'info> Contribute<'info> {
     pub fn contribute(&mut self, amount: u64) -> Result<()> {
 
-        // Check if the amount to contribute meets the minimum amount required
-        require!(
-            amount >= 10_u64.pow(self.mint_to_raise.decimals as u32),
-            FundraiserError::ContributionTooSmall
-        );
+        // Check if the amount to contribute meets the minimum amount required.
+        // 10^decimals leaves u64 above 19 decimals; a floor that cannot be
+        // represented cannot be met, so reject rather than panic.
+        let min_contribution = 10_u64
+            .checked_pow(self.mint_to_raise.decimals as u32)
+            .ok_or(FundraiserError::ContributionTooSmall)?;
+
+        require!(amount >= min_contribution, FundraiserError::ContributionTooSmall);
 
         // Check if the amount to contribute is less than the maximum allowed contribution
         require!(

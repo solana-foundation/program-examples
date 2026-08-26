@@ -44,15 +44,15 @@ describe('fundraiser minimum amounts', () => {
 
     const fundraiser = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from('fundraiser'), maker.publicKey.toBuffer()],
-        program.programId,
+        program.programId
     )[0];
     const floorFundraiser = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from('fundraiser'), floorMaker.publicKey.toBuffer()],
-        program.programId,
+        program.programId
     )[0];
     const contributorAccount = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from('contributor'), fundraiser.toBuffer(), provider.publicKey.toBuffer()],
-        program.programId,
+        program.programId
     )[0];
 
     const tokenBalance = (account: anchor.web3.PublicKey) =>
@@ -109,7 +109,7 @@ describe('fundraiser minimum amounts', () => {
             }),
             createInitializeMint2Instruction(mint, DECIMALS, provider.publicKey, provider.publicKey),
             createAssociatedTokenAccountInstruction(wallet.publicKey, contributorAta, wallet.publicKey, mint),
-            createMintToInstruction(mint, contributorAta, provider.publicKey, 10 * ONE_TOKEN),
+            createMintToInstruction(mint, contributorAta, provider.publicKey, 10 * ONE_TOKEN)
         );
         await provider.sendAndConfirm(setupTx, [mintKp]);
 
@@ -149,6 +149,55 @@ describe('fundraiser minimum amounts', () => {
 
         assert.strictEqual(tokenBalance(vault), vaultBefore, 'vault must not move on a rejected contribution');
         assert.isNotOk(client.getAccount(contributorAccount), 'no contributor account should have been created');
+    });
+
+    // 3 * 10^19 leaves u64, so the minimum target is not representable. With
+    // overflow-checks enabled in the release profile that is a panic unless the
+    // arithmetic is checked; SPL Token places no cap on a mint's decimals.
+    it('rejects a high-decimal mint instead of overflowing', async () => {
+        const wideMintKp = anchor.web3.Keypair.generate();
+        const wideMint = wideMintKp.publicKey;
+        const wideMaker = anchor.web3.Keypair.generate();
+        client.airdrop(wideMaker.publicKey, BigInt(anchor.web3.LAMPORTS_PER_SOL));
+
+        const wideFundraiser = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from('fundraiser'), wideMaker.publicKey.toBuffer()],
+            program.programId
+        )[0];
+
+        const lamports = await provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+        await provider.sendAndConfirm(
+            new anchor.web3.Transaction().add(
+                anchor.web3.SystemProgram.createAccount({
+                    fromPubkey: wallet.publicKey,
+                    newAccountPubkey: wideMint,
+                    space: MINT_SIZE,
+                    lamports,
+                    programId: TOKEN_PROGRAM_ID,
+                }),
+                createInitializeMint2Instruction(wideMint, 19, provider.publicKey, provider.publicKey)
+            ),
+            [wideMintKp]
+        );
+
+        await expectAnchorError(
+            program.methods
+                .initialize(new anchor.BN('18446744073709551615'), 1)
+                .accountsPartial({
+                    maker: wideMaker.publicKey,
+                    fundraiser: wideFundraiser,
+                    mintToRaise: wideMint,
+                    vault: getAssociatedTokenAddressSync(wideMint, wideFundraiser, true),
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                })
+                .signers([wideMaker])
+                .rpc(),
+            'InvalidAmount'
+        );
+
+        assert.isNotOk(client.getAccount(wideFundraiser), 'no fundraiser account should have been created');
     });
 
     it('accepts a contribution of exactly one whole token', async () => {
