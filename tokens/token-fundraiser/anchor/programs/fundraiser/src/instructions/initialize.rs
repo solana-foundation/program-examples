@@ -42,7 +42,7 @@ impl<'info> Initialize<'info> {
 
         // Check if the amount to raise meets the minimum amount required
         require!(
-            amount >= MIN_AMOUNT_TO_RAISE.pow(self.mint_to_raise.decimals as u32),
+            amount >= MIN_AMOUNT_TO_RAISE * 10_u64.pow(self.mint_to_raise.decimals as u32),
             FundraiserError::InvalidAmount
         );
 

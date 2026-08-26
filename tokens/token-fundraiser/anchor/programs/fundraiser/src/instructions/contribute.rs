@@ -58,7 +58,7 @@ impl<'info> Contribute<'info> {
 
         // Check if the amount to contribute meets the minimum amount required
         require!(
-            amount >= 1_u64.pow(self.mint_to_raise.decimals as u32), 
+            amount >= 10_u64.pow(self.mint_to_raise.decimals as u32),
             FundraiserError::ContributionTooSmall
         );
 
