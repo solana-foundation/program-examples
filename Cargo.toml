@@ -58,6 +58,7 @@ members = [
     "tokens/nft-operations/pinocchio/program",
     "tokens/pda-mint-authority/native/program",
     "tokens/pda-mint-authority/pinocchio/program",
+    "tokens/token-fundraiser/pinocchio/program",
     "tokens/transfer-tokens/native/program",
     "tokens/transfer-tokens/pinocchio/program",
     "tokens/token-2022/mint-close-authority/native/program",
