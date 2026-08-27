@@ -1,113 +1,20 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+World Cup bracket-prediction game: fixed entry fee, consistency-checked 32-game bracket, admin oracle posts results, permissionless `refresh_score` folds brackets into a global tally, unique winner sweeps the pot. Pinocchio program + Codama-generated TS client + Vite webapp shell.
 
-## What this is
+Below is only what the code and the `justfile` do not tell you.
 
-A World Cup bracket-prediction game on Solana. Entrants pay a fixed fee to submit
-a consistency-checked 32-game bracket; an admin oracle records results; a
-permissionless, idempotent `refresh_score` folds each bracket into a provable
-global tally; the unique winner sweeps the pot. The ranking key is total — score,
-then goal-closeness, then earliest submission — so exactly one winner always exists.
-The on-chain program, the generated client, and the webapp shell are wired together
-end-to-end.
+## Design decisions
 
-## Required Versions
+- **The ranking key is total** (score, then goal-closeness, then earliest submission), so exactly one winner always exists. That is what lets `finalize` prove a winner instead of the program carrying split-pot logic.
+- **Scoring is folded, not iterated.** `refresh_score` is permissionless and idempotent (guarded by each bracket's `tally_mask`), so the tally is provable without a single transaction looping over every bracket.
+- **Oracle results are immutable once set**, and `post_goals` requires all 32 results first. Re-posting a game would retroactively invalidate already-folded brackets.
+- Events are Anchor-compatible self-CPI (`emit_event` signed by the `event_authority` PDA, derived at compile time via `const-crypto`) purely so existing Anchor indexers detect them by the 8-byte event tag.
 
-- **Rust**: See `rust-toolchain.toml`
-- **Node.js**: See `.nvmrc`
-- **pnpm**: See `package.json` `packageManager` field
+## Gotchas
 
-## Build Commands
+- `idl/` is committed; the clients' `generated/` dirs are gitignored and regenerated from it. `just generate-idl && git diff` is the drift check after touching any `#[codama(...)]` attribute.
+- Own Cargo workspace, excluded from the repo's pinocchio CI workflow by design; `just setup && just build && just test` is the only path.
+- When extending: emit an event per new instruction and add an integration test per instruction in `tests/integration-tests/`.
 
-```bash
-just build              # program .so → IDL → TS client → dist
-just generate-idl       # Generate IDL via Codama (cargo build with build.rs)
-just generate-clients   # Generate TypeScript client from IDL
-just build-program      # Build .so binary only (cargo build-sbf)
-just build-client       # Build TypeScript client (tsup)
-just test               # unit + integration tests
-just unit-test          # Rust host unit tests
-just integration-test   # LiteSVM integration tests (builds the .so first)
-just fmt                # cargo fmt + prettier
-just check              # fmt-check + lint-check
-just webapp-dev         # Start the webapp dev server
-```
-
-## Architecture
-
-Solana program using **Pinocchio** (lightweight `no_std` framework) with **Codama**
-for IDL-driven client generation.
-
-### Client generation pipeline
-
-```
-Rust code with #[codama(...)] attributes
-    ↓
-program/build.rs → idl/world_cup.json
-    ↓
-scripts/generate-clients.ts
-    ↓
-clients/typescript/src/generated/   (gitignored; re-exported from src/index.ts)
-```
-
-### Program
-
-- `program/src/lib.rs` — declares the program ID, wires modules
-- `program/src/tournament.rs` — pure logic: bracket tree topology, consistency rules, weighted scoring (host unit-tested)
-- `program/src/instructions/` — `init_config`, `submit_bracket`, `lock`, `post_result`, `post_goals`, `refresh_score`, `finalize`, `claim`, `close_bracket`, `emit_event` (self-CPI target) + `helpers/` (account checks, PDA creation)
-- `program/src/state/` — `Config`, `Oracle`, `Bracket` PDA structs + `Vault` marker + `common.rs` (discriminator, tournament state, PDA derivation)
-- `program/src/event_engine.rs` — Anchor-compatible self-CPI event emission
-- `program/src/events/` — one event struct per state-changing instruction
-- `program/src/errors.rs` — error codes (100s generic / 200s lifecycle / 300s bracket / 400s oracle / 500s finalize+claim / 600s event)
-- `program/src/tests.rs` — host unit tests for pure logic
-
-### Accounts
-
-Global singletons unless noted:
-
-- **Config** — PDA `["config"]`. Admin, lifecycle `state`, `lock_ts`, entry fee, and the provable global tally (`best_score`/`best_closeness`/`best_index`, `entrant_count`, `refreshed_count`, `tally_mask`, `winner`).
-- **Oracle** — PDA `["oracle"]`. Per-game `results[32]` (immutable once set), `decided_mask`, and the Round-of-32 `total_goals_r32`.
-- **Bracket** — PDA `["bracket", owner]`. One per wallet: `picks[32]`, tiebreaker guess, cached score, `tally_mask`, `entry_index` (submission order).
-- **Vault** — program-owned, zero-data PDA `["vault"]` that escrows the pot.
-
-### Events
-
-Events use Anchor-compatible self-CPI: the program invokes its own `emit_event`
-instruction, signed by the `event_authority` PDA (derived at compile time via
-`const-crypto`). Indexers detect the inner instruction by the 8-byte event tag.
-
-### Program ID
-
-`wCupoZtR1g1NXRRVELe5KqFgayyEteVKKxEerxugvxA` (keypair in `keys/`, gitignored)
-
-## Workspace Structure
-
-- `program/` — Pinocchio program (workspace member `world-cup-program`)
-- `tests/integration-tests/` — LiteSVM integration tests (`tests-world-cup`)
-- `clients/typescript/` — Codama-generated TS client (`@solana/world-cup`)
-- `webapp/` — Vite + React Solana app shell
-- `scripts/` — Codama client generation
-- `idl/` — generated IDL, committed (regenerated by `just generate-idl`); the client `generated/` dirs are gitignored and regenerated from it
-
-## Conventions
-
-- **Pinocchio, not Anchor**: use `pinocchio::AccountView`, `Address`, `ProgramResult`.
-- **No `mod.rs` business logic**: module declarations and re-exports only.
-- **No code comments**: prefer clear names and small functions.
-- **PDA seeds co-located with state**: each state struct exposes its seed pattern; derivation helpers live in `state/common.rs`.
-- **Codama attributes drive IDL**: keep `#[codama(...)]` macros in sync with Rust types — `just generate-idl && git diff` catches drift.
-
-## Lifecycle
-
-`init_config` (admin sets `lock_ts`; creates Config + Oracle + vault) → `submit_bracket`
-(entrants pay the fixed fee; rent funds the Bracket, the remainder escrows to the vault)
-→ `lock` (admin, once `Clock >= lock_ts`) → `post_result` ×32 then `post_goals` (admin
-oracle; goals require all results posted) → `refresh_score` ×N (permissionless; folds
-each bracket into the tally once the oracle is complete, idempotent via `tally_mask`) →
-`finalize` (admin proves the unique winner against the total ranking key) → `claim`
-(winner sweeps the vault, repeatable) and `close_bracket` (permissionless; rolls a
-finalized bracket's rent into the pot).
-
-When extending: keep `#[codama(...)]` attributes in sync, emit an event per new
-instruction, and add an integration test per instruction in `tests/integration-tests/`.
+Program ID `wCupoZtR1g1NXRRVELe5KqFgayyEteVKKxEerxugvxA` (keypair in `keys/`, gitignored).
