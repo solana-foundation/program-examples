@@ -164,7 +164,7 @@ Create a fundraiser account specifying a target mint and amount, allowing contri
 
 [Create liquidity pools to allow trading of new digital assets and allows users that provide liquidity to be rewarded by creating an Automated Market Maker.](./tokens/token-swap/README.md)
 
-[anchor](./tokens/token-swap/anchor)
+[anchor](./tokens/token-swap/anchor) [pinocchio](./tokens/token-swap/pinocchio)
 
 ### External delegate token master
 
