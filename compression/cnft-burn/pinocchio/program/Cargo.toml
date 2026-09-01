@@ -1,0 +1,22 @@
+[package]
+name = "cnft-burn-pinocchio-program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pinocchio.workspace = true
+pinocchio-log.workspace = true
+# Needed for `Address::find_program_address` — see the tree-authority check in
+# `burn_cnft`. Without this the isolated (`-p`) build loses the `curve25519`
+# feature that `find_program_address` requires.
+solana-address.workspace = true
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+custom-heap = []
+custom-panic = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
