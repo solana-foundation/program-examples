@@ -5958,6 +5958,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "token-2022-metadata-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-log",
+ "pinocchio-system",
+]
+
+[[package]]
 name = "token-2022-mint-close-authority-pinocchio-program"
 version = "0.1.0"
 dependencies = [
