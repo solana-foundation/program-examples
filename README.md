@@ -170,7 +170,7 @@ Create a fundraiser account specifying a target mint and amount, allowing contri
 
 Control token transfers using an external secp256k1 delegate signature.
 
-[anchor](./tokens/external-delegate-token-master/anchor)
+[anchor](./tokens/external-delegate-token-master/anchor) [pinocchio](./tokens/external-delegate-token-master/pinocchio)
 
 ## Token Extensions
 
