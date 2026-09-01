@@ -1085,6 +1085,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cnft-vault-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-log",
+ "solana-address 2.6.1",
+]
+
+[[package]]
 name = "combine"
 version = "3.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
