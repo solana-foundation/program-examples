@@ -274,7 +274,7 @@ Count how many times tokens have been transferred using a transfer hook.
 
 Use token account owner data as seeds to derive extra accounts in a transfer hook.
 
-[anchor](./tokens/token-2022/transfer-hook/account-data-as-seed/anchor)
+[anchor](./tokens/token-2022/transfer-hook/account-data-as-seed/anchor) [pinocchio](./tokens/token-2022/transfer-hook/account-data-as-seed/pinocchio)
 
 ### Transfer hook - allow/block list
 

@@ -6047,6 +6047,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "token-2022-transfer-hook-account-data-as-seed-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-log",
+ "pinocchio-system",
+ "solana-address 2.6.1",
+]
+
+[[package]]
 name = "toml"
 version = "0.8.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
