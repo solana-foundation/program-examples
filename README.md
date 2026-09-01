@@ -292,7 +292,7 @@ A block-list transfer hook as a full project: Pinocchio program, Codama-generate
 
 Charge an additional cost or fee on every token transfer using a transfer hook.
 
-[anchor](./tokens/token-2022/transfer-hook/transfer-cost/anchor)
+[anchor](./tokens/token-2022/transfer-hook/transfer-cost/anchor) [pinocchio](./tokens/token-2022/transfer-hook/transfer-cost/pinocchio)
 
 ### Transfer hook - transfer switch
 
