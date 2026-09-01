@@ -5940,6 +5940,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "token-2022-group-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-log",
+ "pinocchio-system",
+ "solana-address 2.6.1",
+]
+
+[[package]]
 name = "token-2022-immutable-owner-pinocchio-program"
 version = "0.1.0"
 dependencies = [
