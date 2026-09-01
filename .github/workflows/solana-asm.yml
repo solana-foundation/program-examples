@@ -40,7 +40,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       projects_per_job: ${{ steps.matrix.outputs.projects_per_job }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         id: changes
         if: github.event_name == 'pull_request'
@@ -121,7 +121,7 @@ jobs:
     outputs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Solana pinned to 4.0.3, the last version the ASM examples passed on
       # (paired with the sbpf rev pinned in the setup action). Floating
       # "stable" moved to 4.1.1 in the same window the toolchain broke. The
@@ -265,7 +265,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create job summary
         run: |
           echo "## ASM Workflow Summary" >> $GITHUB_STEP_SUMMARY

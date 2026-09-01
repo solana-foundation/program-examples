@@ -82,7 +82,7 @@ runs:
 
     - name: Setup Node.js
       if: inputs.install-pnpm == 'true' && inputs.node-version-file == ''
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
       with:
         node-version: ${{ inputs.node-version }}
         check-latest: true
@@ -91,7 +91,7 @@ runs:
 
     - name: Setup Node.js (version file)
       if: inputs.install-pnpm == 'true' && inputs.node-version-file != ''
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
       with:
         node-version-file: ${{ inputs.node-version-file }}
         check-latest: true
@@ -152,7 +152,7 @@ runs:
     - name: Cache Solana environment
       if: inputs.install-solana == 'true'
       id: cache-solana
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: |
           ~/.cache/solana/
@@ -201,7 +201,7 @@ runs:
     - name: Cache Anchor and Cargo binaries
       if: inputs.install-anchor == 'true'
       id: cache-anchor
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: |
           ~/.cargo/bin/avm
@@ -284,7 +284,7 @@ runs:
     - name: Cache sbpf assembler
       if: inputs.install-sbpf == 'true'
       id: cache-sbpf
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ~/.cargo/bin/sbpf
         key: ${{ runner.os }}-sbpf-${{ inputs.sbpf-rev }}

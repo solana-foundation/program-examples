@@ -42,7 +42,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       projects_per_job: ${{ steps.matrix.outputs.projects_per_job }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         id: changes
         if: github.event_name == 'pull_request'
@@ -123,7 +123,7 @@ jobs:
     outputs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - name: Setup build environment
         id: setup
@@ -268,7 +268,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create job summary
         run: |
           echo "## Pinocchio Workflow Summary" >> $GITHUB_STEP_SUMMARY
