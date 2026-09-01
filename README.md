@@ -280,7 +280,7 @@ Use token account owner data as seeds to derive extra accounts in a transfer hoo
 
 Restrict or allow token transfers using an on-chain allow/block list managed by a list authority.
 
-[anchor](./tokens/token-2022/transfer-hook/allow-block-list-token/anchor)
+[anchor](./tokens/token-2022/transfer-hook/allow-block-list-token/anchor) [pinocchio](./tokens/token-2022/transfer-hook/allow-block-list-token/pinocchio)
 
 ### Transfer hook - block list with Codama clients
 
