@@ -298,7 +298,7 @@ Charge an additional cost or fee on every token transfer using a transfer hook.
 
 Enable or disable token transfers with an on-chain switch using a transfer hook.
 
-[anchor](./tokens/token-2022/transfer-hook/transfer-switch/anchor)
+[anchor](./tokens/token-2022/transfer-hook/transfer-switch/anchor) [pinocchio](./tokens/token-2022/transfer-hook/transfer-switch/pinocchio)
 
 ## Compression
 

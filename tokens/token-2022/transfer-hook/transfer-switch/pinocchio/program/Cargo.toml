@@ -1,0 +1,20 @@
+[package]
+name = "token-2022-transfer-hook-transfer-switch-pinocchio-program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pinocchio.workspace = true
+solana-address.workspace = true
+pinocchio-log.workspace = true
+pinocchio-system.workspace = true
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+custom-heap = []
+custom-panic = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
