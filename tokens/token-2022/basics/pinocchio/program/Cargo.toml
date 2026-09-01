@@ -1,0 +1,24 @@
+[package]
+name = "token-2022-basics-pinocchio-program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pinocchio.workspace = true
+pinocchio-log.workspace = true
+pinocchio-system.workspace = true
+pinocchio-associated-token-account.workspace = true
+# Pulls solana-address's `curve25519` feature so `Address::find_program_address`
+# resolves when this crate is built on its own (e.g. `cargo test -p`), not just
+# under the whole workspace. Same reason `favorites` depends on it.
+solana-address.workspace = true
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+custom-heap = []
+custom-panic = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
