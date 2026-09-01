@@ -262,7 +262,7 @@ Create tokens with an inbuilt transfer fee.
 
 A minimal transfer hook program that executes custom logic on every token transfer.
 
-[anchor](./tokens/token-2022/transfer-hook/hello-world/anchor)
+[anchor](./tokens/token-2022/transfer-hook/hello-world/anchor) [pinocchio](./tokens/token-2022/transfer-hook/hello-world/pinocchio)
 
 ### Transfer hook - counter
 
