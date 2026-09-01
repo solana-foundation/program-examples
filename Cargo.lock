@@ -5998,6 +5998,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "token-2022-nft-meta-data-pointer-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-associated-token-account",
+ "pinocchio-log",
+ "pinocchio-system",
+ "solana-address 2.6.1",
+]
+
+[[package]]
 name = "token-2022-non-transferable-pinocchio-program"
 version = "0.1.0"
 dependencies = [
