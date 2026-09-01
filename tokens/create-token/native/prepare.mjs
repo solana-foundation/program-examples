@@ -18,12 +18,12 @@ try {
     for (const program of programs) {
         const { id, name } = program;
         const outputFile = join(outputDir, name);
-        await $`solana config set -um`;
-
         try {
             await mkdir(outputDir, { recursive: true });
             if (overwrite) await rm(outputFile, { force: true });
-            await $`solana program dump ${id} ${outputFile}`;
+            // `-um` targets mainnet for this command only, leaving the developer's
+            // global Solana CLI config alone.
+            await $`solana program dump -um ${id} ${outputFile}`;
             console.log(`Program ${id} dumped to ${outputFile}`);
         } catch (error) {
             console.error(`Error dumping ${id}: ${error.message}`);
