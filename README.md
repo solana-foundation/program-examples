@@ -268,7 +268,7 @@ A minimal transfer hook program that executes custom logic on every token transf
 
 Count how many times tokens have been transferred using a transfer hook.
 
-[anchor](./tokens/token-2022/transfer-hook/counter/anchor)
+[anchor](./tokens/token-2022/transfer-hook/counter/anchor) [pinocchio](./tokens/token-2022/transfer-hook/counter/pinocchio)
 
 ### Transfer hook - using account data as seed
 
