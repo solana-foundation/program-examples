@@ -32,6 +32,7 @@ describe('NFT Minter', () => {
     let mintKeypair: KeyPairSigner;
     let mintAuthorityAddress: Address;
     let mintAuthorityBump: number;
+    let mintConfigAddress: Address;
     let metadataAddress: Address;
     let editionAddress: Address;
 
@@ -49,6 +50,12 @@ describe('NFT Minter', () => {
         });
 
         mintKeypair = await generateKeyPairSigner();
+
+        // The mint config PDA is bound to this mint's address.
+        [mintConfigAddress] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['mint_config', addressEncoder.encode(mintKeypair.address)],
+        });
 
         [metadataAddress] = await getProgramDerivedAddress({
             programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
@@ -97,6 +104,7 @@ describe('NFT Minter', () => {
         const ix = createCreateInstruction(
             mintKeypair,
             mintAuthorityAddress,
+            mintConfigAddress,
             metadataAddress,
             payer,
             programId,
@@ -118,6 +126,10 @@ describe('NFT Minter', () => {
         const metadataInfo = svm.getAccount(metadataAddress);
         assert(metadataInfo.exists, 'metadata account not created');
         assert(metadataInfo.programAddress === TOKEN_METADATA_PROGRAM_ADDRESS, 'metadata account has wrong owner');
+
+        const mintConfigInfo = svm.getAccount(mintConfigAddress);
+        assert(mintConfigInfo.exists, 'mint config PDA not created');
+        assert(mintConfigInfo.programAddress === programId, 'mint config PDA not owned by the program');
     });
 
     it('Mint the NFT to your wallet!', async () => {
@@ -132,6 +144,7 @@ describe('NFT Minter', () => {
             metadataAddress,
             editionAddress,
             mintAuthorityAddress,
+            mintConfigAddress,
             associatedTokenAccountAddress,
             payer,
             programId,
@@ -147,5 +160,76 @@ describe('NFT Minter', () => {
         const editionInfo = svm.getAccount(editionAddress);
         assert(editionInfo.exists, 'edition account not created');
         assert(editionInfo.programAddress === TOKEN_METADATA_PROGRAM_ADDRESS, 'edition account has wrong owner');
+    });
+
+    it('rejects mint from a wallet that did not create the token', async () => {
+        // A fresh mint is required: after the happy-path mint, Metaplex already holds
+        // the mint authority via the master edition, so a second mint would fail even
+        // without the admin check. This test must fail *only* because of that check.
+        const otherMint = await generateKeyPairSigner();
+        const [otherMintConfig] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['mint_config', addressEncoder.encode(otherMint.address)],
+        });
+        const [otherMetadata] = await getProgramDerivedAddress({
+            programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
+            seeds: [
+                'metadata',
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ADDRESS),
+                addressEncoder.encode(otherMint.address),
+            ],
+        });
+        const [otherEdition] = await getProgramDerivedAddress({
+            programAddress: TOKEN_METADATA_PROGRAM_ADDRESS,
+            seeds: [
+                'metadata',
+                addressEncoder.encode(TOKEN_METADATA_PROGRAM_ADDRESS),
+                addressEncoder.encode(otherMint.address),
+                'edition',
+            ],
+        });
+
+        await sendTransaction(
+            createCreateInstruction(
+                otherMint,
+                mintAuthorityAddress,
+                otherMintConfig,
+                otherMetadata,
+                payer,
+                programId,
+                'Homer NFT',
+                'HOMR',
+                'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
+            ),
+        );
+
+        const outsider = await generateKeyPairSigner();
+        svm.airdrop(outsider.address, lamports(10_000_000_000n));
+
+        const [outsiderAta] = await findAssociatedTokenPda({
+            mint: otherMint.address,
+            owner: outsider.address,
+            tokenProgram: TOKEN_PROGRAM_ADDRESS,
+        });
+
+        const ix = createMintInstruction(
+            otherMint.address,
+            otherMetadata,
+            otherEdition,
+            mintAuthorityAddress,
+            otherMintConfig,
+            outsiderAta,
+            outsider,
+            programId,
+        );
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(outsider, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m => appendTransactionMessageInstruction(ix, m),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+        assert(result instanceof FailedTransactionMetadata, 'expected the transaction to fail');
     });
 });

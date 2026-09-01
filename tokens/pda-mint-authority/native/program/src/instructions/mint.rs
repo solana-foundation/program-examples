@@ -1,16 +1,18 @@
 use {
+    borsh::BorshDeserialize,
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint::ProgramResult,
         msg,
         program::{invoke, invoke_signed},
+        program_error::ProgramError,
         pubkey::Pubkey,
     },
     spl_associated_token_account_interface::instruction as associated_token_account_instruction,
     spl_token_interface::instruction as token_instruction,
 };
 
-use crate::state::MintAuthorityPda;
+use crate::state::{MintAuthorityPda, MintConfig};
 
 pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let accounts_iter = &mut accounts.iter();
@@ -19,6 +21,7 @@ pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let metadata_account = next_account_info(accounts_iter)?;
     let edition_account = next_account_info(accounts_iter)?;
     let mint_authority = next_account_info(accounts_iter)?;
+    let mint_config = next_account_info(accounts_iter)?;
     let associated_token_account = next_account_info(accounts_iter)?;
     let payer = next_account_info(accounts_iter)?;
     let _rent = next_account_info(accounts_iter)?;
@@ -27,9 +30,25 @@ pub fn mint_to(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let associated_token_program = next_account_info(accounts_iter)?;
     let token_metadata_program = next_account_info(accounts_iter)?;
 
+    if !payer.is_signer {
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+
     let (mint_authority_pda, bump) =
         Pubkey::find_program_address(&[MintAuthorityPda::SEED_PREFIX.as_bytes()], program_id);
     assert!(&mint_authority_pda.eq(mint_authority.key));
+
+    let (mint_config_pda, _) =
+        Pubkey::find_program_address(&[MintConfig::SEED_PREFIX.as_bytes(), mint_account.key.as_ref()], program_id);
+    assert!(&mint_config_pda.eq(mint_config.key));
+    if mint_config.owner != program_id {
+        return Err(ProgramError::IncorrectProgramId);
+    }
+    // Only the wallet recorded as admin at create_token time may mint.
+    if MintConfig::deserialize(&mut &mint_config.data.borrow()[..])?.admin != *payer.key {
+        msg!("Only the admin recorded at token creation may mint");
+        return Err(ProgramError::InvalidArgument);
+    }
 
     if associated_token_account.lamports() == 0 {
         msg!("Creating associated token account...");

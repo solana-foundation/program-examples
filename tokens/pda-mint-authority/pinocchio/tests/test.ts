@@ -83,6 +83,7 @@ describe('PDA Mint Authority (Pinocchio)', () => {
     let mint: Awaited<ReturnType<typeof generateKeyPairSigner>>;
     let mintAuthorityPda: ReturnType<typeof address>;
     let mintAuthorityBump: number;
+    let mintConfigPda: ReturnType<typeof address>;
 
     before(async () => {
         svm = new LiteSVM();
@@ -106,6 +107,12 @@ describe('PDA Mint Authority (Pinocchio)', () => {
         });
         mintAuthorityPda = pda;
         mintAuthorityBump = bump;
+
+        const [configPda] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['mint_config', addressEncoder.encode(mint.address)],
+        });
+        mintConfigPda = configPda;
     });
 
     async function send<TInstruction extends Parameters<typeof appendTransactionMessageInstruction>[0]>(
@@ -157,6 +164,7 @@ describe('PDA Mint Authority (Pinocchio)', () => {
             accounts: [
                 { address: mint.address, role: AccountRole.WRITABLE_SIGNER, signer: mint }, // mint account
                 { address: mintAuthorityPda, role: AccountRole.READONLY }, // mint authority PDA
+                { address: mintConfigPda, role: AccountRole.WRITABLE }, // mint config PDA
                 { address: metadataAddress, role: AccountRole.WRITABLE }, // metadata account
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // payer
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // system program
@@ -174,6 +182,10 @@ describe('PDA Mint Authority (Pinocchio)', () => {
         if (!metadataAccount?.exists) throw new Error('Metadata account not found');
         assert.equal(metadataAccount.programAddress, TOKEN_METADATA_PROGRAM_ID);
         assert.isTrue(Buffer.from(metadataAccount.data).toString('utf-8').includes('Homer NFT'));
+
+        const mintConfigAccount = svm.getAccount(mintConfigPda);
+        if (!mintConfigAccount?.exists) throw new Error('Mint config PDA not found');
+        assert.equal(mintConfigAccount.programAddress, programId);
     });
 
     it('Mint the NFT to your wallet!', async () => {
@@ -192,6 +204,7 @@ describe('PDA Mint Authority (Pinocchio)', () => {
                 { address: metadataAddress, role: AccountRole.WRITABLE }, // metadata account
                 { address: editionAddress, role: AccountRole.WRITABLE }, // master edition account
                 { address: mintAuthorityPda, role: AccountRole.READONLY }, // mint authority PDA
+                { address: mintConfigPda, role: AccountRole.READONLY }, // mint config PDA
                 { address: ata, role: AccountRole.WRITABLE }, // associated token account
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // payer
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // system program
@@ -215,5 +228,81 @@ describe('PDA Mint Authority (Pinocchio)', () => {
         const editionAccount = svm.getAccount(editionAddress);
         if (!editionAccount?.exists) throw new Error('Master edition account not found');
         assert.equal(editionAccount.programAddress, TOKEN_METADATA_PROGRAM_ID);
+    });
+
+    it('rejects mint from a wallet that did not create the token', async () => {
+        // A fresh mint is required: after the happy-path mint, Metaplex already holds
+        // the mint authority via the master edition, so a second mint would fail even
+        // without the admin check. This test must fail *only* because of that check.
+        const otherMint = await generateKeyPairSigner();
+        const [otherMintConfig] = await getProgramDerivedAddress({
+            programAddress: programId,
+            seeds: ['mint_config', addressEncoder.encode(otherMint.address)],
+        });
+        const otherMetadata = await getMetadataAddress(otherMint.address);
+        const otherEdition = await getMasterEditionAddress(otherMint.address);
+
+        const createData = createTokenArgsEncoder.encode({
+            instruction: CREATE,
+            nftTitle: 'Homer NFT',
+            nftSymbol: 'HOMR',
+            nftUri: 'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/nft.json',
+        });
+
+        await send({
+            programAddress: programId,
+            accounts: [
+                { address: otherMint.address, role: AccountRole.WRITABLE_SIGNER, signer: otherMint },
+                { address: mintAuthorityPda, role: AccountRole.READONLY },
+                { address: otherMintConfig, role: AccountRole.WRITABLE },
+                { address: otherMetadata, role: AccountRole.WRITABLE },
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
+                { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+                { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+                { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY },
+            ],
+            data: new Uint8Array(createData),
+        });
+
+        const outsider = await generateKeyPairSigner();
+        svm.airdrop(outsider.address, lamports(10_000_000_000n));
+
+        const [outsiderAta] = await findAssociatedTokenPda({
+            owner: outsider.address,
+            mint: otherMint.address,
+            tokenProgram: TOKEN_PROGRAM_ADDRESS,
+        });
+
+        const result = svm.sendTransaction(
+            await signTransactionMessageWithSigners(
+                pipe(
+                    createTransactionMessage({ version: 0 }),
+                    m => setTransactionMessageFeePayerSigner(outsider, m),
+                    m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+                    m =>
+                        appendTransactionMessageInstruction(
+                            {
+                                programAddress: programId,
+                                accounts: [
+                                    { address: otherMint.address, role: AccountRole.WRITABLE },
+                                    { address: otherMetadata, role: AccountRole.WRITABLE },
+                                    { address: otherEdition, role: AccountRole.WRITABLE },
+                                    { address: mintAuthorityPda, role: AccountRole.READONLY },
+                                    { address: otherMintConfig, role: AccountRole.READONLY },
+                                    { address: outsiderAta, role: AccountRole.WRITABLE },
+                                    { address: outsider.address, role: AccountRole.WRITABLE_SIGNER, signer: outsider },
+                                    { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+                                    { address: TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+                                    { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+                                    { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY },
+                                ],
+                                data: new Uint8Array([MINT]),
+                            },
+                            m,
+                        ),
+                ),
+            ),
+        );
+        assert(result instanceof FailedTransactionMetadata, 'expected the transaction to fail');
     });
 });

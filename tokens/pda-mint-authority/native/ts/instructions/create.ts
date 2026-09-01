@@ -24,6 +24,7 @@ export const createEncoder = getStructEncoder([
 export function createCreateInstruction(
     mint: TransactionSigner,
     mintAuthority: Address,
+    mintConfig: Address,
     metadata: Address,
     payer: TransactionSigner,
     programId: Address,
@@ -36,6 +37,7 @@ export function createCreateInstruction(
         accounts: [
             { address: mint.address, role: AccountRole.WRITABLE_SIGNER, signer: mint },
             { address: mintAuthority, role: AccountRole.WRITABLE },
+            { address: mintConfig, role: AccountRole.WRITABLE },
             { address: metadata, role: AccountRole.WRITABLE },
             { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer },
             { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY },
