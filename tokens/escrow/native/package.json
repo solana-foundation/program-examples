@@ -3,7 +3,7 @@
     "test": "mocha --import=tsx -t 1000000 ./tests/test.ts",
     "build-and-test": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./tests/fixtures && pnpm test",
     "build": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./program/target/so",
-    "deploy": "solana program deploy ./program/target/so/program.so"
+    "deploy": "solana program deploy ./program/target/so/*.so"
   },
   "dependencies": {
     "@solana-program/system": "^0.13.0",
