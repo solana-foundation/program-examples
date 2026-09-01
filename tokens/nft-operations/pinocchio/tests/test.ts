@@ -67,6 +67,17 @@ async function getAssociatedTokenAddress(mint: ReturnType<typeof address>, owner
     return ata;
 }
 
+async function getCollectionAuthorityAddress(
+    programAddress: ReturnType<typeof address>,
+    mint: ReturnType<typeof address>,
+) {
+    const [pda] = await getProgramDerivedAddress({
+        programAddress,
+        seeds: ['collection_authority', addressEncoder.encode(mint)],
+    });
+    return pda;
+}
+
 describe('NFT Operations (Pinocchio)', () => {
     let svm: LiteSVM;
     let programId: ReturnType<typeof address>;
@@ -119,6 +130,7 @@ describe('NFT Operations (Pinocchio)', () => {
         const metadata = await getMetadataAddress(collectionMint.address);
         const masterEdition = await getMasterEditionAddress(collectionMint.address);
         const destination = await getAssociatedTokenAddress(collectionMint.address, payer.address);
+        const collectionAuthority = await getCollectionAuthorityAddress(programId, collectionMint.address);
 
         await send({
             programAddress: programId,
@@ -126,6 +138,7 @@ describe('NFT Operations (Pinocchio)', () => {
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // user
                 { address: collectionMint.address, role: AccountRole.WRITABLE_SIGNER, signer: collectionMint }, // mint
                 { address: mintAuthorityPda, role: AccountRole.READONLY }, // mint authority PDA
+                { address: collectionAuthority, role: AccountRole.WRITABLE }, // collection authority PDA
                 { address: metadata, role: AccountRole.WRITABLE }, // metadata
                 { address: masterEdition, role: AccountRole.WRITABLE }, // master edition
                 { address: destination, role: AccountRole.WRITABLE }, // destination ATA
@@ -188,20 +201,77 @@ describe('NFT Operations (Pinocchio)', () => {
         assert.equal(editionAccount.programAddress, TOKEN_METADATA_PROGRAM_ID);
     });
 
+    it('rejects verify_collection from a wallet that did not create the collection', async () => {
+        const metadata = await getMetadataAddress(nftMint.address);
+        const collectionMetadata = await getMetadataAddress(collectionMint.address);
+        const collectionMasterEdition = await getMasterEditionAddress(collectionMint.address);
+        const collectionAuthority = await getCollectionAuthorityAddress(programId, collectionMint.address);
+
+        const attacker = await generateKeyPairSigner();
+        svm.airdrop(attacker.address, lamports(10_000_000_000n));
+
+        const transactionMessage = pipe(
+            createTransactionMessage({ version: 0 }),
+            m => setTransactionMessageFeePayerSigner(attacker, m),
+            m => svm.setTransactionMessageLifetimeUsingLatestBlockhash(m),
+            m =>
+                appendTransactionMessageInstruction(
+                    {
+                        programAddress: programId,
+                        accounts: [
+                            { address: attacker.address, role: AccountRole.WRITABLE_SIGNER, signer: attacker }, // payer
+                            { address: mintAuthorityPda, role: AccountRole.READONLY }, // mint authority PDA
+                            { address: collectionAuthority, role: AccountRole.READONLY }, // collection authority PDA
+                            { address: metadata, role: AccountRole.WRITABLE }, // NFT metadata
+                            { address: collectionMint.address, role: AccountRole.READONLY }, // collection mint
+                            { address: collectionMetadata, role: AccountRole.WRITABLE }, // collection metadata
+                            { address: collectionMasterEdition, role: AccountRole.READONLY }, // collection master edition
+                            { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // system program
+                            { address: SYSVAR_INSTRUCTIONS_ADDRESS, role: AccountRole.READONLY }, // instructions sysvar
+                            { address: TOKEN_METADATA_PROGRAM_ID, role: AccountRole.READONLY }, // token metadata program
+                        ],
+                        data: new Uint8Array([VERIFY_COLLECTION]),
+                    },
+                    m,
+                ),
+        );
+        const signedTx = await signTransactionMessageWithSigners(transactionMessage);
+        const result = svm.sendTransaction(signedTx);
+
+        assert.instanceOf(result, FailedTransactionMetadata, 'expected the attacker verify to fail');
+        const failure = result as FailedTransactionMetadata;
+        // Assert the specific Unauthorized rejection (NftOperationsError::Unauthorized = 1),
+        // not just "it failed" — both the custom error code and the on-chain log it pairs
+        // with, so a coincidental, unrelated failure wouldn't false-pass this test.
+        assert.include(
+            failure.err().toString(),
+            'InstructionErrorCustom { code: 1 }',
+            `expected NftOperationsError::Unauthorized (code 1), got: ${failure.err().toString()}`,
+        );
+        assert.include(
+            failure.meta().logs().join('\n'),
+            "Unauthorized: signer is not the collection's original creator",
+        );
+    });
+
     it('Verifies the NFT as part of the collection', async () => {
         const metadata = await getMetadataAddress(nftMint.address);
         const collectionMetadata = await getMetadataAddress(collectionMint.address);
         const collectionMasterEdition = await getMasterEditionAddress(collectionMint.address);
+        const collectionAuthority = await getCollectionAuthorityAddress(programId, collectionMint.address);
 
         // Metaplex `Verify` performs strict checks: the signer must be the
         // collection's update authority (our PDA), the collection metadata and
         // master edition must be valid, and the NFT must reference the collection.
-        // A successful transaction therefore proves the whole flow is correct.
+        // A successful transaction therefore proves the whole flow is correct —
+        // combined with the negative test above, which proves an unrelated
+        // caller cannot trigger that same signature.
         await send({
             programAddress: programId,
             accounts: [
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // payer
                 { address: mintAuthorityPda, role: AccountRole.READONLY }, // mint authority PDA
+                { address: collectionAuthority, role: AccountRole.READONLY }, // collection authority PDA
                 { address: metadata, role: AccountRole.WRITABLE }, // NFT metadata
                 { address: collectionMint.address, role: AccountRole.READONLY }, // collection mint
                 { address: collectionMetadata, role: AccountRole.WRITABLE }, // collection metadata
