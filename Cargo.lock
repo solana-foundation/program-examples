@@ -2247,6 +2247,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "merkle-tree-token-claimer-pinocchio-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-associated-token-account",
+ "pinocchio-log",
+ "pinocchio-system",
+ "pinocchio-token",
+ "solana-address 2.6.1",
+ "solana-sha256-hasher",
+]
+
+[[package]]
 name = "merlin"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -152,7 +152,7 @@ Create a fundraiser account specifying a target mint and amount, allowing contri
 
 [Fund a vault once, publish a Merkle root of a balance snapshot, and let each holder claim their allocation with a proof](./tokens/merkle-tree-token-claimer/README.md) — the claim pattern behind large airdrops and chain migrations.
 
-[anchor](./tokens/merkle-tree-token-claimer/anchor)
+[anchor](./tokens/merkle-tree-token-claimer/anchor) [pinocchio](./tokens/merkle-tree-token-claimer/pinocchio)
 
 ### Minting a token from inside a program with a PDA as the mint authority
 
