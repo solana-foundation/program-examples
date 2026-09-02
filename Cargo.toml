@@ -46,6 +46,9 @@ members = [
     "basics/transfer-sol/anchor/programs/*",
     "basics/transfer-sol/asm",
 
+    # compression
+    "compression/cutils/pinocchio/program",
+
     # cryptography
     "cryptography/bls12-381/pinocchio/program",
     "cryptography/bn254/pinocchio/program",
