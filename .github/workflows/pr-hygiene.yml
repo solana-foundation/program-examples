@@ -59,8 +59,17 @@ jobs:
 
             To proceed: read the full diff, remove the tool attribution from the description and commits, fill in the AI disclosure section, and make sure you can explain every line without an LLM. This check re-runs when you edit the description or push. PRs left in this state are closed.
         run: |
+          if gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep -qxF "$LABEL"; then
+            was_labeled=true
+          else
+            was_labeled=false
+          fi
+
           permission=$(gh api "repos/$GH_REPO/collaborators/$AUTHOR/permission" 2>/dev/null | jq -r '.permission // "none"')
           if [[ "$permission" == "admin" || "$permission" == "write" ]]; then
+            if [[ "$was_labeled" == "true" ]]; then
+              gh pr edit "$PR_NUMBER" --remove-label "$LABEL"
+            fi
             echo "Author has $permission access; skipping."
             exit 0
           fi
@@ -78,12 +87,6 @@ jobs:
             hits+=$'\n'"branch: $HEAD_REF"
           fi
           hits=$(sed '/^$/d' <<<"$hits")
-
-          if gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep -qxF "$LABEL"; then
-            was_labeled=true
-          else
-            was_labeled=false
-          fi
 
           if [[ -z "$hits" ]]; then
             if [[ "$was_labeled" == "true" ]]; then

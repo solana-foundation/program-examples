@@ -8,7 +8,7 @@
 
 ## AI disclosure
 
-Check exactly one. See [CONTRIBUTING.md](../CONTRIBUTING.md#ai-use).
+Check exactly one. See [CONTRIBUTING.md](https://github.com/solana-foundation/program-examples/blob/main/CONTRIBUTING.md#ai-use).
 
 - [ ] No AI tooling was used beyond editor autocomplete.
 - [ ] AI tooling was used. Tool and extent: <!-- e.g. Claude Code wrote the tests, I wrote and reviewed everything else -->
