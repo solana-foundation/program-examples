@@ -1,6 +1,18 @@
 import * as anchor from '@anchor-lang/core';
 import { Keypair, SystemProgram, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { assert } from 'chai';
 import type { CheckingAccountProgram } from '../target/types/checking_account_program.ts';
+
+const expectAnchorError = async (promise: Promise<unknown>, code: string) => {
+    let caught: any;
+    try {
+        await promise;
+    } catch (error) {
+        caught = error;
+    }
+    assert.isDefined(caught, `expected the transaction to fail with ${code}`);
+    assert.strictEqual(caught?.error?.errorCode?.code, code, `expected ${code}, got: ${caught}`);
+};
 
 describe('Anchor example', () => {
     const provider = anchor.AnchorProvider.env();
@@ -37,5 +49,21 @@ describe('Anchor example', () => {
                 accountToChange: accountToChange.publicKey,
             })
             .rpc();
+    });
+
+    it('Rejects an account our program does not own', async () => {
+        // accountToCreate was never created, so the runtime presents it as
+        // owned by the System Program — exactly what `owner = id()` must refuse.
+        await expectAnchorError(
+            program.methods
+                .checkAccounts()
+                .accounts({
+                    payer: wallet.publicKey,
+                    accountToCreate: accountToCreate.publicKey,
+                    accountToChange: accountToCreate.publicKey,
+                })
+                .rpc(),
+            'ConstraintOwner',
+        );
     });
 });
