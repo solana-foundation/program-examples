@@ -97,7 +97,9 @@ Because these are onchain programs, document the account validation, authority c
 
 ## Pull requests
 
-Write a clear title and description that explain the problem, the approach, and how you tested it. Link related issues and call out behavior changes, compatibility concerns, or follow-up work. Use [Conventional Commits](https://www.conventionalcommits.org/) for commit and PR titles. See [AI use](#ai-use) for how to disclose AI assistance.
+Fill in every section of the [pull request template](./.github/PULL_REQUEST_TEMPLATE.md): the problem, the approach, how you tested it, and the [AI disclosure](#disclosure). Link related issues and call out behavior changes, compatibility concerns, or follow-up work. CI fails the PR until the disclosure is declared.
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for commit and PR titles.
 
 By default, [Greptile](https://www.greptile.com) is enabled on all Solana Foundation repositories. Before maintainers review, all Greptile comments must be resolved with either a code fix or an explanation of why no change is needed.
 
@@ -122,9 +124,13 @@ Two more that matter specifically here:
 - Examples are read as teaching material, so generated code that works but obscures the pattern being taught is worse than none. Prefer the shortest version that shows the mechanism.
 - Do not let a tool spread a change across every framework flavor or every example unless the change genuinely applies to all of them. Bulk edits are hard to review and easy to get subtly wrong per example.
 
+You must be able to explain every line of your diff without an LLM. Reviewers may ask you a pointed question about any part of the change; if the answer is pasted from a model or does not come, the PR is closed.
+
+Tool attribution left in a PR (a `Generated with Claude Code` footer, a `Co-Authored-By: Claude` trailer, a `cursor/` or `codex/` branch, and the like) tells us the submission was opened without being read. CI labels these `ai-unreviewed`, fails the check, and explains what to fix. PRs left in that state are closed.
+
 ### Disclosure
 
-It can be helpful to note the extent to which AI was used in the change. For example, adding
+Disclosure is required. The pull request template has two boxes; check exactly one. If AI tooling was used, name the tool and the extent, for example:
 
 > I wrote all of the code for this feature, and had Claude update the documentation and create tests accordingly
 
@@ -132,7 +138,7 @@ or
 
 > I architected the change and handed all implementation over to Codex
 
-to the pull request description can be helpful context for reviewers.
+Editor autocomplete of single keywords or short phrases does not count as AI tooling.
 
 ### Communication
 
