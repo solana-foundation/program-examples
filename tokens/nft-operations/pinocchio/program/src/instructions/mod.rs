@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 
 use pinocchio::{
     cpi::{invoke_signed, Signer},
+    error::ProgramError,
     instruction::{InstructionAccount, InstructionView},
     AccountView, ProgramResult,
 };
@@ -24,6 +25,33 @@ pub const TOKEN_DECIMALS: u8 = 0;
 /// Seed prefix for the program's mint-authority PDA (`[b"authority"]`). The PDA
 /// is never initialized — it exists only to sign the Metaplex CPIs.
 pub const AUTHORITY_SEED: &[u8] = b"authority";
+
+/// Seed prefix for a collection's authority-tracking PDA
+/// (`[b"collection_authority", collection_mint]`). Records which wallet created
+/// the collection, since the `[b"authority"]` PDA that actually signs Metaplex
+/// CPIs is global and signs unconditionally for whoever calls
+/// `verify_collection` — this account is what gates that.
+pub const COLLECTION_AUTHORITY_SEED: &[u8] = b"collection_authority";
+
+/// Size (in bytes) of a collection-authority account: just the raw 32-byte
+/// creator pubkey. No discriminator — this program has only one custom account
+/// type, and the account only ever exists at its derived PDA address if this
+/// program's own `create_collection` created it there.
+pub const COLLECTION_AUTHORITY_LEN: usize = 32;
+
+/// Errors specific to this program's own authorization checks (distinct from
+/// the underlying Metaplex/SPL CPI errors).
+#[derive(Debug, Clone, Copy)]
+pub enum NftOperationsError {
+    /// The signer is not the collection's recorded creator.
+    Unauthorized = 1,
+}
+
+impl From<NftOperationsError> for ProgramError {
+    fn from(e: NftOperationsError) -> Self {
+        ProgramError::Custom(e as u32)
+    }
+}
 
 /// The Metaplex Token Metadata program ID
 /// (`metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`).

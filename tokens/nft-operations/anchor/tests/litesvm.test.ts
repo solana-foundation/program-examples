@@ -1,10 +1,22 @@
 import * as anchor from '@anchor-lang/core';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from '@solana/web3.js';
+import { assert } from 'chai';
 import { LiteSVMProvider } from 'anchor-litesvm';
 import { LiteSVM } from 'litesvm';
 import IDL from '../target/idl/mint_nft.json' with { type: 'json' };
 import type { MintNft } from '../target/types/mint_nft.ts';
+
+const expectAnchorError = async (promise: Promise<unknown>, code: string) => {
+    let caught: any;
+    try {
+        await promise;
+    } catch (error) {
+        caught = error;
+    }
+    assert.isDefined(caught, `expected the transaction to fail with ${code}`);
+    assert.strictEqual(caught?.error?.errorCode?.code, code, `expected ${code}, got: ${caught}`);
+};
 
 const PROGRAM_ID = new PublicKey(IDL.address);
 const METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
@@ -27,6 +39,11 @@ describe('mint-nft litesvm', () => {
 
     const collectionKeypair = Keypair.generate();
     const collectionMint = collectionKeypair.publicKey;
+
+    const collectionAuthority = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('collection_authority'), collectionMint.toBuffer()],
+        program.programId,
+    )[0];
 
     const mintKeypair = Keypair.generate();
     const mint = mintKeypair.publicKey;
@@ -63,6 +80,7 @@ describe('mint-nft litesvm', () => {
                 user: wallet.publicKey,
                 mint: collectionMint,
                 mintAuthority,
+                collectionAuthority,
                 metadata,
                 masterEdition,
                 destination,
@@ -130,6 +148,7 @@ describe('mint-nft litesvm', () => {
                 mint,
                 mintAuthority,
                 collectionMint,
+                collectionAuthority,
                 collectionMetadata,
                 collectionMasterEdition,
                 systemProgram: SystemProgram.programId,
@@ -140,5 +159,37 @@ describe('mint-nft litesvm', () => {
                 skipPreflight: true,
             });
         console.log('\nCollection Verified! Your transaction signature', tx);
+    });
+
+    it('rejects verify_collection from a wallet that did not create the collection', async () => {
+        const outsider = Keypair.generate();
+        client.airdrop(outsider.publicKey, BigInt(LAMPORTS_PER_SOL));
+
+        const mintMetadata = await getMetadata(mint);
+        const collectionMetadata = await getMetadata(collectionMint);
+        const collectionMasterEdition = await getMasterEdition(collectionMint);
+
+        await expectAnchorError(
+            program.methods
+                .verifyCollection()
+                .accountsPartial({
+                    authority: outsider.publicKey,
+                    metadata: mintMetadata,
+                    mint,
+                    mintAuthority,
+                    collectionMint,
+                    collectionAuthority,
+                    collectionMetadata,
+                    collectionMasterEdition,
+                    systemProgram: SystemProgram.programId,
+                    sysvarInstruction: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+                    tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+                })
+                .signers([outsider])
+                .rpc({
+                    skipPreflight: true,
+                }),
+            'Unauthorized',
+        );
     });
 });

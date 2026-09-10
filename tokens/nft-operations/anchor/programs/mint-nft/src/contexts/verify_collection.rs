@@ -1,3 +1,4 @@
+use crate::{errors::MintNftError, state::CollectionAuthority};
 use anchor_lang::prelude::*;
 
 use anchor_spl::metadata::mpl_token_metadata::instructions::{
@@ -28,6 +29,15 @@ pub struct VerifyCollectionMint<'info> {
     /// CHECK: This account is not initialized and is being used for signing purposes only
     pub mint_authority: UncheckedAccount<'info>,
     pub collection_mint: Account<'info, Mint>,
+    // Only the wallet recorded as this collection's creator at create_collection
+    // time may verify NFTs into it — the mint_authority PDA otherwise signs
+    // unconditionally for whoever calls this instruction.
+    #[account(
+        seeds = [b"collection_authority", collection_mint.key().as_ref()],
+        bump,
+        constraint = collection_authority.creator == authority.key() @ MintNftError::Unauthorized,
+    )]
+    pub collection_authority: Account<'info, CollectionAuthority>,
     #[account(mut)]
     pub collection_metadata: Account<'info, MetadataAccount>,
     pub collection_master_edition: Account<'info, MasterEditionAccount>,
