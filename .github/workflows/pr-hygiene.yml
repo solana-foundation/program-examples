@@ -25,7 +25,7 @@ jobs:
         env:
           BODY: ${{ github.event.pull_request.body }}
         run: |
-          body=$(sed 's/<!--.*-->//g' <<<"$BODY")
+          body=$(perl -0777 -pe 's/<!--.*?-->//gs' <<<"$BODY")
           no_ai=$(grep -ciE '^\s*[-*] \[x\] No AI tooling was used' <<<"$body" || true)
           used_ai=$(grep -ciE '^\s*[-*] \[x\] AI tooling was used' <<<"$body" || true)
 
