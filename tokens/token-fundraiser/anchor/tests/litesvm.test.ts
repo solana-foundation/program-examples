@@ -4,6 +4,7 @@ import {
     createAssociatedTokenAccountInstruction,
     createInitializeMint2Instruction,
     createMintToInstruction,
+    createTransferInstruction,
     getAssociatedTokenAddressSync,
     MINT_SIZE,
     TOKEN_PROGRAM_ID,
@@ -195,6 +196,33 @@ describe('fundraiser litesvm', () => {
         assert.strictEqual(tokenBalance(vault), vaultBalanceBefore, 'rejected refund must not move any funds');
     });
 
+    // Teardown's time check fires before the un-refunded check, so this
+    // must run before the deadline warp below to isolate the guard itself.
+    it('Teardown is rejected while the fundraiser is still active', async () => {
+        const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
+        const vaultBalanceBefore = tokenBalance(vault);
+
+        await expectAnchorError(
+            program.methods
+                .teardown()
+                .accountsPartial({
+                    maker: maker.publicKey,
+                    mintToRaise: mint,
+                    fundraiser,
+                    vault,
+                    makerAta: makerATA,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                })
+                .signers([maker])
+                .rpc(),
+            'FundraiserNotEnded',
+        );
+
+        assert.strictEqual(tokenBalance(vault), vaultBalanceBefore, 'rejected teardown must not move any funds');
+    });
+
     it('Check contributions - Robustness Test', async () => {
         // Only 2_000_000 has been contributed against a 30_000_000 target.
         // Time-independent - checker.rs has no duration check.
@@ -250,6 +278,30 @@ describe('fundraiser litesvm', () => {
         );
     });
 
+    // 2_000_000 is still recorded as un-refunded, so the maker cannot tear
+    // the campaign down yet even though the deadline has passed.
+    it('Teardown is rejected while contributions are outstanding', async () => {
+        const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
+
+        await expectAnchorError(
+            program.methods
+                .teardown()
+                .accountsPartial({
+                    maker: maker.publicKey,
+                    mintToRaise: mint,
+                    fundraiser,
+                    vault,
+                    makerAta: makerATA,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                })
+                .signers([maker])
+                .rpc(),
+            'UnrefundedContributions',
+        );
+    });
+
     it('Refund Contributions', async () => {
         // Runs after the deadline warp above, so refund's time check now passes.
         const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
@@ -285,5 +337,40 @@ describe('fundraiser litesvm', () => {
             "contributor's full original balance should be restored",
         );
         assert.isNull(client.getAccount(contributor), 'the Contributor account should be closed');
+    });
+
+    it('Teardown sweeps strays and closes the vault and fundraiser', async () => {
+        const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
+
+        // A direct deposit into the vault that no contributor record tracks.
+        const stray = 1_234_567n;
+        client.expireBlockhash();
+        const strayTx = new anchor.web3.Transaction().add(
+            createTransferInstruction(contributorATA, vault, provider.publicKey, stray),
+        );
+        await provider.sendAndConfirm(strayTx);
+        assert.strictEqual(tokenBalance(vault), stray, 'stray deposit should sit in the vault');
+
+        client.expireBlockhash();
+
+        const tx = await program.methods
+            .teardown()
+            .accountsPartial({
+                maker: maker.publicKey,
+                mintToRaise: mint,
+                fundraiser,
+                vault,
+                makerAta: makerATA,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                systemProgram: anchor.web3.SystemProgram.programId,
+                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            })
+            .signers([maker])
+            .rpc();
+        console.log('\nTore down failed fundraiser', tx);
+
+        assert.strictEqual(tokenBalance(makerATA), stray, 'stray balance should be swept to the maker');
+        assert.isNull(client.getAccount(vault), 'the vault should be closed');
+        assert.isNull(client.getAccount(fundraiser), 'the fundraiser account should be closed');
     });
 });

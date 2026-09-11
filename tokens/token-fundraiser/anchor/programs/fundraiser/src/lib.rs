@@ -38,4 +38,10 @@ pub mod fundraiser {
 
         Ok(())
     }
+
+    pub fn teardown(ctx: Context<Teardown>) -> Result<()> {
+        ctx.accounts.teardown()?;
+
+        Ok(())
+    }
 }
