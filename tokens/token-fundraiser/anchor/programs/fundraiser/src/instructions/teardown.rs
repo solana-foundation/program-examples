@@ -98,7 +98,7 @@ impl<'info> Teardown<'info> {
             authority: self.fundraiser.to_account_info(),
         };
 
-        close_account(CpiContext::new_with_signer(cpi_program, close_accounts, &signer_seeds), None)?;
+        close_account(CpiContext::new_with_signer(cpi_program, close_accounts, &signer_seeds))?;
 
         Ok(())
     }

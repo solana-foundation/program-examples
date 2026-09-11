@@ -196,6 +196,33 @@ describe('fundraiser litesvm', () => {
         assert.strictEqual(tokenBalance(vault), vaultBalanceBefore, 'rejected refund must not move any funds');
     });
 
+    // Teardown's time check fires before the un-refunded check, so this
+    // must run before the deadline warp below to isolate the guard itself.
+    it('Teardown is rejected while the fundraiser is still active', async () => {
+        const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
+        const vaultBalanceBefore = tokenBalance(vault);
+
+        await expectAnchorError(
+            program.methods
+                .teardown()
+                .accountsPartial({
+                    maker: maker.publicKey,
+                    mintToRaise: mint,
+                    fundraiser,
+                    vault,
+                    makerAta: makerATA,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                })
+                .signers([maker])
+                .rpc(),
+            'FundraiserNotEnded',
+        );
+
+        assert.strictEqual(tokenBalance(vault), vaultBalanceBefore, 'rejected teardown must not move any funds');
+    });
+
     it('Check contributions - Robustness Test', async () => {
         // Only 2_000_000 has been contributed against a 30_000_000 target.
         // Time-independent - checker.rs has no duration check.
