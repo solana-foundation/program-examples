@@ -1,6 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{create_account, CreateAccount};
 
+// NOTE: this example does not restrict who may call it. A real rent vault
+// needs an authority check: a `has_one` against an admin recorded at
+// initialization, seeds that bind the vault to one funder, or a per-caller
+// limit. A bare `authority: Signer` alone is not enough, since any keypair
+// can sign for itself.
 #[derive(Accounts)]
 pub struct CreateNewAccount<'info> {
     #[account(mut)]
