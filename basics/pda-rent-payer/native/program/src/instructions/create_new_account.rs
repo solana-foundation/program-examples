@@ -8,6 +8,10 @@ use solana_program::{
 
 use crate::state::RentVault;
 
+// NOTE: this example does not restrict who may call it. A real rent vault
+// needs an authority check: an authority recorded at initialization with
+// seeds that bind the vault to one funder, or a per-caller limit. A bare
+// signer alone is not enough, since any keypair can sign for itself.
 pub fn create_new_account(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let accounts_iter = &mut accounts.iter();
     let new_account = next_account_info(accounts_iter)?;
