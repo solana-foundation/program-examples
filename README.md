@@ -146,7 +146,7 @@ Allow two users to swap digital assets with each other, each getting 100% of wha
 
 Create a fundraiser account specifying a target mint and amount, allowing contributors to deposit tokens until the goal is reached.
 
-[anchor](./tokens/token-fundraiser/anchor)
+[anchor](./tokens/token-fundraiser/anchor) [pinocchio](./tokens/token-fundraiser/pinocchio)
 
 ### Distributing tokens with Merkle-proof claims
 
