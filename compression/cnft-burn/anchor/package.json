@@ -12,7 +12,7 @@
     "@solana/kit": "^7.0.0",
     "@solana/spl-account-compression": "^0.2.0",
     "@solana/web3.js": "^1.98.4",
-    "axios": "^1.6.5"
+    "axios": "^1.18.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

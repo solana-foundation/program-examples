@@ -7,8 +7,17 @@ settings:
 overrides:
   toml: ^5.0.0
   serialize-javascript: ^7.1.1
-  uuid: ^11.1.1
-  diff: ^8.0.3
+  js-yaml@^3.0.0: ^3.15.2
+  js-yaml@^4.0.0: ^4.3.2
+  ws@^6.0.0: ^6.2.6
+  ws@^7.0.0: ^7.5.11
+  ws@^8.0.0: ^8.21.3
+  bn.js@^4.0.0: ^4.12.3
+  bn.js@^5.0.0: ^5.2.3
+  base-x@^3.0.0: ^3.0.11
+  base-x@^4.0.0: ^4.0.1
+  uuid@^8.0.0: ^11.1.1
+  uuid@^9.0.0: ^11.1.1
 
 importers:
 
@@ -16,19 +25,19 @@ importers:
     dependencies:
       '@solana-program/system':
         specifier: ^0.12.2
-        version: 0.12.2(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
+        version: 0.12.2(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))
       '@solana-program/token-2022':
         specifier: ^0.12.0
-        version: 0.12.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(@solana/sysvars@6.10.0(typescript@5.9.3))
+        version: 0.12.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))(@solana/sysvars@6.10.0(typescript@5.9.3))
       '@solana/kit':
         specifier: ^7.0.0
-        version: 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        version: 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/sysvars':
         specifier: ^6.10.0
         version: 6.10.0(typescript@5.9.3)
       litesvm:
         specifier: ^1.3.0
-        version: 1.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        version: 1.3.0(bufferutil@4.1.0)(typescript@5.9.3)
     devDependencies:
       '@types/chai':
         specifier: ^5.2.3
@@ -1126,8 +1135,8 @@ packages:
     resolution: {integrity: sha512-9iE1PgSik9HeIIw2JO94IidnE3eBoQrFJ3w7sFuzSX4DpmZ3v5sZpUiV5Swcf6mQEF+Y0ru8Neo+p+nyh2J+hQ==}
     engines: {node: '>=10'}
 
-  diff@8.0.4:
-    resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
+  diff@7.0.0:
+    resolution: {integrity: sha512-PJWHUb1RFevKCwaFA9RlG5tCd+FO5iRh9A8HEtkmBH2Li03iJriB6m6JIN4rGz3K3JLawI7/veA1xzRKP6ISBw==}
     engines: {node: '>=0.3.1'}
 
   eastasianwidth@0.2.0:
@@ -1208,8 +1217,8 @@ packages:
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
 
-  js-yaml@4.1.0:
-    resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
+  js-yaml@4.3.2:
+    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
     hasBin: true
 
   litesvm-darwin-arm64@1.3.0:
@@ -1381,10 +1390,6 @@ packages:
   undici-types@8.7.0:
     resolution: {integrity: sha512-gbsS+hAjHg9iV+T8XWdFqnOZEk4f5xrrX3eb9Y1GDe+B5u9H68P6SzYXXUw/rkRvJHRgKIdNfAcrcVj/JvayVA==}
 
-  utf-8-validate@6.0.6:
-    resolution: {integrity: sha512-q3l3P9UtEEiAHcsgsqTgf9PPjctrDWoIXW3NpOHFdRDbLvu4DLIcxHangJ4RLrWkBcKjmcs/6NkerI8T/rE4LA==}
-    engines: {node: '>=6.14.2'}
-
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
@@ -1401,8 +1406,8 @@ packages:
     resolution: {integrity: sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ==}
     engines: {node: '>=12'}
 
-  ws@8.21.0:
-    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
+  ws@8.21.3:
+    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -1531,30 +1536,30 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@solana-program/system@0.12.2(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))':
+  '@solana-program/system@0.12.2(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3))':
     dependencies:
-      '@solana/kit': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/kit': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
 
-  '@solana-program/system@0.12.2(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))':
+  '@solana-program/system@0.12.2(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))':
     dependencies:
-      '@solana/kit': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/kit': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
 
-  '@solana-program/token-2022@0.12.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(@solana/sysvars@6.10.0(typescript@5.9.3))':
+  '@solana-program/token-2022@0.12.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))(@solana/sysvars@6.10.0(typescript@5.9.3))':
     dependencies:
       '@noble/curves': 1.9.7
-      '@solana-program/zk-elgamal-proof': 0.2.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
-      '@solana/kit': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana-program/zk-elgamal-proof': 0.2.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))
+      '@solana/kit': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/sysvars': 6.10.0(typescript@5.9.3)
 
-  '@solana-program/token@0.14.0(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))':
+  '@solana-program/token@0.14.0(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3))':
     dependencies:
-      '@solana-program/system': 0.12.2(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
-      '@solana/kit': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana-program/system': 0.12.2(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3))
+      '@solana/kit': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
 
-  '@solana-program/zk-elgamal-proof@0.2.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))':
+  '@solana-program/zk-elgamal-proof@0.2.0(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))':
     dependencies:
-      '@solana-program/system': 0.12.2(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
-      '@solana/kit': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana-program/system': 0.12.2(@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3))
+      '@solana/kit': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
 
   '@solana/accounts@6.10.0(typescript@5.9.3)':
     dependencies:
@@ -1812,7 +1817,7 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/accounts': 6.10.0(typescript@5.9.3)
       '@solana/addresses': 6.10.0(typescript@5.9.3)
@@ -1831,12 +1836,12 @@ snapshots:
       '@solana/rpc-api': 6.10.0(typescript@5.9.3)
       '@solana/rpc-parsed-types': 6.10.0(typescript@5.9.3)
       '@solana/rpc-spec-types': 6.10.0(typescript@5.9.3)
-      '@solana/rpc-subscriptions': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/rpc-subscriptions': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/rpc-types': 6.10.0(typescript@5.9.3)
       '@solana/signers': 6.10.0(typescript@5.9.3)
       '@solana/subscribable': 6.10.0(typescript@5.9.3)
       '@solana/sysvars': 6.10.0(typescript@5.9.3)
-      '@solana/transaction-confirmation': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/transaction-confirmation': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/transaction-messages': 6.10.0(typescript@5.9.3)
       '@solana/transactions': 6.10.0(typescript@5.9.3)
     optionalDependencies:
@@ -1846,7 +1851,7 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - utf-8-validate
 
-  '@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/kit@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/accounts': 7.0.0(typescript@5.9.3)
       '@solana/addresses': 7.0.0(typescript@5.9.3)
@@ -1865,12 +1870,12 @@ snapshots:
       '@solana/rpc-api': 7.0.0(typescript@5.9.3)
       '@solana/rpc-parsed-types': 7.0.0(typescript@5.9.3)
       '@solana/rpc-spec-types': 7.0.0(typescript@5.9.3)
-      '@solana/rpc-subscriptions': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/rpc-subscriptions': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/rpc-types': 7.0.0(typescript@5.9.3)
       '@solana/signers': 7.0.0(typescript@5.9.3)
       '@solana/subscribable': 7.0.0(typescript@5.9.3)
       '@solana/sysvars': 7.0.0(typescript@5.9.3)
-      '@solana/transaction-confirmation': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/transaction-confirmation': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/transaction-introspection': 7.0.0(typescript@5.9.3)
       '@solana/transaction-messages': 7.0.0(typescript@5.9.3)
       '@solana/transactions': 7.0.0(typescript@5.9.3)
@@ -2135,26 +2140,26 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/rpc-subscriptions-channel-websocket@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/rpc-subscriptions-channel-websocket@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/errors': 6.10.0(typescript@5.9.3)
       '@solana/functional': 6.10.0(typescript@5.9.3)
       '@solana/rpc-subscriptions-spec': 6.10.0(typescript@5.9.3)
       '@solana/subscribable': 6.10.0(typescript@5.9.3)
-      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      ws: 8.21.3(bufferutil@4.1.0)
     optionalDependencies:
       typescript: 5.9.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@solana/rpc-subscriptions-channel-websocket@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/rpc-subscriptions-channel-websocket@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/errors': 7.0.0(typescript@5.9.3)
       '@solana/functional': 7.0.0(typescript@5.9.3)
       '@solana/rpc-subscriptions-spec': 7.0.0(typescript@5.9.3)
       '@solana/subscribable': 7.0.0(typescript@5.9.3)
-      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      ws: 8.21.3(bufferutil@4.1.0)
     optionalDependencies:
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -2179,7 +2184,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@solana/rpc-subscriptions@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/rpc-subscriptions@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/errors': 6.10.0(typescript@5.9.3)
       '@solana/fast-stable-stringify': 6.10.0(typescript@5.9.3)
@@ -2187,7 +2192,7 @@ snapshots:
       '@solana/promises': 6.10.0(typescript@5.9.3)
       '@solana/rpc-spec-types': 6.10.0(typescript@5.9.3)
       '@solana/rpc-subscriptions-api': 6.10.0(typescript@5.9.3)
-      '@solana/rpc-subscriptions-channel-websocket': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/rpc-subscriptions-channel-websocket': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/rpc-subscriptions-spec': 6.10.0(typescript@5.9.3)
       '@solana/rpc-transformers': 6.10.0(typescript@5.9.3)
       '@solana/rpc-types': 6.10.0(typescript@5.9.3)
@@ -2199,7 +2204,7 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - utf-8-validate
 
-  '@solana/rpc-subscriptions@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/rpc-subscriptions@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/errors': 7.0.0(typescript@5.9.3)
       '@solana/fast-stable-stringify': 7.0.0(typescript@5.9.3)
@@ -2207,7 +2212,7 @@ snapshots:
       '@solana/promises': 7.0.0(typescript@5.9.3)
       '@solana/rpc-spec-types': 7.0.0(typescript@5.9.3)
       '@solana/rpc-subscriptions-api': 7.0.0(typescript@5.9.3)
-      '@solana/rpc-subscriptions-channel-websocket': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/rpc-subscriptions-channel-websocket': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/rpc-subscriptions-spec': 7.0.0(typescript@5.9.3)
       '@solana/rpc-transformers': 7.0.0(typescript@5.9.3)
       '@solana/rpc-types': 7.0.0(typescript@5.9.3)
@@ -2393,7 +2398,7 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/transaction-confirmation@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/transaction-confirmation@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/addresses': 6.10.0(typescript@5.9.3)
       '@solana/codecs-strings': 6.10.0(typescript@5.9.3)
@@ -2401,7 +2406,7 @@ snapshots:
       '@solana/keys': 6.10.0(typescript@5.9.3)
       '@solana/promises': 6.10.0(typescript@5.9.3)
       '@solana/rpc': 6.10.0(typescript@5.9.3)
-      '@solana/rpc-subscriptions': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/rpc-subscriptions': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/rpc-types': 6.10.0(typescript@5.9.3)
       '@solana/transaction-messages': 6.10.0(typescript@5.9.3)
       '@solana/transactions': 6.10.0(typescript@5.9.3)
@@ -2412,7 +2417,7 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - utf-8-validate
 
-  '@solana/transaction-confirmation@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@solana/transaction-confirmation@7.0.0(bufferutil@4.1.0)(typescript@5.9.3)':
     dependencies:
       '@solana/addresses': 7.0.0(typescript@5.9.3)
       '@solana/codecs-strings': 7.0.0(typescript@5.9.3)
@@ -2420,7 +2425,7 @@ snapshots:
       '@solana/keys': 7.0.0(typescript@5.9.3)
       '@solana/promises': 7.0.0(typescript@5.9.3)
       '@solana/rpc': 7.0.0(typescript@5.9.3)
-      '@solana/rpc-subscriptions': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana/rpc-subscriptions': 7.0.0(bufferutil@4.1.0)(typescript@5.9.3)
       '@solana/rpc-types': 7.0.0(typescript@5.9.3)
       '@solana/transaction-messages': 7.0.0(typescript@5.9.3)
       '@solana/transactions': 7.0.0(typescript@5.9.3)
@@ -2599,7 +2604,7 @@ snapshots:
 
   decamelize@4.0.0: {}
 
-  diff@8.0.4: {}
+  diff@7.0.0: {}
 
   eastasianwidth@0.2.0: {}
 
@@ -2686,7 +2691,7 @@ snapshots:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
 
-  js-yaml@4.1.0:
+  js-yaml@4.3.2:
     dependencies:
       argparse: 2.0.1
 
@@ -2708,11 +2713,11 @@ snapshots:
   litesvm-linux-x64-musl@1.3.0:
     optional: true
 
-  litesvm@1.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6):
+  litesvm@1.3.0(bufferutil@4.1.0)(typescript@5.9.3):
     dependencies:
-      '@solana-program/system': 0.12.2(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
-      '@solana-program/token': 0.14.0(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
-      '@solana/kit': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      '@solana-program/system': 0.12.2(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3))
+      '@solana-program/token': 0.14.0(@solana/kit@6.10.0(bufferutil@4.1.0)(typescript@5.9.3))
+      '@solana/kit': 6.10.0(bufferutil@4.1.0)(typescript@5.9.3)
     optionalDependencies:
       litesvm-darwin-arm64: 1.3.0
       litesvm-darwin-x64: 1.3.0
@@ -2748,13 +2753,13 @@ snapshots:
       browser-stdout: 1.3.1
       chokidar: 4.0.3
       debug: 4.4.3(supports-color@8.1.1)
-      diff: 8.0.4
+      diff: 7.0.0
       escape-string-regexp: 4.0.0
       find-up: 5.0.0
       glob: 10.5.0
       he: 1.2.0
       is-path-inside: 3.0.3
-      js-yaml: 4.1.0
+      js-yaml: 4.3.2
       log-symbols: 4.1.0
       minimatch: 9.0.9
       ms: 2.1.3
@@ -2849,11 +2854,6 @@ snapshots:
 
   undici-types@8.7.0: {}
 
-  utf-8-validate@6.0.6:
-    dependencies:
-      node-gyp-build: 4.8.4
-    optional: true
-
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
@@ -2872,10 +2872,9 @@ snapshots:
       string-width: 5.1.2
       strip-ansi: 7.2.0
 
-  ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6):
+  ws@8.21.3(bufferutil@4.1.0):
     optionalDependencies:
       bufferutil: 4.1.0
-      utf-8-validate: 6.0.6
 
   y18n@5.0.8: {}
 
