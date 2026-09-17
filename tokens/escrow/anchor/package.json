@@ -1,10 +1,5 @@
 {
   "type": "module",
-  "pnpm": {
-    "overrides": {
-      "litesvm": "^0.8.0"
-    }
-  },
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"

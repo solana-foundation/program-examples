@@ -20,10 +20,5 @@
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "zx": "^8.1.4"
-  },
-  "pnpm": {
-    "overrides": {
-      "litesvm": "^0.8.0"
-    }
   }
 }

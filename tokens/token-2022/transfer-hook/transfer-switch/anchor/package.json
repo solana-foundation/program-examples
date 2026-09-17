@@ -20,10 +20,5 @@
     "typescript": "^5.9.3",
     "@types/node": "^26.1.0",
     "tsx": "^4.19.2"
-  },
-  "pnpm": {
-    "overrides": {
-      "litesvm": "^0.8.0"
-    }
   }
 }
