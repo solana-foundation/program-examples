@@ -59,6 +59,9 @@ function log(level: 'info' | 'warn' | 'error', message: string, meta?: Record<st
 }
 
 function errorMessage(error: unknown): string {
+    if (error instanceof Error && 'code' in error && typeof error.code === 'string') {
+        return error.code;
+    }
     return error instanceof Error ? error.message : String(error);
 }
 
