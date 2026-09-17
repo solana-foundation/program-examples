@@ -58,6 +58,10 @@ function log(level: 'info' | 'warn' | 'error', message: string, meta?: Record<st
     console.log(`[${timestamp}] ${level.toUpperCase()}: ${message}${metaStr}`);
 }
 
+function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
 async function readConfig(): Promise<Config> {
     try {
         const content = await readFile(CONFIG_PATH, 'utf-8');
@@ -239,7 +243,7 @@ async function handleProgramStatus(rpcUrl: string, programAddr: string): Promise
         const status = await checkProgramStatus(rpcUrl, programAddr);
         return jsonResponse(status);
     } catch (error) {
-        return jsonResponse({ error: 'Failed to check program status', details: String(error) }, 500);
+        return jsonResponse({ error: 'Failed to check program status', details: errorMessage(error) }, 500);
     }
 }
 
@@ -250,7 +254,7 @@ async function handleBinaryInfo(): Promise<Response> {
         const fileStats = await stat(SO_PATH);
         return jsonResponse({ hash, size: fileStats.size });
     } catch (error) {
-        return jsonResponse({ error: 'Binary not found', details: String(error) }, 404);
+        return jsonResponse({ error: 'Binary not found', details: errorMessage(error) }, 404);
     }
 }
 
@@ -280,7 +284,7 @@ async function handlePrepareDeploy(body: {
         return jsonResponse(plan);
     } catch (error) {
         log('error', 'Failed to prepare deploy', { error: String(error) });
-        return jsonResponse({ error: 'Failed to prepare deploy', details: String(error) }, 500);
+        return jsonResponse({ error: 'Failed to prepare deploy', details: errorMessage(error) }, 500);
     }
 }
 
@@ -543,7 +547,7 @@ async function handleCreateMockUsdc(): Promise<Response> {
             });
         });
     } catch (error) {
-        return jsonResponse({ error: 'Failed to create mock USDC', details: String(error) }, 500);
+        return jsonResponse({ error: 'Failed to create mock USDC', details: errorMessage(error) }, 500);
     }
 }
 
@@ -566,7 +570,7 @@ async function handleSaveConfig(body: {
         await writeFile(CONFIG_PATH, JSON.stringify(existing, null, 2));
         return jsonResponse({ success: true });
     } catch (error) {
-        return jsonResponse({ error: 'Failed to save config', details: String(error) }, 500);
+        return jsonResponse({ error: 'Failed to save config', details: errorMessage(error) }, 500);
     }
 }
 
