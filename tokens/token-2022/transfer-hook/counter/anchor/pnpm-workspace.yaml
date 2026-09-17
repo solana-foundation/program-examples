@@ -1,5 +1,10 @@
+allowBuilds:
+  bigint-buffer: true
+  bufferutil: true
+  esbuild: true
+  utf-8-validate: true
 overrides:
-  toml: ^5.0.0
-  serialize-javascript: ^7.1.1
-  uuid: ^11.1.1
   diff: ^8.0.3
+  serialize-javascript: ^7.1.1
+  toml: ^5.0.0
+  uuid: ^11.1.1
