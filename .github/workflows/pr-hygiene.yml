@@ -77,8 +77,7 @@ jobs:
           commits=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[] | .messageHeadline, .messageBody')
           text=$(printf '%s\n%s\n%s\n' "$TITLE" "$BODY" "$commits")
 
-          patterns='marzipan'
-          patterns+='|co-authored-by:.*(claude|copilot|cursor|codex|chatgpt|openai|aider|devin|gemini|windsurf)'
+          patterns='co-authored-by:.*(claude|copilot|cursor|codex|chatgpt|openai|aider|devin|gemini|windsurf)'
           patterns+='|generated with .*claude code|claude\.ai/code|claude\.com/claude-code'
           patterns+='|noreply@anthropic\.com|noreply@cursor\.com|made with cursor|cursor\.com'
 
