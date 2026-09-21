@@ -5,6 +5,7 @@ import { address as toAddress, type Address } from '@solana/kit';
 import { useParams } from 'next/navigation';
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { tokenAmountToBaseUnits } from '@/lib/token-amount';
 import { WalletButton } from '../solana/solana-provider';
 import { useAblTokenProgram, useGetToken } from './abl-token-data-access';
 
@@ -104,7 +105,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
             const recipient = destinationWallet.trim() ? toAddress(destinationWallet.trim()) : account;
             await mintTo.mutateAsync({
                 mint: toAddress(tokenInfo.address),
-                amount: BigInt(mintAmount || '0'),
+                amount: tokenAmountToBaseUnits(mintAmount, tokenInfo.decimals),
                 recipient,
             });
             console.log('Minted successfully');
@@ -212,6 +213,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                                 value={mintAmount}
                                 onChange={e => setMintAmount(e.target.value)}
                                 min="0"
+                                step="any"
                                 placeholder="Amount to mint"
                             />
                             <Button onClick={handleMint}>Mint Tokens</Button>
