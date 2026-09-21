@@ -161,22 +161,18 @@ export function AccountTokens({ address }: { address: Address }) {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         const amount = window.prompt('Enter amount to send:');
                                                         const destination = window.prompt(
                                                             'Enter destination wallet address:',
                                                         );
                                                         if (amount && destination) {
                                                             try {
-                                                                sendTokens.mutateAsync({
+                                                                await sendTokens.mutateAsync({
                                                                     mint: toAddress(account.data.parsed.info.mint),
                                                                     destination: toAddress(destination),
-                                                                    amount: parseFloat(amount),
+                                                                    amount,
                                                                 });
-                                                                // TODO: Implement token transfer logic
-                                                                console.log(
-                                                                    `Sending ${amount} tokens to ${destination}`,
-                                                                );
                                                             } catch (err) {
                                                                 console.error('Failed to send tokens:', err);
                                                             }

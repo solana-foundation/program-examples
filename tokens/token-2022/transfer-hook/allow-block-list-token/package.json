@@ -17,6 +17,7 @@
         "format:check": "prettier --check .",
         "lint": "next lint",
         "start": "next start",
+        "test": "mocha --import=tsx ./tests/token-amount.test.ts",
         "typecheck": "pnpm run generate-client && tsc --noEmit"
     },
     "dependencies": {

@@ -14,6 +14,7 @@ import {
 import { getTransferSolInstruction } from '@solana-program/system';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSendInstruction } from '@/hooks/use-send-instruction';
+import { tokenAmountToBaseUnits } from '@/lib/token-amount';
 import { findExtraMetasAccountPda } from '@/generated/pdas';
 import { useCluster } from '../cluster/cluster-data-access';
 import { useTransactionErrorToast, useTransactionToast } from '../use-transaction-toast';
@@ -51,7 +52,7 @@ export function useSendTokens() {
     const transactionErrorToast = useTransactionErrorToast();
 
     return useMutation({
-        mutationFn: async (args: { mint: Address; destination: Address; amount: number }) => {
+        mutationFn: async (args: { mint: Address; destination: Address; amount: string }) => {
             if (!signer || !account || !client) throw new Error('No public key found');
             const { mint, destination, amount } = args;
 
@@ -61,6 +62,7 @@ export function useSendTokens() {
                 findAssociatedTokenPda({ owner: account, mint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
             ]);
 
+            const baseUnits = tokenAmountToBaseUnits(amount, mintAccount.data.decimals);
             const extensions = mintAccount.data.extensions.__option === 'Some' ? mintAccount.data.extensions.value : [];
             const transferHook = extensions.find(extension => extension.__kind === 'TransferHook');
             if (!transferHook) throw new Error('This mint has no transfer hook, so it is not an allow/block token');
@@ -99,7 +101,7 @@ export function useSendTokens() {
                     mint,
                     destination: ataDestination,
                     authority: signer,
-                    amount: BigInt(amount),
+                    amount: baseUnits,
                     decimals: mintAccount.data.decimals,
                 },
                 { tokenProgram: TOKEN_2022_PROGRAM_ADDRESS },
