@@ -1,7 +1,7 @@
 'use client';
 
 import { LAMPORTS_PER_SOL } from '@solana/connector';
-import { useKitTransactionSigner, useSolanaClient, useWallet } from '@solana/connector/react';
+import { useKitTransactionSigner, useSolanaClient } from '@solana/connector/react';
 import { airdropFactory, fetchEncodedAccount, lamports, type Address } from '@solana/kit';
 import {
     fetchMint,
@@ -44,21 +44,19 @@ export function useGetSignatures({ address }: { address: Address }) {
 
 export function useSendTokens() {
     const { client } = useSolanaClient();
-    const { account } = useWallet();
     const { signer } = useKitTransactionSigner();
     const sendInstruction = useSendInstruction();
     const transactionToast = useTransactionToast();
     const transactionErrorToast = useTransactionErrorToast();
 
     return useMutation({
-        mutationFn: async (args: { mint: Address; destination: Address; amount: number }) => {
-            if (!signer || !account || !client) throw new Error('No public key found');
-            const { mint, destination, amount } = args;
+        mutationFn: async (args: { source: Address; mint: Address; destination: Address; amount: number }) => {
+            if (!signer || !client) throw new Error('No public key found');
+            const { source, mint, destination, amount } = args;
 
-            const [mintAccount, [ataDestination], [ataSource]] = await Promise.all([
+            const [mintAccount, [ataDestination]] = await Promise.all([
                 fetchMint(client.rpc, mint),
                 findAssociatedTokenPda({ owner: destination, mint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
-                findAssociatedTokenPda({ owner: account, mint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
             ]);
 
             const extensions = mintAccount.data.extensions.__option === 'Some' ? mintAccount.data.extensions.value : [];
@@ -95,7 +93,7 @@ export function useSendTokens() {
             const transferIx = await getTransferCheckedWithTransferHookInstructionAsync(
                 client,
                 {
-                    source: ataSource,
+                    source,
                     mint,
                     destination: ataDestination,
                     authority: signer,
