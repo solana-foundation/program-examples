@@ -7,9 +7,9 @@ We believe that a welcoming and inclusive environment fosters collaboration and 
 ## Before you start
 
 - Search existing issues and pull requests before opening a new one.
-- For substantial changes, such as a new example or a new framework flavor, open an issue or discussion first so maintainers can confirm the approach. Small PRs are preferred.
+- Open an issue first and wait for a maintainer to label it `accepted`. Every pull request has to reference such an issue with `Fixes #<issue>`; CI labels the ones that don't `needs-issue` and closes them, with the exception of typos, broken links, and comment-only fixes, which declare `Linked issue: trivial` in the description instead. This matters most for a new example or a new framework flavor, where the decision is whether it belongs here at all. Small PRs are preferred.
 - Do not include secrets, private keys, seed phrases, or production credentials in issues, pull requests, commits, logs, or screenshots. Program keypairs belong in gitignored `keys/` directories, never in the diff.
-- All commits into a Solana Foundation repository require [commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) to be enabled. Your PRs will not be merged without this.
+- All commits into a Solana Foundation repository require [commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) to be enabled. CI requests changes on a PR carrying an unverified commit and dismisses that review once every commit verifies.
 
 ## Security vulnerabilities
 

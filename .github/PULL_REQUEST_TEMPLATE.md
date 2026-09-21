@@ -1,3 +1,10 @@
+## Linked issue
+
+Fixes #
+
+<!-- Required. The issue must be labeled `accepted` by a maintainer. For a typo, broken link, or
+comment-only fix, replace the line above with `Linked issue: trivial`. -->
+
 ## What and why
 
 <!-- The problem, the approach, and any behavior or compatibility changes. Link related issues. -->
