@@ -73,6 +73,7 @@ members = [
     "tokens/token-2022/permanent-delegate/pinocchio/program",
     "tokens/token-2022/multiple-extensions/pinocchio/program",
     "tokens/token-2022/immutable-owner/pinocchio/program",
+    "tokens/token-2022/cpi-guard/pinocchio/program",
 ]
 resolver = "2"
 
