@@ -12,7 +12,7 @@ use pinocchio_system::instructions::CreateAccount;
 use pinocchio_token::instructions::InitializeMint2;
 
 use crate::instructions::{CreateTokenArgs, MINT_SIZE, TOKEN_DECIMALS, TOKEN_METADATA_PROGRAM_ID};
-use crate::state::MintAuthorityPda;
+use crate::state::{MintAuthorityPda, MintConfig};
 
 /// Discriminator of the Metaplex `CreateMetadataAccountV3` instruction (variant
 /// 33 of the Token Metadata program's instruction enum).
@@ -25,11 +25,12 @@ const CREATE_METADATA_ACCOUNT_V3: u8 = 33;
 /// Accounts:
 ///   0. `[signer, writable]` mint account (a fresh keypair to initialize)
 ///   1. `[]`                 mint authority PDA (also the metadata update authority)
-///   2. `[writable]`         metadata account (the Metaplex metadata PDA)
-///   3. `[signer, writable]` payer (funds the new accounts)
-///   4. `[]`                 system program
-///   5. `[]`                 token program
-///   6. `[]`                 token metadata program
+///   2. `[writable]`         mint config PDA (created here; records the payer)
+///   3. `[writable]`         metadata account (the Metaplex metadata PDA)
+///   4. `[signer, writable]` payer (funds the new accounts)
+///   5. `[]`                 system program
+///   6. `[]`                 token program
+///   7. `[]`                 token metadata program
 ///
 /// Instruction data: Borsh `[name: string, symbol: string, uri: string]`.
 ///
@@ -39,7 +40,7 @@ const CREATE_METADATA_ACCOUNT_V3: u8 = 33;
 pub fn create_token(program_id: &Address, accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     // `token_program` and `token_metadata_program` are unused directly, but must
     // be supplied so they are present in the transaction for the CPIs below.
-    let [mint_account, mint_authority, metadata_account, payer, system_program, _token_program, _token_metadata_program] =
+    let [mint_account, mint_authority, mint_config, metadata_account, payer, system_program, _token_program, _token_metadata_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -55,6 +56,13 @@ pub fn create_token(program_id: &Address, accounts: &mut [AccountView], data: &[
     let pda = Address::create_program_address(&[MintAuthorityPda::SEED_PREFIX, &[bump]], program_id)
         .map_err(|_| ProgramError::InvalidSeeds)?;
     if mint_authority.address() != &pda {
+        return Err(ProgramError::InvalidSeeds);
+    }
+
+    // Confirm the supplied account is the mint-config PDA bound to this mint.
+    let (mint_config_pda, mint_config_bump) =
+        Address::find_program_address(&[MintConfig::SEED_PREFIX, mint_account.address().as_array()], program_id);
+    if mint_config.address() != &mint_config_pda {
         return Err(ProgramError::InvalidSeeds);
     }
 
@@ -100,6 +108,23 @@ pub fn create_token(program_id: &Address, accounts: &mut [AccountView], data: &[
         &[*metadata_account, *mint_account, *mint_authority, *payer, *mint_authority, *system_program],
         &signers,
     )?;
+
+    // Records who is allowed to call `mint_to`, since the mint authority PDA
+    // itself signs unconditionally for whoever calls it.
+    log!("Creating mint config account");
+    let config_lamports = rent.try_minimum_balance(MintConfig::ACCOUNT_SPACE)?;
+    let bump_bytes = [mint_config_bump];
+    let seeds =
+        [Seed::from(MintConfig::SEED_PREFIX), Seed::from(mint_account.address().as_ref()), Seed::from(&bump_bytes)];
+    CreateAccount {
+        from: payer,
+        to: mint_config,
+        lamports: config_lamports,
+        space: MintConfig::ACCOUNT_SPACE as u64,
+        owner: program_id,
+    }
+    .invoke_signed(&[Signer::from(&seeds)])?;
+    MintConfig { admin: *payer.address() }.serialize(&mut mint_config.try_borrow_mut()?)?;
 
     log!("Token mint created successfully");
     Ok(())
