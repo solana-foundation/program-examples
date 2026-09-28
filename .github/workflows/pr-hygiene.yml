@@ -62,7 +62,7 @@ jobs:
             exit 0
           fi
 
-          numbers=$(grep -oiE '(fixes|closes|resolves)[[:space:]]+#[0-9]+' <<<"$body" | grep -oE '[0-9]+' | sort -u || true)
+          numbers=$(grep -oiE "(fixes|closes|resolves)[[:space:]]+(#|https://github\.com/$GH_REPO/issues/)[0-9]+" <<<"$body" | grep -oE '[0-9]+' | sort -u || true)
 
           for number in $numbers; do
             issue=$(gh api "repos/$GH_REPO/issues/$number" 2>/dev/null) || continue
