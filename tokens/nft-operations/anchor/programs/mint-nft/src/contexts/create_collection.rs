@@ -1,3 +1,4 @@
+use crate::state::CollectionAuthority;
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken, 
@@ -44,6 +45,16 @@ pub struct CreateCollection<'info> {
     )]
     /// CHECK: This account is not initialized and is being used for signing purposes only
     pub mint_authority: UncheckedAccount<'info>,
+    // Records `user` as this collection's creator, so verify_collection can
+    // later confirm only they (not an arbitrary caller) may verify members.
+    #[account(
+        init,
+        payer = user,
+        space = CollectionAuthority::LEN,
+        seeds = [b"collection_authority", mint.key().as_ref()],
+        bump,
+    )]
+    pub collection_authority: Account<'info, CollectionAuthority>,
     #[account(mut)]
     /// CHECK: This account will be initialized by the metaplex program
     metadata: UncheckedAccount<'info>,
@@ -65,6 +76,7 @@ pub struct CreateCollection<'info> {
 
 impl<'info> CreateCollection<'info> {
     pub fn create_collection(&mut self, bumps: &CreateCollectionBumps) -> Result<()> {
+        self.collection_authority.creator = self.user.key();
 
         let metadata = &self.metadata.to_account_info();
         let master_edition = &self.master_edition.to_account_info();

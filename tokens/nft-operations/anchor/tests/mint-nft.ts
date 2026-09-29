@@ -23,6 +23,11 @@ describe('mint-nft', () => {
     const collectionKeypair = Keypair.generate();
     const collectionMint = collectionKeypair.publicKey;
 
+    const collectionAuthority = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from('collection_authority'), collectionMint.toBuffer()],
+        program.programId,
+    )[0];
+
     const mintKeypair = Keypair.generate();
     const mint = mintKeypair.publicKey;
 
@@ -58,6 +63,7 @@ describe('mint-nft', () => {
                 user: wallet.publicKey,
                 mint: collectionMint,
                 mintAuthority,
+                collectionAuthority,
                 metadata,
                 masterEdition,
                 destination,
@@ -125,6 +131,7 @@ describe('mint-nft', () => {
                 mint,
                 mintAuthority,
                 collectionMint,
+                collectionAuthority,
                 collectionMetadata,
                 collectionMasterEdition,
                 systemProgram: SystemProgram.programId,
