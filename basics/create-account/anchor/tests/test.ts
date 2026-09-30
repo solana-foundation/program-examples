@@ -25,7 +25,7 @@ describe('Anchor: Create a system account', () => {
 
         await program.methods
             .createSystemAccount(addressData)
-            .accounts({
+            .accountsPartial({
                 payer: wallet.publicKey,
                 newAccount: newKeypair.publicKey,
             })

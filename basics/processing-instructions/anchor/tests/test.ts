@@ -9,7 +9,7 @@ describe('custom-instruction-data', () => {
     it('Go to the park!', async () => {
         // Again, Anchor makes it super simple.
         //
-        await program.methods.goToPark('Jimmy', 3).accounts({}).rpc();
-        await program.methods.goToPark('Mary', 10).accounts({}).rpc();
+        await program.methods.goToPark('Jimmy', 3).accountsPartial({}).rpc();
+        await program.methods.goToPark('Mary', 10).accountsPartial({}).rpc();
     });
 });

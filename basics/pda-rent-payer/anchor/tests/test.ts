@@ -19,7 +19,7 @@ describe('PDA Rent-Payer', () => {
 
         await program.methods
             .initRentVault(fundAmount)
-            .accounts({
+            .accountsPartial({
                 payer: wallet.publicKey,
             })
             .rpc();
@@ -35,7 +35,7 @@ describe('PDA Rent-Payer', () => {
 
         await program.methods
             .createNewAccount()
-            .accounts({
+            .accountsPartial({
                 newAccount: newAccount.publicKey,
             })
             .signers([newAccount])

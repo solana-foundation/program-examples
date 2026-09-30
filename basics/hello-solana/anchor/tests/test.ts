@@ -12,6 +12,6 @@ describe('Anchor: hello-solana', () => {
     it('Say hello!', async () => {
         // Just run Anchor's IDL method to build a transaction!
         //
-        await program.methods.hello().accounts({}).rpc();
+        await program.methods.hello().accountsPartial({}).rpc();
     });
 });

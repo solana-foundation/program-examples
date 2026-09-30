@@ -25,7 +25,7 @@ describe('Account Data!', () => {
 
         await program.methods
             .createAddressInfo(addressInfo.name, addressInfo.houseNumber, addressInfo.street, addressInfo.city)
-            .accounts({
+            .accountsPartial({
                 addressInfo: addressInfoAccount.publicKey,
                 payer: payer.publicKey,
             })

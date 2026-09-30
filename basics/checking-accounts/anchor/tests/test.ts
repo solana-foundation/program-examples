@@ -31,7 +31,7 @@ describe('Anchor example', () => {
     it('Check accounts', async () => {
         await program.methods
             .checkAccounts()
-            .accounts({
+            .accountsPartial({
                 payer: wallet.publicKey,
                 accountToCreate: accountToCreate.publicKey,
                 accountToChange: accountToChange.publicKey,
