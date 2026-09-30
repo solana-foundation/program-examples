@@ -21,7 +21,7 @@ describe('Create Tokens', () => {
         // SPL Token default = 9 decimals
         const transactionSignature = await program.methods
             .createTokenMint(9, metadata.name, metadata.symbol, metadata.uri)
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 mintAccount: mintKeypair.publicKey,
             })
@@ -40,7 +40,7 @@ describe('Create Tokens', () => {
         // NFT default = 0 decimals
         const transactionSignature = await program.methods
             .createTokenMint(0, metadata.name, metadata.symbol, metadata.uri)
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 mintAccount: mintKeypair.publicKey,
             })
