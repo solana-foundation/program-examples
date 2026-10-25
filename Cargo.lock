@@ -6047,6 +6047,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "token-swap-native-program"
+version = "0.1.0"
+dependencies = [
+ "borsh",
+ "solana-program",
+ "solana-system-interface 2.0.0",
+ "spl-associated-token-account-interface",
+ "spl-token-interface",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "toml"
 version = "0.8.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"

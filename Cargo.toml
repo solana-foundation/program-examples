@@ -55,6 +55,7 @@ members = [
     "tokens/create-token/pinocchio/program",
     "tokens/escrow/native/program",
     "tokens/escrow/pinocchio/program",
+    "tokens/token-swap/native/program",
     "tokens/nft-operations/pinocchio/program",
     "tokens/pda-mint-authority/native/program",
     "tokens/pda-mint-authority/pinocchio/program",
