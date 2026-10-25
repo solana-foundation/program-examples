@@ -6,6 +6,11 @@ use pinocchio::{
 
 use crate::state::RentVault;
 
+// NOTE: this example does not restrict who may call it, nor does it require
+// `new_account` to sign or be newly created via the System Program. A real
+// rent vault needs an authority check (e.g., verifying a recorded admin signer
+// or binding the vault PDA seeds to a specific funder) and account creation
+// checks. See `basics/checking-accounts` for authority and account checks.
 pub fn create_new_account(
     program_id: &Address,
     accounts: &mut [AccountView],
