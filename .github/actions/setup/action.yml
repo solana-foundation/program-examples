@@ -49,13 +49,9 @@ inputs:
     required: false
     default: 'false'
   sbpf-rev:
-    description: >-
-      blueshift-gg/sbpf git rev. Pinned to v0.1.9: the tip moved to v0.2.2,
-      which emits an sBPF binary the runtime loader rejects at execution
-      ("Program is not deployed"). Keep in sync with the ASM workflow's pinned
-      Solana version.
+    description: 'blueshift-gg/sbpf git rev (v0.3.3)'
     required: false
-    default: '0223df0e7ba622d4956b4ecf3cf2397f6945b76b'
+    default: '494512700f886c3b3e6aa89f7b5b12cd95f30cd3'
   cargo-cache:
     description: 'Cache the cargo registry (and optionally targets) via rust-cache'
     required: false
@@ -292,4 +288,4 @@ runs:
     - name: Install sbpf assembler
       if: inputs.install-sbpf == 'true' && steps.cache-sbpf.outputs.cache-hit != 'true'
       shell: bash
-      run: cargo install --git https://github.com/blueshift-gg/sbpf.git --rev ${{ inputs.sbpf-rev }}
+      run: cargo install --git https://github.com/blueshift-gg/sbpf.git --rev ${{ inputs.sbpf-rev }} sbpf

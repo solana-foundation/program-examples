@@ -122,13 +122,8 @@ jobs:
       failed_projects: ${{ steps.set-failed.outputs.failed_projects }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Solana pinned to 4.0.3, the last version the ASM examples passed on
-      # (paired with the sbpf rev pinned in the setup action). Floating
-      # "stable" moved to 4.1.1 in the same window the toolchain broke. The
-      # beta leg below stays on the moving channel on purpose.
       - uses: ./.github/actions/setup
         with:
-          solana-version: '4.0.3'
           install-sbpf: 'true'
       - name: Setup build environment
         id: setup
