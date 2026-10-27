@@ -1,14 +1,11 @@
 use {
     crate::{error::*, state::*, utils::*},
     borsh::{BorshDeserialize, BorshSerialize},
-    solana_program::{
-        account_info::AccountInfo,
-        entrypoint::ProgramResult,
-        program::{invoke, invoke_signed},
-        program_error::ProgramError,
-        program_pack::Pack,
-        pubkey::Pubkey,
-    },
+    solana_account_info::AccountInfo,
+    solana_cpi::{invoke, invoke_signed},
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_program_pack::Pack,
+    solana_pubkey::Pubkey,
     spl_associated_token_account_interface::instruction as associated_token_account_instruction,
     spl_token_interface::{instruction as token_instruction, state::Account as TokenAccount},
 };
@@ -128,10 +125,10 @@ impl TakeOffer {
         let maker_amount_b_before_transfer = TokenAccount::unpack(&maker_token_account_b.data.borrow())?.amount;
         let taker_amount_b = TokenAccount::unpack(&taker_token_account_b.data.borrow())?.amount;
 
-        solana_program::msg!("Vault A Balance Before Transfer: {}", vault_amount_a);
-        solana_program::msg!("Taker A Balance Before Transfer: {}", taker_amount_a_before_transfer);
-        solana_program::msg!("Maker B Balance Before Transfer: {}", maker_amount_b_before_transfer);
-        solana_program::msg!("Taker B Balance Before Transfer: {}", taker_amount_b);
+        solana_msg::msg!("Vault A Balance Before Transfer: {}", vault_amount_a);
+        solana_msg::msg!("Taker A Balance Before Transfer: {}", taker_amount_a_before_transfer);
+        solana_msg::msg!("Maker B Balance Before Transfer: {}", maker_amount_b_before_transfer);
+        solana_msg::msg!("Taker B Balance Before Transfer: {}", taker_amount_b);
 
         // taker transfer mint a tokens to vault
         //
@@ -178,10 +175,10 @@ impl TakeOffer {
         let taker_amount_b = TokenAccount::unpack(&taker_token_account_b.data.borrow())?.amount;
         let vault_amount_a = TokenAccount::unpack(&vault.data.borrow())?.amount;
 
-        solana_program::msg!("Vault A Balance After Transfer: {}", vault_amount_a);
-        solana_program::msg!("Taker A Balance After Transfer: {}", taker_amount_a);
-        solana_program::msg!("Maker B Balance After Transfer: {}", maker_amount_b);
-        solana_program::msg!("Taker B Balance After Transfer: {}", taker_amount_b);
+        solana_msg::msg!("Vault A Balance After Transfer: {}", vault_amount_a);
+        solana_msg::msg!("Taker A Balance After Transfer: {}", taker_amount_a);
+        solana_msg::msg!("Maker B Balance After Transfer: {}", maker_amount_b);
+        solana_msg::msg!("Taker B Balance After Transfer: {}", taker_amount_b);
 
         // close the vault account
         //

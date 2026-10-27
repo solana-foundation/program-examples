@@ -3,7 +3,7 @@ use litesvm::LiteSVM;
 use repository_layout_program::processor::CarnivalInstructionData;
 use solana_instruction::{AccountMeta, Instruction};
 use solana_keypair::{Keypair, Signer};
-use solana_program::native_token::LAMPORTS_PER_SOL;
+use solana_native_token::LAMPORTS_PER_SOL;
 use solana_pubkey::Pubkey;
 use solana_transaction::Transaction;
 

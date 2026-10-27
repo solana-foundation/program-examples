@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_program_error::ProgramResult,
 };
 
 use crate::state::PageVisits;

@@ -1,5 +1,5 @@
 use crate::error::EscrowError;
-use solana_program::{program_error::ProgramError, pubkey::Pubkey};
+use {solana_program_error::ProgramError, solana_pubkey::Pubkey};
 
 pub fn assert_is_associated_token_account(
     token_address: &Pubkey,

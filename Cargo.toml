@@ -85,26 +85,34 @@ overflow-checks = true
 [workspace.dependencies]
 
 # misc
-borsh = "1.6.1"
-borsh-derive = "1.6.1"
+borsh = "1.8.1"
+borsh-derive = "1.8.1"
 
 
 # spl
-solana-program = "4.0"
-spl-token-2022 = {version = "9.0.0" , features = [ "no-entrypoint" ] }
+spl-token-2022 = { version = "11.1.0", features = ["no-entrypoint"] }
+
+# program
+solana-account-info = "3.1.1"
+solana-cpi = "3.1.0"
+solana-msg = "3.1.0"
+solana-program-entrypoint = "3.1.1"
+solana-program-error = { version = "3.0.1", features = ["borsh"] }
+solana-program-pack = "3.1.0"
+solana-sysvar = "5.0.0"
 
 # interface
-solana-system-interface = {version = "2.0.0", features = ["bincode"]}
-spl-token-interface = "2.0.0"
+solana-system-interface = { version = "3.3.0", features = ["bincode"] }
+spl-token-interface = "3.0.0"
 spl-associated-token-account-interface = "2.0.0"
-spl-token-2022-interface = "2.1.0"
+spl-token-2022-interface = "3.1.2"
 
 # pinocchio
 pinocchio = { version = "0.11.2", features = ["cpi", "copy", "account-resize"] }
 pinocchio-log = "0.5.1"
 pinocchio-system = "0.6.1"
-pinocchio-token = "0.6.0"
-pinocchio-token-2022 = "0.3.1"
+pinocchio-token = "0.7.0"
+pinocchio-token-2022 = "0.4.0"
 pinocchio-associated-token-account = "0.4.0"
 
 # testing
@@ -114,7 +122,7 @@ solana-instruction-error = "2.5.0"
 solana-keypair = "3.1.2"
 solana-message = "4.6.0"
 solana-native-token = "3.0.0"
-solana-pubkey = "3.0.0"
+solana-pubkey = { version = "4.3.0", features = ["borsh", "curve25519"] }
 solana-rent = "4.4.0"
 solana-signer = "3.0.1"
 solana-transaction = "4.3.0"

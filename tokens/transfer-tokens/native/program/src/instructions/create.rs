@@ -1,15 +1,12 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
-    solana_program::{
-        account_info::{next_account_info, AccountInfo},
-        entrypoint::ProgramResult,
-        msg,
-        program::invoke,
-        program_pack::Pack,
-        rent::Rent,
-        sysvar::Sysvar,
-    },
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_cpi::invoke,
+    solana_msg::msg,
+    solana_program_error::ProgramResult,
+    solana_program_pack::Pack,
     solana_system_interface::instruction as system_instruction,
+    solana_sysvar::{rent::Rent, Sysvar},
     spl_token_interface::{instruction as token_instruction, state::Mint},
 };
 

@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use {solana_account_info::AccountInfo, solana_program_error::ProgramResult, solana_pubkey::Pubkey};
 
 use crate::instructions::{close_user::close_user, create_user::create_user};
 use crate::state::user::User;

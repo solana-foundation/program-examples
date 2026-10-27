@@ -103,14 +103,7 @@ pub fn take_offer(program_id: &Address, accounts: &mut [AccountView], _data: &[u
 
     // Taker pays the maker the requested token B.
     log!("Sending token B from taker to maker");
-    Transfer {
-        from: taker_token_account_b,
-        to: maker_token_account_b,
-        authority: taker,
-        multisig_signers: &[] as &[&AccountView],
-        amount: offer.token_b_wanted_amount,
-    }
-    .invoke()?;
+    Transfer::new(taker_token_account_b, maker_token_account_b, taker, offer.token_b_wanted_amount).invoke()?;
 
     // Release the vaulted token A to the taker, signed by the offer PDA.
     let seeds = [
@@ -122,24 +115,11 @@ pub fn take_offer(program_id: &Address, accounts: &mut [AccountView], _data: &[u
     let signers = [Signer::from(&seeds)];
 
     log!("Releasing token A from vault to taker");
-    Transfer {
-        from: vault,
-        to: taker_token_account_a,
-        authority: offer_account,
-        multisig_signers: &[] as &[&AccountView],
-        amount: vault_amount,
-    }
-    .invoke_signed(&signers)?;
+    Transfer::new(vault, taker_token_account_a, offer_account, vault_amount).invoke_signed(&signers)?;
 
     // Close the now-empty vault, returning its rent to the taker.
     log!("Closing vault");
-    CloseAccount {
-        account: vault,
-        destination: taker,
-        authority: offer_account,
-        multisig_signers: &[] as &[&AccountView],
-    }
-    .invoke_signed(&signers)?;
+    CloseAccount::new(vault, taker, offer_account).invoke_signed(&signers)?;
 
     // Close the offer account, returning its rent to the payer that funded it.
     log!("Closing offer account");

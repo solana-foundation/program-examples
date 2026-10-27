@@ -57,13 +57,7 @@ pub fn create_collection(program_id: &Address, accounts: &mut [AccountView]) -> 
     CreateAccount { from: user, to: mint, lamports, space: MINT_SIZE as u64, owner: &pinocchio_token::ID }.invoke()?;
 
     log!("Initializing mint account");
-    InitializeMint2 {
-        mint,
-        decimals: TOKEN_DECIMALS,
-        mint_authority: mint_authority.address(),
-        freeze_authority: Some(mint_authority.address()),
-    }
-    .invoke()?;
+    InitializeMint2::new(mint, TOKEN_DECIMALS, mint_authority.address(), Some(mint_authority.address())).invoke()?;
 
     // Signer seeds for the mint-authority PDA, reused by the CPIs below.
     let bump_bytes = [bump];
@@ -75,8 +69,7 @@ pub fn create_collection(program_id: &Address, accounts: &mut [AccountView]) -> 
         .invoke()?;
 
     log!("Minting collection NFT");
-    MintTo { mint, account: destination, mint_authority, amount: 1, multisig_signers: &[] as &[&AccountView] }
-        .invoke_signed(&signers)?;
+    MintTo::new(mint, destination, mint_authority, 1).invoke_signed(&signers)?;
 
     log!("Creating metadata account");
     let metadata_data =

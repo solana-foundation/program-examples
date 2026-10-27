@@ -41,14 +41,7 @@ pub fn transfer_tokens(accounts: &mut [AccountView], data: &[u8]) -> ProgramResu
     .invoke()?;
 
     log!("Transferring tokens");
-    Transfer {
-        multisig_signers: &[] as &[&AccountView],
-        from: source_token_account,
-        to: destination_token_account,
-        authority,
-        amount,
-    }
-    .invoke()?;
+    Transfer::new(source_token_account, destination_token_account, authority, amount).invoke()?;
 
     log!("Tokens transferred successfully");
     Ok(())

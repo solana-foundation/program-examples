@@ -1,4 +1,7 @@
-use solana_program::{account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, pubkey::Pubkey};
+use {
+    solana_account_info::AccountInfo, solana_msg::msg, solana_program_entrypoint::entrypoint,
+    solana_program_error::ProgramResult, solana_pubkey::Pubkey,
+};
 
 // Tells Solana that the entrypoint to this program
 //  is the "process_instruction" function.

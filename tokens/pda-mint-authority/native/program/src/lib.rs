@@ -1,4 +1,7 @@
-use solana_program::{account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, pubkey::Pubkey};
+use {
+    solana_account_info::AccountInfo, solana_program_entrypoint::entrypoint, solana_program_error::ProgramResult,
+    solana_pubkey::Pubkey,
+};
 
 pub mod instructions;
 pub mod mpl_util;

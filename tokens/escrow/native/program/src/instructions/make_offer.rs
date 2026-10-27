@@ -1,17 +1,13 @@
 use {
     crate::{error::*, state::*, utils::assert_is_associated_token_account},
     borsh::{BorshDeserialize, BorshSerialize},
-    solana_program::{
-        account_info::AccountInfo,
-        entrypoint::ProgramResult,
-        program::{invoke, invoke_signed},
-        program_error::ProgramError,
-        program_pack::Pack,
-        pubkey::Pubkey,
-        rent::Rent,
-        sysvar::Sysvar,
-    },
+    solana_account_info::AccountInfo,
+    solana_cpi::{invoke, invoke_signed},
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_program_pack::Pack,
+    solana_pubkey::Pubkey,
     solana_system_interface::instruction as system_instruction,
+    solana_sysvar::{rent::Rent, Sysvar},
     spl_associated_token_account_interface::instruction as associated_token_account_instruction,
     spl_token_interface::{instruction as token_instruction, state::Account as TokenAccount},
 };
@@ -118,7 +114,7 @@ impl MakeOffer {
 
         let vault_token_amount = TokenAccount::unpack(&vault.data.borrow())?.amount;
 
-        solana_program::msg!("Amount in vault: {}", vault_token_amount);
+        solana_msg::msg!("Amount in vault: {}", vault_token_amount);
 
         assert_eq!(vault_token_amount, args.token_a_offered_amount);
 

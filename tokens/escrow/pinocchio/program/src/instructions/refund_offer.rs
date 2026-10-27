@@ -83,23 +83,10 @@ pub fn refund_offer(program_id: &Address, accounts: &mut [AccountView], _data: &
     let signers = [Signer::from(&seeds)];
 
     // Return the vaulted token A to the maker.
-    Transfer {
-        from: vault,
-        to: maker_token_account_a,
-        authority: offer_account,
-        multisig_signers: &[] as &[&AccountView],
-        amount: vault_amount,
-    }
-    .invoke_signed(&signers)?;
+    Transfer::new(vault, maker_token_account_a, offer_account, vault_amount).invoke_signed(&signers)?;
 
     // Close the now-empty vault, returning its rent to the maker.
-    CloseAccount {
-        account: vault,
-        destination: maker,
-        authority: offer_account,
-        multisig_signers: &[] as &[&AccountView],
-    }
-    .invoke_signed(&signers)?;
+    CloseAccount::new(vault, maker, offer_account).invoke_signed(&signers)?;
 
     // Close the offer account, returning its rent to the maker.
     let new_maker_lamports = maker.lamports() + offer_account.lamports();

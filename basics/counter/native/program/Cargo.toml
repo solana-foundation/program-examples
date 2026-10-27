@@ -16,7 +16,12 @@ custom-panic = []
 [dependencies]
 borsh.workspace = true
 borsh-derive.workspace = true
-solana-program.workspace = true
+
+solana-account-info.workspace = true
+solana-msg.workspace = true
+solana-program-entrypoint.workspace = true
+solana-program-error.workspace = true
+solana-pubkey.workspace = true
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

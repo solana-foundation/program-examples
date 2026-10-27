@@ -1,12 +1,12 @@
 use borsh::BorshDeserialize;
 use cross_program_invocatio_native_lever::SetPowerStatus;
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint,
-    entrypoint::ProgramResult,
-    instruction::{AccountMeta, Instruction},
-    program::invoke,
-    pubkey::Pubkey,
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_cpi::invoke,
+    solana_instruction::{AccountMeta, Instruction},
+    solana_program_entrypoint::entrypoint,
+    solana_program_error::ProgramResult,
+    solana_pubkey::Pubkey,
 };
 
 entrypoint!(pull_lever);

@@ -73,14 +73,7 @@ pub fn mint_to(program_id: &Address, accounts: &mut [AccountView]) -> ProgramRes
     .invoke()?;
 
     log!("Minting NFT to associated token account");
-    MintTo {
-        mint: mint_account,
-        account: associated_token_account,
-        mint_authority,
-        amount: 1,
-        multisig_signers: &[] as &[&AccountView],
-    }
-    .invoke_signed(&signers)?;
+    MintTo::new(mint_account, associated_token_account, mint_authority, 1).invoke_signed(&signers)?;
 
     // Create the master edition. This is what makes the token a real NFT: the
     // Token Metadata program takes over the mint and freeze authorities, so no

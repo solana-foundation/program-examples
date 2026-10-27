@@ -6,7 +6,10 @@ mod utils;
 use {
     borsh::{BorshDeserialize, BorshSerialize},
     instructions::*,
-    solana_program::{account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, pubkey::Pubkey},
+    solana_account_info::AccountInfo,
+    solana_program_entrypoint::entrypoint,
+    solana_program_error::ProgramResult,
+    solana_pubkey::Pubkey,
 };
 
 entrypoint!(process_instruction);

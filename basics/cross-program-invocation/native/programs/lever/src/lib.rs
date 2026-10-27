@@ -1,15 +1,13 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 #[cfg(not(feature = "no-entrypoint"))]
-use solana_program::entrypoint;
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    msg,
-    program::invoke,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+use solana_program_entrypoint::entrypoint;
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_cpi::invoke,
+    solana_msg::msg,
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_pubkey::Pubkey,
+    solana_sysvar::{rent::Rent, Sysvar},
 };
 
 #[cfg(not(feature = "no-entrypoint"))]

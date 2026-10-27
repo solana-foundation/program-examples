@@ -1,11 +1,9 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
-    solana_program::{
-        account_info::{next_account_info, AccountInfo},
-        entrypoint::ProgramResult,
-        msg,
-        program::invoke,
-    },
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_cpi::invoke,
+    solana_msg::msg,
+    solana_program_error::ProgramResult,
     spl_associated_token_account_interface::instruction as associated_token_account_instruction,
     spl_token_interface::instruction as token_instruction,
 };

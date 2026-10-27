@@ -1,10 +1,11 @@
 use {
     crate::{error::*, state::*, utils::*},
     borsh::BorshDeserialize,
-    solana_program::{
-        account_info::AccountInfo, entrypoint::ProgramResult, program::invoke_signed, program_error::ProgramError,
-        program_pack::Pack, pubkey::Pubkey,
-    },
+    solana_account_info::AccountInfo,
+    solana_cpi::invoke_signed,
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_program_pack::Pack,
+    solana_pubkey::Pubkey,
     spl_token_interface::{instruction as token_instruction, state::Account as TokenAccount},
 };
 

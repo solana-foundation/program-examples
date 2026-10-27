@@ -72,13 +72,8 @@ pub fn create_token(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult 
         .invoke()?;
 
     log!("Initializing mint account");
-    InitializeMint2 {
-        mint: mint_account,
-        decimals: args.decimals,
-        mint_authority: mint_authority.address(),
-        freeze_authority: Some(mint_authority.address()),
-    }
-    .invoke()?;
+    InitializeMint2::new(mint_account, args.decimals, mint_authority.address(), Some(mint_authority.address()))
+        .invoke()?;
 
     log!("Creating metadata account");
     let mut metadata_buffer = [0u8; METADATA_DATA_MAX];

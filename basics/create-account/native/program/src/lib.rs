@@ -1,12 +1,11 @@
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint,
-    entrypoint::ProgramResult,
-    msg,
-    program::invoke,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_cpi::invoke,
+    solana_msg::msg,
+    solana_program_entrypoint::entrypoint,
+    solana_program_error::ProgramResult,
+    solana_pubkey::Pubkey,
+    solana_sysvar::{rent::Rent, Sysvar},
 };
 
 entrypoint!(process_instruction);

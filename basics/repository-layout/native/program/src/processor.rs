@@ -1,6 +1,10 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{
-    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, program_error::ProgramError, pubkey::Pubkey,
+use {
+    solana_account_info::AccountInfo,
+    solana_msg::msg,
+    solana_program_entrypoint::entrypoint,
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_pubkey::Pubkey,
 };
 
 use crate::instructions::{eat_food, get_on_ride, play_game};

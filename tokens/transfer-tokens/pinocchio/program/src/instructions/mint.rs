@@ -40,14 +40,7 @@ pub fn mint_tokens(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
     .invoke()?;
 
     log!("Minting tokens");
-    MintTo {
-        multisig_signers: &[] as &[&AccountView],
-        mint: mint_account,
-        account: token_account,
-        mint_authority,
-        amount,
-    }
-    .invoke()?;
+    MintTo::new(mint_account, token_account, mint_authority, amount).invoke()?;
 
     log!("Tokens minted successfully");
     Ok(())

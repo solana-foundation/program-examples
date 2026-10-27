@@ -1,9 +1,8 @@
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_program_error::ProgramResult,
+    solana_pubkey::Pubkey,
+    solana_sysvar::{rent::Rent, Sysvar},
 };
 
 use crate::state::RentVault;

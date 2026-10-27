@@ -19,6 +19,6 @@ litesvm = "0.18.1"
 solana-instruction = "3.5.1"
 solana-keypair = "3.1.2"
 solana-native-token = "3.0.0"
-solana-pubkey = "3.0.0"
+solana-pubkey = "4.3.0"
 solana-transaction = "4.3.0"
-solana-system-interface = { version = "2.0.0", features = ["bincode"] }
+solana-system-interface = { version = "3.3.0", features = ["bincode"] }

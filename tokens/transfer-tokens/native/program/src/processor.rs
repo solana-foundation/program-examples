@@ -1,6 +1,8 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
-    solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey},
+    solana_account_info::AccountInfo,
+    solana_program_error::ProgramResult,
+    solana_pubkey::Pubkey,
 };
 
 use crate::instructions::{

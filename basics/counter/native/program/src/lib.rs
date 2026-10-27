@@ -1,11 +1,9 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    declare_id,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_msg::msg,
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_pubkey::{declare_id, Pubkey},
 };
 
 mod state;
@@ -14,7 +12,7 @@ pub use state::*;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[cfg(not(feature = "no-entrypoint"))]
-use solana_program::entrypoint;
+use solana_program_entrypoint::entrypoint;
 
 #[cfg(not(feature = "no-entrypoint"))]
 entrypoint!(process_instruction);

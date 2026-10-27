@@ -1,7 +1,7 @@
 use crate::instructions::*;
 use crate::state::*;
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use {solana_account_info::AccountInfo, solana_program_error::ProgramResult, solana_pubkey::Pubkey};
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 pub enum ReallocInstruction {

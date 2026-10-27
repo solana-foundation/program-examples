@@ -1,4 +1,7 @@
-use solana_program::{entrypoint::ProgramResult, msg, program_error::ProgramError};
+use {
+    solana_msg::msg,
+    solana_program_error::{ProgramError, ProgramResult},
+};
 
 use crate::state::ride;
 

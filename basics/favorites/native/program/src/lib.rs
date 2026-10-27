@@ -1,4 +1,4 @@
-use solana_program::entrypoint;
+use solana_program_entrypoint::entrypoint;
 
 pub mod instructions;
 pub mod processor;

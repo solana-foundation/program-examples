@@ -6,10 +6,8 @@
 
 use {
     borsh::BorshSerialize,
-    solana_program::{
-        instruction::{AccountMeta, Instruction},
-        pubkey::Pubkey,
-    },
+    solana_instruction::{AccountMeta, Instruction},
+    solana_pubkey::Pubkey,
 };
 
 /// The Metaplex Token Metadata program

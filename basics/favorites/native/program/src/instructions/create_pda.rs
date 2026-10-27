@@ -1,14 +1,12 @@
 use crate::state::Favorites;
 use borsh::BorshSerialize;
-use solana_program::{
-    account_info::{next_account_info, AccountInfo},
-    entrypoint::ProgramResult,
-    msg,
-    program::invoke_signed,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    rent::Rent,
-    sysvar::Sysvar,
+use {
+    solana_account_info::{next_account_info, AccountInfo},
+    solana_cpi::invoke_signed,
+    solana_msg::msg,
+    solana_program_error::{ProgramError, ProgramResult},
+    solana_pubkey::Pubkey,
+    solana_sysvar::{rent::Rent, Sysvar},
 };
 
 pub fn create_pda(program_id: &Pubkey, accounts: &[AccountInfo], data: Favorites) -> ProgramResult {

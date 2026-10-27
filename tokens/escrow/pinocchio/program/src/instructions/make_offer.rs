@@ -84,14 +84,7 @@ pub fn make_offer(program_id: &Address, accounts: &mut [AccountView], data: &[u8
 
     // Move the maker's tokens into the vault.
     log!("Depositing tokens into vault");
-    Transfer {
-        from: maker_token_account_a,
-        to: vault,
-        authority: maker,
-        multisig_signers: &[] as &[&AccountView],
-        amount: token_a_offered_amount,
-    }
-    .invoke()?;
+    Transfer::new(maker_token_account_a, vault, maker, token_a_offered_amount).invoke()?;
 
     // Persist the offer terms.
     let offer = Offer {

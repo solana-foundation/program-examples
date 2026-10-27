@@ -34,13 +34,7 @@ pub fn create_token(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult 
         .invoke()?;
 
     log!("Initializing mint account");
-    InitializeMint2 {
-        mint: mint_account,
-        decimals,
-        mint_authority: mint_authority.address(),
-        freeze_authority: Some(mint_authority.address()),
-    }
-    .invoke()?;
+    InitializeMint2::new(mint_account, decimals, mint_authority.address(), Some(mint_authority.address())).invoke()?;
 
     log!("Mint created successfully");
     Ok(())

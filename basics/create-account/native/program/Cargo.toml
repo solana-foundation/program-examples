@@ -4,8 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-solana-program.workspace = true
 solana-system-interface.workspace = true
+
+solana-account-info.workspace = true
+solana-cpi.workspace = true
+solana-msg.workspace = true
+solana-program-entrypoint.workspace = true
+solana-program-error.workspace = true
+solana-pubkey.workspace = true
+solana-sysvar.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]
