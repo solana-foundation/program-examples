@@ -103,6 +103,11 @@ function jsonResponse(data: unknown, status = 200, origin?: string | null) {
     });
 }
 
+function errorResponse(error: string, status: number, details: string) {
+    log('error', error, { details });
+    return jsonResponse({ error }, status);
+}
+
 async function handleSolAirdrop(recipient: string, amount: number): Promise<Response> {
     if (!recipient || !BASE58_RE.test(recipient)) {
         return jsonResponse({ error: 'Invalid recipient address' }, 400);
@@ -127,7 +132,7 @@ async function handleSolAirdrop(recipient: string, amount: number): Promise<Resp
 
         child.on('close', code => {
             if (code !== 0) {
-                resolve(jsonResponse({ error: 'Failed to airdrop SOL', details: stderr }, 500));
+                resolve(errorResponse('Failed to airdrop SOL', 500, stderr));
                 return;
             }
             resolve(
@@ -141,7 +146,7 @@ async function handleSolAirdrop(recipient: string, amount: number): Promise<Resp
         });
 
         child.on('error', err => {
-            resolve(jsonResponse({ error: 'Failed to start airdrop process', details: err.message }, 500));
+            resolve(errorResponse('Failed to start airdrop process', 500, err.message));
         });
     });
 }
@@ -178,7 +183,7 @@ async function handleUsdcAirdrop(recipient: string, amount: number): Promise<Res
 
         child.on('close', code => {
             if (code !== 0) {
-                resolve(jsonResponse({ error: 'Failed to mint USDC', details: stderr || stdout }, 500));
+                resolve(errorResponse('Failed to mint USDC', 500, stderr || stdout));
                 return;
             }
             resolve(
@@ -193,7 +198,7 @@ async function handleUsdcAirdrop(recipient: string, amount: number): Promise<Res
         });
 
         child.on('error', err => {
-            resolve(jsonResponse({ error: 'Failed to start minting process', details: err.message }, 500));
+            resolve(errorResponse('Failed to start minting process', 500, err.message));
         });
     });
 }
@@ -246,7 +251,7 @@ async function handleProgramStatus(rpcUrl: string, programAddr: string): Promise
         const status = await checkProgramStatus(rpcUrl, programAddr);
         return jsonResponse(status);
     } catch (error) {
-        return jsonResponse({ error: 'Failed to check program status', details: errorMessage(error) }, 500);
+        return errorResponse('Failed to check program status', 500, errorMessage(error));
     }
 }
 
@@ -257,7 +262,7 @@ async function handleBinaryInfo(): Promise<Response> {
         const fileStats = await stat(SO_PATH);
         return jsonResponse({ hash, size: fileStats.size });
     } catch (error) {
-        return jsonResponse({ error: 'Binary not found', details: errorMessage(error) }, 404);
+        return errorResponse('Binary not found', 404, errorMessage(error));
     }
 }
 
@@ -287,7 +292,7 @@ async function handlePrepareDeploy(body: {
         return jsonResponse(plan);
     } catch (error) {
         log('error', 'Failed to prepare deploy', { error: String(error) });
-        return jsonResponse({ error: 'Failed to prepare deploy', details: errorMessage(error) }, 500);
+        return errorResponse('Failed to prepare deploy', 500, errorMessage(error));
     }
 }
 
@@ -515,13 +520,13 @@ async function handleCreateMockUsdc(): Promise<Response> {
 
             child.on('close', async code => {
                 if (code !== 0) {
-                    resolve(jsonResponse({ error: 'Failed to create token', details: stderr || stdout }, 500));
+                    resolve(errorResponse('Failed to create token', 500, stderr || stdout));
                     return;
                 }
 
                 const match = stdout.match(/Creating token ([A-Za-z0-9]+)/);
                 if (!match) {
-                    resolve(jsonResponse({ error: 'Could not parse mint address', details: stdout }, 500));
+                    resolve(errorResponse('Could not parse mint address', 500, stdout));
                     return;
                 }
 
@@ -546,11 +551,11 @@ async function handleCreateMockUsdc(): Promise<Response> {
             });
 
             child.on('error', err => {
-                resolve(jsonResponse({ error: 'Failed to start spl-token', details: err.message }, 500));
+                resolve(errorResponse('Failed to start spl-token', 500, err.message));
             });
         });
     } catch (error) {
-        return jsonResponse({ error: 'Failed to create mock USDC', details: errorMessage(error) }, 500);
+        return errorResponse('Failed to create mock USDC', 500, errorMessage(error));
     }
 }
 
@@ -573,7 +578,7 @@ async function handleSaveConfig(body: {
         await writeFile(CONFIG_PATH, JSON.stringify(existing, null, 2));
         return jsonResponse({ success: true });
     } catch (error) {
-        return jsonResponse({ error: 'Failed to save config', details: errorMessage(error) }, 500);
+        return errorResponse('Failed to save config', 500, errorMessage(error));
     }
 }
 
