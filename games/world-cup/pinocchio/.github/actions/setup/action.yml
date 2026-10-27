@@ -9,7 +9,7 @@ inputs:
   rust-toolchain:
     description: 'Rust toolchain to install'
     required: false
-    default: '1.92'
+    default: '1.97'
   rust-components:
     description: 'Rust components to install'
     required: false

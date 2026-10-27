@@ -16,7 +16,7 @@ solana-account = { version = "~3.4", optional = true }
 solana-account-info = "~3.1"
 solana-address = { version = "2.6.0", features = ["borsh", "copy", "curve25519", "decode"] }
 solana-cpi = "~3.1"
-solana-instruction = { version = "~3.4", features = ["borsh"] }
+solana-instruction = { version = "~3.5", features = ["borsh"] }
 solana-program-error = "~3.0"
 solana-rpc-client = { version = "3.1.8", optional = true }
 

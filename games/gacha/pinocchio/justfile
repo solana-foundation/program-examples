@@ -172,9 +172,10 @@ light-bootstrap:
 
 # Run Light Protocol integration tests: the real settle -> cc-vrf -> Light CPI
 # chain with validity proofs from the local prover (single-threaded because
-# test binaries share the prover port)
-light-test: light-bootstrap build-program dump-cc-vrf
-    cp target/deploy/gacha_program.so tests/fixtures/
+# test binaries share the prover port). Built as SBPFv0: light-program-test
+# 0.23 pins litesvm 0.7, which cannot load SBPFv3 programs.
+light-test: light-bootstrap dump-cc-vrf
+    cd {{program_dir}} && cargo build-sbf --arch v0 --sbf-out-dir ../tests/fixtures
     cd tests/light-integration-tests && cargo test -- --test-threads=1
 
 # Run TypeScript client tests
