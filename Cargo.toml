@@ -76,6 +76,9 @@ members = [
 ]
 resolver = "2"
 
+[workspace.metadata.solana]
+tools-version = "v1.58"
+
 [profile.release]
 overflow-checks = true
 
@@ -97,7 +100,7 @@ spl-associated-token-account-interface = "2.0.0"
 spl-token-2022-interface = "2.1.0"
 
 # pinocchio
-pinocchio = { version = "0.11.1", features = ["cpi", "copy", "account-resize"] }
+pinocchio = { version = "0.11.2", features = ["cpi", "copy", "account-resize"] }
 pinocchio-log = "0.5.1"
 pinocchio-system = "0.6.1"
 pinocchio-token = "0.6.0"
@@ -105,15 +108,15 @@ pinocchio-token-2022 = "0.3.1"
 pinocchio-associated-token-account = "0.4.0"
 
 # testing
-litesvm = "0.11.0"
-solana-instruction = "3.0.0"
-solana-instruction-error = "2.3.0"
-solana-keypair = "3.0.1"
-solana-message = "4.0.0"
+litesvm = "0.18.1"
+solana-instruction = "3.5.1"
+solana-instruction-error = "2.5.0"
+solana-keypair = "3.1.2"
+solana-message = "4.6.0"
 solana-native-token = "3.0.0"
 solana-pubkey = "3.0.0"
-solana-rent = "4.1.0"
-solana-signer = "3.0.0"
-solana-transaction = "3.0.1"
-solana-transaction-error = "3.2.0"
-solana-address = { version = "2.6.0", features = ["curve25519", "decode"] }
+solana-rent = "4.4.0"
+solana-signer = "3.0.1"
+solana-transaction = "4.3.0"
+solana-transaction-error = "3.4.0"
+solana-address = { version = "2.7.0", features = ["curve25519", "decode"] }
