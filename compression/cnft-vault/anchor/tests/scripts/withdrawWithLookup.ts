@@ -59,7 +59,7 @@ async function main() {
 
     const ix = await program.methods
         .withdrawTwoCnfts(...ixData1, ...ixData2)
-        .accounts({
+        .accountsPartial({
             leafOwner: vaultPDA,
             merkleTree1: tree1,
             newLeafOwner1: receiver1,

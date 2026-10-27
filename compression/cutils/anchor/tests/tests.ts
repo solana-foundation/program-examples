@@ -24,7 +24,7 @@ describe('cutils', () => {
     it('Mint!', async () => {
         const tx = await program.methods
             .mint({ uri })
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 leafOwner: testWallet.publicKey,
                 leafDelegate: testWallet.publicKey, //verify

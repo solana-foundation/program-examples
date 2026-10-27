@@ -216,7 +216,7 @@ describe('Escrow LiteSVM example', () => {
 
         const _transactionSignature = await program.methods
             .refundOffer()
-            .accounts({ ...accounts })
+            .accountsPartial({ ...accounts })
             .signers([alice])
             .rpc();
 
@@ -259,7 +259,7 @@ describe('Escrow LiteSVM example', () => {
         try {
             await program.methods
                 .refundOffer()
-                .accounts(forgedAccounts as any)
+                .accountsPartial(forgedAccounts as any)
                 .signers([bob])
                 .rpc();
         } catch {

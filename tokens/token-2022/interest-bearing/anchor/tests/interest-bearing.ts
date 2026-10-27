@@ -19,7 +19,7 @@ describe('interest-bearing', () => {
 
         const transactionSignature = await program.methods
             .initialize(rate)
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
@@ -30,7 +30,7 @@ describe('interest-bearing', () => {
 
         const transactionSignature = await program.methods
             .updateRate(rate)
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
     });

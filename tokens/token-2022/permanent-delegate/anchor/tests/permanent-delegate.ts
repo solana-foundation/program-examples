@@ -16,7 +16,7 @@ describe('permanent-delegate', () => {
     it('Create Mint with Permanent Delegate', async () => {
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);

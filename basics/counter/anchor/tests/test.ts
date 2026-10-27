@@ -18,7 +18,7 @@ describe('Anchor: Counter', () => {
     it('Initialize Counter', async () => {
         await program.methods
             .initializeCounter()
-            .accounts({
+            .accountsPartial({
                 counter: counterKeypair.publicKey,
                 payer: payer.publicKey,
             })
@@ -31,7 +31,7 @@ describe('Anchor: Counter', () => {
     });
 
     it('Increment Counter', async () => {
-        await program.methods.increment().accounts({ counter: counterKeypair.publicKey }).rpc();
+        await program.methods.increment().accountsPartial({ counter: counterKeypair.publicKey }).rpc();
 
         const currentCount = await program.account.counter.fetch(counterKeypair.publicKey);
 
@@ -39,7 +39,7 @@ describe('Anchor: Counter', () => {
     });
 
     it('Increment Counter Again', async () => {
-        await program.methods.increment().accounts({ counter: counterKeypair.publicKey }).rpc();
+        await program.methods.increment().accountsPartial({ counter: counterKeypair.publicKey }).rpc();
 
         const currentCount = await program.account.counter.fetch(counterKeypair.publicKey);
 

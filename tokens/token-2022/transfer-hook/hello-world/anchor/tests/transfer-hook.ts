@@ -50,7 +50,7 @@ describe('transfer-hook', () => {
     it('Create Mint with Transfer Hook Extension', async () => {
         const transactionSignature = await program.methods
             .initialize(decimals)
-            .accounts({ mintAccount: mint.publicKey })
+            .accountsPartial({ mintAccount: mint.publicKey })
             .signers([mint])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
@@ -98,7 +98,7 @@ describe('transfer-hook', () => {
     it('Create ExtraAccountMetaList Account', async () => {
         const initializeExtraAccountMetaListInstruction = await program.methods
             .initializeExtraAccountMetaList()
-            .accounts({
+            .accountsPartial({
                 mint: mint.publicKey,
             })
             .instruction();
@@ -140,7 +140,7 @@ describe('transfer-hook', () => {
     it('Try call transfer hook without transfer', async () => {
         const transferHookIx = await program.methods
             .transferHook(new anchor.BN(1))
-            .accounts({
+            .accountsPartial({
                 sourceToken: sourceTokenAccount,
                 mint: mint.publicKey,
                 destinationToken: destinationTokenAccount,

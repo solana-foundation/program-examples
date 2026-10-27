@@ -17,7 +17,7 @@ describe('mint-close-authority', () => {
     it('Create Mint with Close Authority', async () => {
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
@@ -26,7 +26,7 @@ describe('mint-close-authority', () => {
     it('Close Mint with Anchor CPI', async () => {
         const transactionSignature = await program.methods
             .close()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
     });
@@ -34,7 +34,7 @@ describe('mint-close-authority', () => {
     it('Create Mint with Close Authority again', async () => {
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);

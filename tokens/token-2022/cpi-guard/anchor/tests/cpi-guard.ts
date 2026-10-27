@@ -98,7 +98,7 @@ describe('cpi-guard', () => {
         try {
             await program.methods
                 .cpiTransfer()
-                .accounts({
+                .accountsPartial({
                     sender: wallet.publicKey,
                     senderTokenAccount: tokenKeypair.publicKey,
                     mintAccount: mintKeypair.publicKey,
@@ -122,7 +122,7 @@ describe('cpi-guard', () => {
     it('Transfer, expect success', async () => {
         const transactionSignature = await program.methods
             .cpiTransfer()
-            .accounts({
+            .accountsPartial({
                 sender: wallet.publicKey,
                 senderTokenAccount: tokenKeypair.publicKey,
                 mintAccount: mintKeypair.publicKey,

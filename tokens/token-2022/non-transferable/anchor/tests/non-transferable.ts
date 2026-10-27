@@ -23,7 +23,7 @@ describe('non-transferable', () => {
     it('Create Mint with NonTransferable extension', async () => {
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);

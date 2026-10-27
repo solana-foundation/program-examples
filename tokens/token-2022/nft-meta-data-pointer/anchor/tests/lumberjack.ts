@@ -37,7 +37,7 @@ describe('extension_nft', () => {
         getOrCreateAssociatedTokenAccount;
         const tx = await program.methods
             .mintNft()
-            .accounts({
+            .accountsPartial({
                 signer: payer.publicKey,
                 tokenAccount: destinationTokenAccount,
                 mint: mint.publicKey,

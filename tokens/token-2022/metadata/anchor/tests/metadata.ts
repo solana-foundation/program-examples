@@ -20,7 +20,7 @@ describe('metadata', () => {
     it('Create Mint with MetadataPointer and TokenMetadata Extensions', async () => {
         const tx = await program.methods
             .initialize(metadata)
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', tx);
@@ -33,7 +33,7 @@ describe('metadata', () => {
                 field: { name: {} }, // Update the name field
                 value: 'Solana',
             })
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', tx);
     });
@@ -44,7 +44,7 @@ describe('metadata', () => {
                 field: { key: { 0: 'color' } }, // Add a custom field named "color"
                 value: 'red',
             })
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', tx);
     });
@@ -52,7 +52,7 @@ describe('metadata', () => {
     it('Remove custom field', async () => {
         const tx = await program.methods
             .removeKey('color') // Remove the custom field named "color"
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', tx);
     });
@@ -60,7 +60,7 @@ describe('metadata', () => {
     it('Change update authority', async () => {
         const tx = await program.methods
             .updateAuthority()
-            .accounts({
+            .accountsPartial({
                 mintAccount: mintKeypair.publicKey,
                 newAuthority: null, // Set the update authority to null
             })
@@ -71,7 +71,7 @@ describe('metadata', () => {
     it('Emit metadata, decode transaction logs', async () => {
         const txSignature = await program.methods
             .emit()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ commitment: 'confirmed', skipPreflight: true });
         console.log('Your transaction signature', txSignature);
 
@@ -95,7 +95,7 @@ describe('metadata', () => {
     it('Emit metadata, decode simulated transaction', async () => {
         const simulateResponse = await program.methods
             .emit()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .simulate();
 
         // Extract the log message that starts with "Program return:"

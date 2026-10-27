@@ -31,7 +31,7 @@ describe('memo-transfer', () => {
 
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({
+            .accountsPartial({
                 mintAccount: mintKeypair.publicKey,
                 tokenAccount: tokenKeypair.publicKey,
             })
@@ -136,7 +136,7 @@ describe('memo-transfer', () => {
     it('Disable RequiredMemo extension', async () => {
         const transactionSignature = await program.methods
             .disable()
-            .accounts({
+            .accountsPartial({
                 tokenAccount: tokenKeypair.publicKey,
             })
             .rpc({ skipPreflight: true });

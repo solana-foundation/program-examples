@@ -14,7 +14,7 @@ describe('Anchor: Transfer SOL', () => {
 
         await program.methods
             .transferSolWithCpi(new anchor.BN(LAMPORTS_PER_SOL))
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 recipient: recipient.publicKey,
             })
@@ -41,7 +41,7 @@ describe('Anchor: Transfer SOL', () => {
         const recipientAccount = Keypair.generate();
         await program.methods
             .transferSolWithProgram(new anchor.BN(LAMPORTS_PER_SOL))
-            .accounts({
+            .accountsPartial({
                 payer: payerAccount.publicKey,
                 recipient: recipientAccount.publicKey,
             })

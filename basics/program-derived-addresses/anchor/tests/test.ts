@@ -18,7 +18,7 @@ describe('Anchor: PDAs', () => {
     it('Create the page visits tracking PDA', async () => {
         await program.methods
             .createPageVisits()
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
             })
             .rpc();
@@ -30,7 +30,7 @@ describe('Anchor: PDAs', () => {
     it('Visit the page!', async () => {
         await program.methods
             .incrementPageVisits()
-            .accounts({
+            .accountsPartial({
                 user: payer.publicKey,
             })
             .rpc();
@@ -42,7 +42,7 @@ describe('Anchor: PDAs', () => {
     it('Again visit the page!', async () => {
         await program.methods
             .incrementPageVisits()
-            .accounts({
+            .accountsPartial({
                 user: payer.publicKey,
             })
             .rpc();

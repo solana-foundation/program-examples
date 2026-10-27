@@ -145,7 +145,7 @@ describe('transfer-hook', () => {
     it('Create ExtraAccountMetaList Account', async () => {
         const initializeExtraAccountMetaListInstruction = await program.methods
             .initializeExtraAccountMetaList()
-            .accounts({
+            .accountsPartial({
                 mint: mint.publicKey,
             })
             .instruction();
@@ -190,7 +190,7 @@ describe('transfer-hook', () => {
     it('Try call transfer hook without transfer', async () => {
         const transferHookIx = await program.methods
             .transferHook(new anchor.BN(1))
-            .accounts({
+            .accountsPartial({
                 sourceToken: sourceTokenAccount,
                 mint: mint.publicKey,
                 destinationToken: destinationTokenAccount,

@@ -52,7 +52,7 @@ describe('cnft-burn', () => {
         );
         const tx = await program.methods
             .burnCnft(root, dataHash, creatorHash, nonce, index)
-            .accounts({
+            .accountsPartial({
                 merkleTree: treeAddress,
                 leafOwner: payerWallet.publicKey,
                 treeAuthority: treeAuthority,

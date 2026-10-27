@@ -17,7 +17,7 @@ describe('Anchor: CPI', () => {
     it('Initialize the lever!', async () => {
         await lever.methods
             .initialize()
-            .accounts({
+            .accountsPartial({
                 power: powerAccount.publicKey,
                 user: provider.wallet.publicKey,
             })
@@ -40,7 +40,7 @@ describe('Anchor: CPI', () => {
     it('Pull the lever!', async () => {
         await hand.methods
             .pullLever('Jacob')
-            .accounts({
+            .accountsPartial({
                 power: powerAccount.publicKey,
             })
             .rpc();
@@ -57,7 +57,7 @@ describe('Anchor: CPI', () => {
     it('Pull it again!', async () => {
         await hand.methods
             .pullLever('sol-warrior')
-            .accounts({
+            .accountsPartial({
                 power: powerAccount.publicKey,
             })
             .rpc();

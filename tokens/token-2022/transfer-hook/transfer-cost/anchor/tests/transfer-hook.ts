@@ -151,7 +151,7 @@ describe('transfer-hook', () => {
     it('Create ExtraAccountMetaList Account', async () => {
         const initializeExtraAccountMetaListInstruction = await program.methods
             .initializeExtraAccountMetaList()
-            .accounts({
+            .accountsPartial({
                 payer: wallet.publicKey,
                 mint: mint.publicKey,
             })

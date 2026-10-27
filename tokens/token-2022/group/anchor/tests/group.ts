@@ -14,7 +14,7 @@ describe('group', () => {
     it('Create Mint with Group Pointer', async () => {
         const transactionSignature = await program.methods
             .testInitializeGroup()
-            .accounts({})
+            .accountsPartial({})
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
     });

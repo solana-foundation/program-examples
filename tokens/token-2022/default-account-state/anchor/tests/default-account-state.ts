@@ -16,7 +16,7 @@ describe('default-account-state', () => {
     it('Create Mint with DefaultAccountState extension', async () => {
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .signers([mintKeypair])
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
@@ -58,7 +58,7 @@ describe('default-account-state', () => {
         // Update the default state to initialized (not frozen)
         const transactionSignature = await program.methods
             .updateDefaultState({ initialized: {} })
-            .accounts({ mintAccount: mintKeypair.publicKey })
+            .accountsPartial({ mintAccount: mintKeypair.publicKey })
             .rpc({ skipPreflight: true });
         console.log('Your transaction signature', transactionSignature);
     });

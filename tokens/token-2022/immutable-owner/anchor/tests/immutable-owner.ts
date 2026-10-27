@@ -28,7 +28,7 @@ describe('immutable-owner', () => {
 
         const transactionSignature = await program.methods
             .initialize()
-            .accounts({
+            .accountsPartial({
                 mintAccount: mint,
                 tokenAccount: tokenKeypair.publicKey,
             })

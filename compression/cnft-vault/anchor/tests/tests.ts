@@ -46,7 +46,7 @@ describe('cNFT Vault', () => {
 
         const sx = await program.methods
             .withdrawCnft(root, dataHash, creatorHash, nonce, index)
-            .accounts({
+            .accountsPartial({
                 leafOwner: vaultPDA,
                 merkleTree: tree,
                 newLeafOwner: receiver,
@@ -99,7 +99,7 @@ describe('cNFT Vault', () => {
 
         const sx = await program.methods
             .withdrawTwoCnfts(...ixData1, ...ixData2)
-            .accounts({
+            .accountsPartial({
                 leafOwner: vaultPDA,
                 merkleTree1: tree1,
                 newLeafOwner1: receiver1,

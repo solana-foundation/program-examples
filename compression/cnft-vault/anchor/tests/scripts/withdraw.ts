@@ -36,7 +36,7 @@ async function main() {
 
     const tx = await program.methods
         .withdrawCnft(root, dataHash, creatorHash, nonce, index)
-        .accounts({
+        .accountsPartial({
             leafOwner: vaultPDA,
             merkleTree: tree,
             newLeafOwner: receiver,

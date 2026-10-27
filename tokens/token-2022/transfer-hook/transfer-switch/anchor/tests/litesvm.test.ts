@@ -127,7 +127,7 @@ describe('Transfer switch', () => {
     it('Create ExtraAccountMetaList Account', async () => {
         await program.methods
             .initializeExtraAccountMetasList()
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 tokenMint: mint.publicKey,
             })
@@ -139,7 +139,7 @@ describe('Transfer switch', () => {
     it('Configure an admin', async () => {
         await program.methods
             .configureAdmin()
-            .accounts({
+            .accountsPartial({
                 admin: payer.publicKey,
                 newAdmin: payer.publicKey,
             })

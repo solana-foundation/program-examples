@@ -32,7 +32,7 @@ describe('Anchor: realloc', () => {
 
         await program.methods
             .initialize(input)
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 messageAccount: messageAccount.publicKey,
             })
@@ -47,7 +47,7 @@ describe('Anchor: realloc', () => {
 
         await program.methods
             .update(input)
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 messageAccount: messageAccount.publicKey,
             })
@@ -61,7 +61,7 @@ describe('Anchor: realloc', () => {
 
         await program.methods
             .update(input)
-            .accounts({
+            .accountsPartial({
                 payer: payer.publicKey,
                 messageAccount: messageAccount.publicKey,
             })
