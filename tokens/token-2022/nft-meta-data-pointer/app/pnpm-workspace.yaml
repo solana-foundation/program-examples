@@ -1,5 +1,5 @@
 overrides:
-  toml: ^5.0.0
+  toml: ^5.0.1
   serialize-javascript: ^7.1.1
   'js-yaml@^3.0.0': ^3.15.2
   'js-yaml@^4.0.0': ^4.3.2
@@ -18,3 +18,5 @@ overrides:
   'follow-redirects@^1.0.0': ^1.16.1
   'nanoid@^3.0.0': ^3.3.18
   'shell-quote@^1.0.0': ^1.11.0
+  'source-map-js@^1.0.0': ^1.2.2
+  'zod@^4.0.0': ^4.6.6
