@@ -1,11 +1,9 @@
 {
-  "additionalPrograms": [],
   "kind": "rootNode",
   "program": {
     "accounts": [
       {
         "data": {
-          "fields": [],
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
@@ -139,7 +137,6 @@
       },
       {
         "data": {
-          "fields": [],
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
@@ -289,7 +286,6 @@
       },
       {
         "data": {
-          "fields": [],
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
@@ -300,7 +296,6 @@
         }
       }
     ],
-    "constants": [],
     "definedTypes": [
       {
         "kind": "definedTypeNode",
@@ -821,7 +816,6 @@
         "name": "invalidEventData"
       }
     ],
-    "events": [],
     "instructions": [
       {
         "accounts": [
@@ -905,8 +899,7 @@
               "pda": {
                 "kind": "pdaLinkNode",
                 "name": "eventAuthority"
-              },
-              "seeds": []
+              }
             },
             "docs": [
               "The event authority PDA"
@@ -937,6 +930,10 @@
               "number": 0
             },
             "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
             "kind": "instructionArgumentNode",
             "name": "discriminator",
             "type": {
@@ -1021,8 +1018,7 @@
               "pda": {
                 "kind": "pdaLinkNode",
                 "name": "eventAuthority"
-              },
-              "seeds": []
+              }
             },
             "docs": [
               "The event authority PDA"
@@ -1053,6 +1049,10 @@
               "number": 1
             },
             "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
             "kind": "instructionArgumentNode",
             "name": "discriminator",
             "type": {
@@ -1246,8 +1246,7 @@
               "pda": {
                 "kind": "pdaLinkNode",
                 "name": "eventAuthority"
-              },
-              "seeds": []
+              }
             },
             "docs": [
               "The event authority PDA"
@@ -1278,6 +1277,10 @@
               "number": 2
             },
             "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
             "kind": "instructionArgumentNode",
             "name": "discriminator",
             "type": {
@@ -1349,8 +1352,7 @@
               "pda": {
                 "kind": "pdaLinkNode",
                 "name": "eventAuthority"
-              },
-              "seeds": []
+              }
             },
             "docs": [
               "The event authority PDA"
@@ -1381,6 +1383,10 @@
               "number": 3
             },
             "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
             "kind": "instructionArgumentNode",
             "name": "discriminator",
             "type": {
@@ -1435,8 +1441,7 @@
               "pda": {
                 "kind": "pdaLinkNode",
                 "name": "eventAuthority"
-              },
-              "seeds": []
+              }
             },
             "docs": [
               "The event authority PDA"
@@ -1467,6 +1472,10 @@
               "number": 4
             },
             "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
             "kind": "instructionArgumentNode",
             "name": "discriminator",
             "type": {
@@ -1612,8 +1621,7 @@
               "pda": {
                 "kind": "pdaLinkNode",
                 "name": "eventAuthority"
-              },
-              "seeds": []
+              }
             },
             "docs": [
               "The event authority PDA"
@@ -1644,6 +1652,10 @@
               "number": 5
             },
             "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
             "kind": "instructionArgumentNode",
             "name": "discriminator",
             "type": {
@@ -1801,5 +1813,5 @@
     "version": "0.1.0"
   },
   "standard": "codama",
-  "version": "1.6.0"
+  "version": "1.8.0"
 }

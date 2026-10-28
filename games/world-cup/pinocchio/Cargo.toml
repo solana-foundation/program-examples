@@ -25,12 +25,12 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 ] }
 
 [workspace.dependencies]
-codama = "=0.9.3"
+codama = "=0.13.2"
 const-crypto = "0.3"
 pinocchio = { version = "0.11.1", features = ["cpi", "copy"] }
 pinocchio-system = "0.6.1"
-pinocchio-token = "0.6.0"
-pinocchio-token-2022 = "0.3.1"
+pinocchio-token = "0.7.0"
+pinocchio-token-2022 = "0.4.0"
 serde_json = "1"
 solana-address = { version = "2", features = ["curve25519"] }
 solana-security-txt = "1.1.3"

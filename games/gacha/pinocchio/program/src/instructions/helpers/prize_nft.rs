@@ -83,14 +83,7 @@ pub fn mint_prize_nft(
     }
     .invoke()?;
 
-    InitializeMint2 {
-        mint: accounts.mint,
-        decimals: 0,
-        mint_authority: pool_address,
-        freeze_authority: None,
-        token_program: &pinocchio_token_2022::ID,
-    }
-    .invoke()?;
+    InitializeMint2::new(accounts.mint, 0, pool_address, None).invoke()?;
 
     let mut digits = [0u8; 20];
     let index_str = format_u64(index, &mut digits);
@@ -110,23 +103,9 @@ pub fn mint_prize_nft(
     }
     .invoke()?;
 
-    MintTo {
-        mint: accounts.mint,
-        account: accounts.buyer_ata,
-        mint_authority: accounts.pool,
-        amount: 1,
-        token_program: &pinocchio_token_2022::ID,
-    }
-    .invoke_signed(&pool_signer)?;
+    MintTo::new(accounts.mint, accounts.buyer_ata, accounts.pool, 1).invoke_signed(&pool_signer)?;
 
-    SetAuthority {
-        account: accounts.mint,
-        authority: accounts.pool,
-        authority_type: AuthorityType::MintTokens,
-        new_authority: None,
-        token_program: &pinocchio_token_2022::ID,
-    }
-    .invoke_signed(&pool_signer)
+    SetAuthority::new(accounts.mint, accounts.pool, AuthorityType::MintTokens, None).invoke_signed(&pool_signer)
 }
 
 /// Tops the mint up to the rent floor of its final size, before any metadata is
