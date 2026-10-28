@@ -46,15 +46,14 @@ anchor test
 
 ## Generating a tree from a snapshot
 
-`scripts/generate-merkle-tree.ts` turns a snapshot JSON file into the on-chain root plus a proof per claimant:
+The `generate_merkle_tree` example turns a snapshot JSON file into the on-chain root plus a proof per claimant:
 
 ```bash
-cd anchor
-pnpm install
-pnpm generate-tree scripts/sample-snapshot.json merkle-output.json
+cd anchor/programs/merkle-tree-token-claimer
+cargo run --example generate_merkle_tree -- examples/sample-snapshot.json merkle-output.json
 ```
 
-The tree uses SHA-256 throughout: leaves are `sha256(leaf_bytes)` and parents are `sha256(left || right)`, with the last node of an odd level paired with a 32-byte zero hash. Padding with a zero hash instead of duplicating the last node matters: a duplicated node produces the symmetric parent `sha256(C || C)`, which lets one proof verify under two indices and open two receipt PDAs for the same leaf. `scripts/merkle.ts` contains the reference implementation, which matches the program's verifier byte for byte; the Rust tests carry an equivalent builder.
+The tree uses SHA-256 throughout: leaves are `sha256(leaf_bytes)` and parents are `sha256(left || right)`, with the last node of an odd level paired with a 32-byte zero hash. Padding with a zero hash instead of duplicating the last node matters: a duplicated node produces the symmetric parent `sha256(C || C)`, which lets one proof verify under two indices and open two receipt PDAs for the same leaf. `examples/generate_merkle_tree.rs` contains the reference implementation, which matches the program's verifier byte for byte; the Rust tests carry an equivalent builder.
 
 ## Adapting it for a real distribution
 
