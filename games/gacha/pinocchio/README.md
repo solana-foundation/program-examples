@@ -7,7 +7,7 @@ verifiable random function (VRF) anchored in Collector Crypt's real
 [`cc-vrf`](https://vrf.collectorcrypt.com) registry by CPI, and mint each prize as
 a Token-2022 NFT whose metadata carries its `rarity`.
 
-Built with **Pinocchio** (`no_std`) and **Codama**-generated TypeScript + Rust clients.
+Built with **Pinocchio** (`no_std`) and a **Codama**-generated Rust client.
 
 ## Randomness: RFC 9381 ECVRF, verified off-chain, anchored on-chain
 
@@ -28,8 +28,7 @@ Collector Crypt ships — and CPIs their deployed registry program:
    settle order, by construction).
 3. Anyone verifies `beta = VRF(alpha)` off-chain with
    [`@collectorcrypt/ecvrf`](https://www.npmjs.com/package/@collectorcrypt/ecvrf) and
-   reproduces the tier with `selectTier` / `pullAlpha` — byte-for-byte mirrors of
-   the on-chain logic.
+   reproduces the tier with the program's pure `select_tier` / `derive_alpha`.
 4. If the operator never reveals, the buyer reclaims fee + rent with
    `refund_pull` after the pool's deadline; the admin can only ever withdraw
    settled revenue.
@@ -49,27 +48,17 @@ for the full trust model, including cc-vrf trust caveats.
 | `program/src/ccvrf.rs`           | Hand-built Anchor CPI to cc-vrf (no Anchor dependency)                      |
 | `tests/integration-tests/`       | LiteSVM integration tests                                                   |
 | `tests/light-integration-tests/` | Real cc-vrf CPI tests with Light validity proofs                            |
-| `clients/typescript/`            | Codama TS client + `selectTier`/`pullAlpha`/ECVRF helpers (`@solana/gacha`) |
 | `clients/rust/`                  | Codama Rust client (`gacha-client`)                                         |
-| `scripts/`                       | Client generation + off-chain operator demo                                 |
+| `scripts/`                       | Client generation                                                           |
 | `idl/`                           | Committed Codama IDL                                                        |
-| `webapp/`                        | Next.js webapp                                                              |
 
 ## Quick start
 
 ```bash
 just setup     # install deps (needs pnpm, cargo, solana-keygen, npm)
-just build     # program .so → IDL → clients
-just test      # unit + integration + light + client tests
-just demo      # off-chain operator/verifier walkthrough (no RPC)
+just build     # program .so → IDL → Rust client
+just test      # unit + integration + light tests
 ```
-
-On devnet, `just burst-test 200` opens and settles 200 pulls against a throwaway
-1-lamport pool, re-derives every reveal off-chain, and scores the tier distribution
-(chi-square), the beta bit balance, and the beta byte uniformity — the statistical
-counterpart to the per-instruction tests. `just burst-report` re-scores every pull
-that pool has recorded without sending a transaction. Both need a devnet operator
-registered with `just register-operator`.
 
 The Light-stack tests dump the mainnet cc-vrf binary once (`just dump-cc-vrf`) and
 spawn a local prover automatically. Production operators need a Photon-capable RPC
@@ -100,7 +89,7 @@ the one-time program dump.
 - `claim_prize` — anyone cranks the prize NFT mint to the buyer.
 - `withdraw_fees` — admin withdraws settled revenue (never pending escrow).
 
-Edit the program, then run `just generate-clients` to regenerate the IDL and clients.
+Edit the program, then run `just generate-clients` to regenerate the IDL and the Rust client.
 
 ## License
 

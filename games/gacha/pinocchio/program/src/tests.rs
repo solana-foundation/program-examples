@@ -56,8 +56,6 @@ fn errors_on_zero_total_weight() {
     assert!(matches!(select_tier(&beta_from(0), &weights, 3), Err(GachaError::InvalidTierConfig)));
 }
 
-/// Pinned cross-language fixture: the TypeScript client's `pullAlpha` test uses
-/// the same inputs and digest, keeping the two implementations byte-identical.
 #[test]
 fn derive_alpha_matches_pinned_fixture() {
     let pull = Address::from([1u8; 32]);

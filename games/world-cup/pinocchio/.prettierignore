@@ -1,9 +1,6 @@
 # IDL files
 idl/
 
-# Generated files
-clients/typescript/src/generated/
-
 # Build outputs
 dist/
 build/
@@ -16,9 +13,6 @@ target/
 node_modules/
 package.json
 pnpm-lock.yaml
-
-# TypeDoc generated API docs
-clients/typescript/docs/
 
 # Editor / tool config
 .emdash.json

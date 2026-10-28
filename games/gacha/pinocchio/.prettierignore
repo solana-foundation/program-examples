@@ -1,23 +1,15 @@
 # IDL files
 idl/
 
-# Generated files
-clients/typescript/src/generated/
-webapp/next-env.d.ts
-
 # Build outputs
 dist/
 build/
 target/
-webapp/.next/
 
 # Dependencies
 node_modules/
 package.json
 pnpm-lock.yaml
-
-# TypeDoc generated API docs
-clients/typescript/docs/
 
 # Editor / tool config
 .emdash.json

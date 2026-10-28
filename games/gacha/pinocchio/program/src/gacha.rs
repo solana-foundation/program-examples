@@ -1,11 +1,9 @@
 //! Pure gacha logic: alpha derivation, weighted tier selection, and prize constants.
 //!
 //! [`select_tier`] maps a 64-byte VRF output (`beta`) to a reward tier and
-//! [`derive_alpha`] binds the VRF input to buyer-supplied entropy. Both are host
-//! unit-tested and mirrored byte-for-byte by the off-chain verifier in the
-//! TypeScript client (`selectTier` / `pullAlpha` in `@solana/gacha`), so anyone
-//! can reproduce a pull result from on-chain data and check it against the
-//! recorded tier.
+//! [`derive_alpha`] binds the VRF input to buyer-supplied entropy. Both are pure
+//! and host unit-tested, so anyone can reproduce a pull result from on-chain
+//! data and check it against the recorded tier.
 //!
 //! Tier weights are a primitive array rather than an array of structs so the
 //! layout maps cleanly through Codama to the client.

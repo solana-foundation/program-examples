@@ -1,8 +1,7 @@
 # World Cup
 
-A World Cup bracket-prediction game on Solana — a Pinocchio on-chain program,
-a Codama-generated TypeScript client, and a React webapp shell, wired together
-end-to-end.
+A World Cup bracket-prediction game on Solana: a Pinocchio on-chain program and
+a Codama-generated Rust client.
 
 Entrants pay a fixed fee to submit a consistency-checked 32-game bracket; an
 admin oracle records results; a permissionless `refresh_score` folds each bracket
@@ -16,8 +15,7 @@ winner always exists.
 | -------------------------- | --------------------------------------------------------------- |
 | `program/`                 | Pinocchio program (`world-cup-program`)                         |
 | `tests/integration-tests/` | LiteSVM integration tests (`tests-world-cup`)                   |
-| `clients/typescript/`      | Codama-generated TS client (`@solana/world-cup`)                |
-| `webapp/`                  | Vite + React Solana app shell (wallet, cluster, deploy, faucet) |
+| `clients/rust/`            | Codama-generated Rust client (`world-cup-client`)               |
 | `scripts/`                 | Codama client generation                                        |
 | `idl/`                     | Generated IDL                                                   |
 
@@ -26,9 +24,8 @@ winner always exists.
 ```bash
 # Prerequisites: rustup, the Solana CLI, pnpm, just
 just setup            # install JS dependencies
-just build            # program .so → IDL → TS client
+just build            # program .so → IDL → Rust client
 just test             # unit + LiteSVM integration tests
-just webapp-dev       # start the webapp
 ```
 
 ## The program
@@ -41,7 +38,7 @@ Instructions: `init_config`, `submit_bracket`, `lock`, `post_result`,
 `post_goals`, `refresh_score`, `finalize`, `claim`, `close_bracket`.
 
 Edit the Rust types, then `just generate-clients` regenerates the IDL and the
-TypeScript client.
+Rust client.
 
 ## License
 

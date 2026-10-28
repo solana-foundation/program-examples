@@ -30,9 +30,6 @@ keys/
 # Dumped mainnet program fixtures
 tests/fixtures/
 
-# TypeDoc generated API docs
-clients/typescript/docs/
-
 .claude/
 
 # Editor / tool config

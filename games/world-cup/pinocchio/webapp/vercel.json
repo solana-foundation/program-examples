@@ -1,8 +1,0 @@
-{
-    "$schema": "https://openapi.vercel.sh/vercel.json",
-    "framework": "vite",
-    "buildCommand": "pnpm -w run generate-ts-client && pnpm --filter @solana/world-cup build && pnpm --filter webapp build",
-    "installCommand": "pnpm install --frozen-lockfile",
-    "outputDirectory": "dist",
-    "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
-}

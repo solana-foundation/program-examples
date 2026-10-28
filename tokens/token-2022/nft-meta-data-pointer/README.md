@@ -6,7 +6,7 @@ The cool thing about this especially for games is that we can now have additiona
 
 This opens all kind of interesting possibilities for games. You can for example save the level and xp of the player, the current weapon and armor, the current quest and so on. When market places will eventually support additional meta data the nfts could be filtered and ordered by the meta data fields and NFTs with better values like higher level could potentially gain more value by playing.
 
-The nft will be created in an anchor program so it is very easy to mint from the js client. The name, uri and symbol are saved in the meta data extension which is pointed to the mint.
+The nft will be created in an anchor program so it is very easy to mint from any client. The name, uri and symbol are saved in the meta data extension which is pointed to the mint.
 
 The nft will have a name, symbol and a uri. The uri is a link to a json file which contains the meta data of the nft.
 
@@ -16,29 +16,13 @@ There is a video walkthrough of this example on the Solana Foundation Youtube ch
 
 # How to run this example
 
-Running the tests
-
 ```shell
-cd program
-anchor test --detach
+cd anchor
+anchor build
+anchor test
 ```
 
-Then you can set your https://solana.explorer.com url to local net an look at the transactions.
-
-The program is also already deployed to dev net so you can try it out on dev net.
-Starting the js client
-
-```shell
-cd app
-yarn install
-yarn dev
-```
-
-Copy `app/.env.example` to `app/.env.local` first. Listing the NFTs a wallet
-owns goes through the Metaplex Digital Asset Standard API, which is a separate
-service from the base Solana RPC and requires an endpoint from a provider such
-as Helius, Shyft, QuickNode, or Triton. Without `NEXT_PUBLIC_DAS_RPC` set, the
-app runs but the NFT list stays empty.
+The program is also already deployed to devnet.
 
 # Minting the NFT
 
@@ -216,90 +200,10 @@ let space = ExtensionType::try_calculate_account_len::<Mint>(
     )?;
 ```
 
-The example is based on the Solana Games Preset
-
-```shell
-npx create-solana-game gamName
-```
-
 # Solana Game Preset
 
-This game is ment as a starter game for on chain games.
-There is a js and a unity client for this game and both are talking to a solana anchor program.
-
-This game uses gum session keys for auto approval of transactions.
+The example is based on the Solana Games Preset. It uses gum session keys for auto approval of transactions.
 Note that neither the program nor session keys are audited. Use at your own risk.
-
-# How to run this example
-
-## Quickstart
-
-The unity client and the js client are both connected to the same program and should work out of the box connecting to the already deployed program.
-
-### Unity
-
-Open the Unity project with Unity Version 2021.3.32.f1 (or similar), open the GameScene or LoginScene and hit play.
-Use the editor login button in the bottom left. If you cant get devnet sol you can copy your address from the console and use the faucet here: https://faucet.solana.com/ to request some sol.
-
-### Js Client
-
-To start the js client open the project in visual studio code and run:
-
-```bash
-cd app
-yarn install
-yarn dev
-```
-
-To start changing the program and connecting to your own program follow the steps below.
-
-## Installing Solana dependencies
-
-Follow the installation here: https://www.anchor-lang.com/docs/installation
-Install the latest 1.16 solana version (1.17 is not supported yet)
-sh -c "$(curl -sSfL https://release.solana.com/v1.16.18/install)"
-
-Anchor program
-
-1. Install the [Anchor CLI](https://project-serum.github.io/anchor/getting-started/installation.html)
-2. `cd anchor` to end the program directory
-3. Run `anchor build` to build the program
-4. Run `anchor deploy` to deploy the program
-5. Copy the program id from the terminal into the lib.rs, anchor.toml and within the unity project in the AnchorService and if you use js in the anchor.ts file
-6. Build and deploy again
-
-Next js client
-
-1. Install [Node.js](https://nodejs.org/en/download/)
-2. Copy the program id into app/utils/anchor.ts
-3. `cd app` to end the app directory
-4. Run `yarn install` to install node modules
-5. Run `yarn dev` to start the client
-6. After doing changes to the anchor program make sure to copy over the types from the program into the client so you can use them. You can find the js types in the target/idl folder.
-
-Unity client
-
-1. Install [Unity](https://unity.com/)
-2. Open the MainScene
-3. Hit play
-4. After doing changes to the anchor program make sure to regenerate the C# client: https://solanacookbook.com/gaming/porting-anchor-to-unity.html#generating-the-client
-   Its done like this (after you have build the program):
-
-```bash
-cd program
-dotnet tool install Solana.Unity.Anchor.Tool <- run once
-dotnet anchorgen -i target/idl/extension_nft.json -o target/idl/ExtensionNft.cs
-```
-
-(Replace extension_nft with the name of your program)
-
-then copy the c# code into the unity project.
-
-## Connect to local host (optional)
-
-To connect to local host from Unity add these links on the wallet holder game object:
-http://localhost:8899
-ws://localhost:8900
 
 ## Video walkthroughs
 
@@ -453,84 +357,7 @@ pub fn update_energy(&mut self) -> Result<()> {
 }
 ```
 
-## Js client
-
-### Subscribe to account updates
-
-It is possible to subscribe to account updates via a websocket. This get updates to this account pushed directly back to the client without the need to poll this data. This allows fast gameplay because the updates usually arrive after around 500ms.
-
-```js
-useEffect(() => {
-    if (!publicKey) {
-        return;
-    }
-    const [pda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('player', 'utf8'), publicKey.toBuffer()],
-        new PublicKey(ExtensionNft_PROGRAM_ID),
-    );
-    try {
-        program.account.playerData.fetch(pda).then(data => {
-            setGameState(data);
-        });
-    } catch (e) {
-        window.alert('No player data found, please init!');
-    }
-
-    connection.onAccountChange(pda, account => {
-        setGameState(program.coder.accounts.decode('playerData', account.data));
-    });
-}, [publicKey]);
-```
-
-### Calculate energy and show countdown
-
-In the java script client we can then perform the same logic and show a countdown timer for the player so that he knows when the next energy will be available:
-
-```js
-const interval = setInterval(async () => {
-    if (gameState == null || gameState.lastLogin == undefined || gameState.energy >= 10) {
-        return;
-    }
-
-    const lastLoginTime = gameState.lastLogin * 1000;
-    const currentTime = Date.now();
-    const timePassed = (currentTime - lastLoginTime) / 1000;
-
-    while (timePassed > TIME_TO_REFILL_ENERGY && gameState.energy < MAX_ENERGY) {
-        gameState.energy++;
-        gameState.lastLogin += TIME_TO_REFILL_ENERGY;
-        timePassed -= TIME_TO_REFILL_ENERGY;
-    }
-
-    setTimePassed(timePassed);
-
-    const nextEnergyIn = Math.floor(TIME_TO_REFILL_ENERGY - timePassed);
-    setEnergyNextIn(nextEnergyIn > 0 ? nextEnergyIn : 0);
-    }, 1000);
-
-    return () => clearInterval(interval);
-}, [gameState, timePassed]);
-
-...
-
-{(gameState && <div className="flex flex-col items-center">
-    {("Wood: " + gameState.wood + " Energy: " + gameState.energy + " Next energy in: " + nextEnergyIn )}
-</div>)}
-
-```
-
-## Unity client
-
-In the Unity client everything interesting happens in the AnchorService.
-To generate the client code you can follow the instructions here: https://solanacookbook.com/gaming/porting-anchor-to-unity.html#generating-the-client
-
-```bash
-cd program
-dotnet tool install Solana.Unity.Anchor.Tool <- run once
-dotnet anchorgen -i target/idl/extension_nft.json -o target/idl/ExtensionNft.cs
-```
-
-### Session keys
+## Session keys
 
 Session keys is an optional component. What it does is creating a local key pair which is toped up with some sol which can be used to autoapprove transactions. The session token is only allowed on certain functions of the program and has an expiry of 23 hours. Then the player will get the sol back and can create a new session.
 

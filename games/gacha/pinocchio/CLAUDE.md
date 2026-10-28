@@ -22,11 +22,9 @@ Oracle VRFs (Switchboard On-Demand, MagicBlock VRF, ORAO) verify on-chain at the
 - The 80-byte proof is never stored on-chain: it is hashed into the cc-vrf commit and emitted in `PullSettledEvent`.
 - **Packed state:** never take a reference to a `#[repr(C, packed)]` field whose type has alignment > 1 (u32/u64 arrays); copy into a local first.
 - **Codama limits:** array field types need a **literal** size (`[u32; 8]`, not `[u32; MAX_TIERS]`), and Codama cannot express arrays of custom structs, hence the primitive tier arrays. `just generate-idl && git diff` is the drift check.
-- **Cross-language parity:** `select_tier`/`selectTier` and `derive_alpha`/`pullAlpha` must stay byte-for-byte identical; shared fixtures in both suites pin them.
 - Light Protocol addresses come from `light-sdk-types`. cc-vrf publishes no crate, so its program ID, CPI authority, and instruction discriminator are declared locally in `ccvrf.rs`; foreign CPIs are hand-serialized (Anchor: 8-byte `sha256("global:<name>")` + borsh; SPL interface: 8-byte `SplDiscriminate` + borsh).
 - Integration tests derive PDAs through `gacha_client`'s generated `find_pda` helpers on purpose, so a seed the IDL gets wrong fails the suite instead of shipping. They need `just generate-clients` first.
 - `just light-test` runs single-threaded (shared local gnark prover port, prepared by `just light-bootstrap`, cached in `~/.config/light`) against the mainnet-dumped `tests/fixtures/cc_vrf.so`.
-- `just burst-test <n>` spends devnet SOL: ~0.0025 SOL of pull rent per pull, unrecoverable once a pull is settled (pulls are only closable while pending, via `refund_pull`). `just burst-report` re-scores history for free.
 - When extending: keep `#[codama(...)]` attributes in sync, emit an event per new instruction, add an integration test per instruction.
 
 Program ID `Bv65bJKK9kwTERuyHdCrXqWf2gKBFwkTx2rnscXaBZsS` (keypair in `keys/`, gitignored).

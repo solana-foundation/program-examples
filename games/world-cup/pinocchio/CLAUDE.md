@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-World Cup bracket-prediction game: fixed entry fee, consistency-checked 32-game bracket, admin oracle posts results, permissionless `refresh_score` folds brackets into a global tally, unique winner sweeps the pot. Pinocchio program + Codama-generated TS client + Vite webapp shell.
+World Cup bracket-prediction game: fixed entry fee, consistency-checked 32-game bracket, admin oracle posts results, permissionless `refresh_score` folds brackets into a global tally, unique winner sweeps the pot. Pinocchio program + Codama-generated Rust client.
 
 Below is only what the code and the `justfile` do not tell you.
 

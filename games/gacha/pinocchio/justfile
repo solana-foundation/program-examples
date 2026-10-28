@@ -6,9 +6,8 @@ set shell := ["bash", "-uc"]
 
 # Variables
 program_dir := "program"
-ts_client_dir := "clients/typescript"
 idl_file := "idl/gacha.json"
-generated_paths := "idl clients/typescript/src/generated clients/rust/src/generated"
+generated_paths := "idl clients/rust/src/generated"
 cc_vrf_program_id := "ccvrfu3fSpbnPLiUqdWAt85Zn9nq96ekwGTbHqGtdgQ"
 cc_vrf_fixture := "tests/fixtures/cc_vrf.so"
 
@@ -55,7 +54,7 @@ program-id:
 # ============================================
 
 # Build everything (program + client)
-build: build-program build-client
+build: build-program build-rust-client
 
 # Compile Solana program to .so
 build-program:
@@ -67,7 +66,7 @@ generate-idl:
     pnpm run generate-idl
     @echo "✓ IDL generated"
 
-# Generate TypeScript + Rust clients from IDL
+# Generate the Rust client from IDL
 generate-clients: generate-idl
     pnpm run generate-clients
     @echo "✓ Clients generated"
@@ -84,11 +83,6 @@ check-generated: generate-clients
     fi
     echo "✓ IDL and generated clients are up-to-date"
 
-# Build TypeScript client
-build-client: generate-clients
-    cd {{ts_client_dir}} && pnpm run build
-    @echo "✓ TypeScript client built"
-
 # Build the generated Rust client
 build-rust-client: generate-clients
     cargo build -p gacha-client
@@ -98,8 +92,8 @@ build-rust-client: generate-clients
 # Test
 # ============================================
 
-# Run all tests (unit + integration + light + client)
-test: unit-test integration-test light-test client-test
+# Run all tests (unit + integration + light)
+test: unit-test integration-test light-test
 
 # Run Rust unit tests
 unit-test:
@@ -178,62 +172,13 @@ light-test: light-bootstrap dump-cc-vrf
     cd {{program_dir}} && cargo build-sbf --arch v0 --sbf-out-dir ../tests/fixtures
     cd tests/light-integration-tests && cargo test -- --test-threads=1
 
-# Run TypeScript client tests
-client-test: build-client
-    cd {{ts_client_dir}} && pnpm test
-
 # ============================================
-# Demo
+# Devnet
 # ============================================
-
-# Run the off-chain operator/verifier demo (no RPC required)
-demo: build-client
-    pnpm exec tsx scripts/operator-demo.ts
-
-# ============================================
-# Webapp
-# ============================================
-
-# Start the Next.js webapp. Its /api/pull route runs the operator flow.
-webapp-dev:
-    pnpm --filter gacha-webapp dev
-
-# Start only the Next.js UI/API process
-webapp-ui:
-    pnpm --filter gacha-webapp dev
-
-# Open the standalone SIMD reveal simulator (no wallet, RPC, or transactions)
-webapp-simd-preview:
-    @echo "Start 'just webapp-ui', then open http://localhost:3000/simd-preview"
-
-# Build the webapp
-webapp-build:
-    pnpm --filter gacha-webapp build
 
 # Deploy the program to devnet (needs a devnet-configured Solana CLI + funded wallet; run `just build-program` first)
 deploy-devnet:
     solana program deploy target/deploy/gacha_program.so --program-id keys/gacha-keypair.json
-
-# Create a pool on-chain (config via env, e.g. OPERATOR_PUBKEY, ADMIN_KEYPAIR, ENTRY_FEE_SOL, WEIGHTS)
-setup-pool:
-    pnpm exec tsx scripts/setup-pool.ts
-
-# Register and freeze the operator's cc-vrf authority
-register-operator:
-    pnpm exec tsx scripts/register-operator.ts
-
-# Run the operator crank, loading its Photon RPC from webapp/.env.local
-operator-watch:
-    pnpm exec tsx scripts/operator-settle.ts --watch
-
-# Buy + settle N pulls on a dedicated 1-lamport devnet pool, then score every
-# reveal and the tier distribution (needs a registered operator; ~0.0025 SOL/pull)
-burst-test pulls="100":
-    PULLS={{pulls}} pnpm exec tsx scripts/burst-randomness.ts
-
-# Re-score every pull the burst pool has recorded, without buying or settling
-burst-report:
-    pnpm exec tsx scripts/burst-randomness.ts --analyze
 
 # ============================================
 # Format and lint
@@ -257,14 +202,12 @@ fmt:
 lint:
     @cargo clippy --workspace --exclude gacha-client --all-targets --no-deps --fix -- -D warnings
     @cargo clippy --manifest-path tests/light-integration-tests/Cargo.toml --all-targets --no-deps --fix -- -D warnings
-    @pnpm run lint:fix
     @echo "✓ Code linted"
 
 # Check linting without fixing
 lint-check:
     @cargo clippy --workspace --exclude gacha-client --all-targets --no-deps -- -D warnings
     @cargo clippy --manifest-path tests/light-integration-tests/Cargo.toml --all-targets --no-deps -- -D warnings
-    @pnpm run lint
     @echo "✓ Lint check passed"
 
 # Run all code quality checks
@@ -279,5 +222,4 @@ clean:
     #!/usr/bin/env bash
     set -euo pipefail
     cargo clean
-    cd {{ts_client_dir}} && pnpm run clean || true
     echo "✓ Clean complete"
