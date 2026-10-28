@@ -1,0 +1,51 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
+        with:
+          tool: cargo-audit
+      - name: Audit every Cargo.lock
+        run: |
+          status=0
+          for lock in $(git ls-files '*Cargo.lock'); do
+            echo "::group::$lock"
+            cargo audit --file "$lock" || status=1
+            echo "::endgroup::"
+          done
+          exit $status
+
+  pnpm-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: lts/*
+      - name: Audit every pnpm-lock.yaml
+        run: |
+          status=0
+          for lock in $(git ls-files '*pnpm-lock.yaml'); do
+            dir=$(dirname "$lock")
+            echo "::group::$dir"
+            (cd "$dir" && pnpm audit) || status=1
+            echo "::endgroup::"
+          done
+          exit $status
