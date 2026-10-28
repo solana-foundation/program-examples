@@ -130,6 +130,12 @@ Create an NFT collection, mint NFTs, and verify NFTs as part of a collection usi
 
 [anchor](./tokens/nft-operations/anchor) [pinocchio](./tokens/nft-operations/pinocchio)
 
+### NFT staking
+
+[Stake an NFT to earn reward tokens over time, and claim those rewards without unstaking.](./tokens/nft-staking/README.md) The NFT is frozen in the owner's own wallet with a delegate authority rather than moved into a vault, and rewards accrue against a checkpoint so the same time can never be paid for twice.
+
+[anchor](./tokens/nft-staking/anchor)
+
 ### Transferring Tokens
 
 [Create a token mint, mint tokens, and transfer tokens between accounts.](./tokens/transfer-tokens/README.md)
