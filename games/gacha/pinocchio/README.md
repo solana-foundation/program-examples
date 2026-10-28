@@ -41,16 +41,16 @@ for the full trust model, including cc-vrf trust caveats.
 
 ## Layout
 
-| Path                             | What                                                                        |
-| -------------------------------- | --------------------------------------------------------------------------- |
-| `program/`                       | Pinocchio on-chain program (`gacha-program`)                                |
-| `program/src/gacha.rs`           | Pure `select_tier` + `derive_alpha` (host unit-tested)                      |
-| `program/src/ccvrf.rs`           | Hand-built Anchor CPI to cc-vrf (no Anchor dependency)                      |
-| `tests/integration-tests/`       | LiteSVM integration tests                                                   |
-| `tests/light-integration-tests/` | Real cc-vrf CPI tests with Light validity proofs                            |
-| `clients/rust/`                  | Codama Rust client (`gacha-client`)                                         |
-| `scripts/`                       | Client generation                                                           |
-| `idl/`                           | Committed Codama IDL                                                        |
+| Path                             | What                                                   |
+| -------------------------------- | ------------------------------------------------------ |
+| `program/`                       | Pinocchio on-chain program (`gacha-program`)           |
+| `program/src/gacha.rs`           | Pure `select_tier` + `derive_alpha` (host unit-tested) |
+| `program/src/ccvrf.rs`           | Hand-built Anchor CPI to cc-vrf (no Anchor dependency) |
+| `tests/integration-tests/`       | LiteSVM integration tests                              |
+| `tests/light-integration-tests/` | Real cc-vrf CPI tests with Light validity proofs       |
+| `clients/rust/`                  | Codama Rust client (`gacha-client`)                    |
+| `scripts/`                       | Client generation                                      |
+| `idl/`                           | Committed Codama IDL                                   |
 
 ## Quick start
 
