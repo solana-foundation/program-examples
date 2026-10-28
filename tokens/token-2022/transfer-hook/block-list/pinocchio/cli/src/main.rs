@@ -9,9 +9,9 @@ use {
         keypair::signer_from_path,
     },
     solana_client::nonblocking::rpc_client::RpcClient,
+    solana_commitment_config::CommitmentConfig,
     solana_remote_wallet::remote_wallet::RemoteWalletManager,
     solana_sdk::{
-        commitment_config::CommitmentConfig,
         message::Message,
         pubkey::Pubkey,
         signature::{Signature, Signer},

@@ -101,7 +101,7 @@ cargo build
 pnpm build-and-test
 ```
 
-This regenerates the SDKs, typechecks the TypeScript client, builds the program, and runs the litesvm tests in [program/tests](program/tests/) covering `init`, `block_wallet`, and `unblock_wallet`. The `setup_extra_metas` and `tx_hook` paths require a token-2022 mint with the transfer-hook extension — see the devnet transactions below for end-to-end examples.
+This regenerates the SDKs, typechecks the TypeScript client, builds the program and the CLI, and runs the litesvm tests in [program/tests](program/tests/) covering `init`, `block_wallet`, and `unblock_wallet`. The `setup_extra_metas` and `tx_hook` paths require a token-2022 mint with the transfer-hook extension — see the devnet transactions below for end-to-end examples.
 
 ## Setup
 

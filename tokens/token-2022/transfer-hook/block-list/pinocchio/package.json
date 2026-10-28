@@ -10,7 +10,7 @@
     "generate-sdks": "pnpx tsx codama.ts",
     "build": "cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./tests/fixtures",
     "test": "cargo test -p block-list",
-    "build-and-test": "pnpm generate-sdks && pnpm exec tsc --noEmit -p tsconfig.json && pnpm build && pnpm test"
+    "build-and-test": "pnpm generate-sdks && pnpm exec tsc --noEmit -p tsconfig.json && pnpm build && cargo build -p block-list-cli && pnpm test"
   },
   "dependencies": {
     "@solana/kit": "^8.5.0",
