@@ -15,15 +15,17 @@ struct Snapshot {
     entries: Vec<SnapshotEntry>,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct SnapshotEntry {
     source_address: String,
-    solana_address: String,
+    solana_address: Value,
     amount: Value,
 }
 
 struct Claim<'a> {
     entry: &'a SnapshotEntry,
+    address: &'a str,
     wallet: Pubkey,
     amount: u64,
 }
@@ -88,9 +90,9 @@ fn parse_amount(amount: &Value) -> Result<u64, String> {
 }
 
 fn parse_claim(entry: &SnapshotEntry) -> Result<Claim<'_>, String> {
-    let wallet = Pubkey::from_str(&entry.solana_address)
-        .map_err(|error| format!("invalid solana_address {}: {error}", entry.solana_address))?;
-    Ok(Claim { entry, wallet, amount: parse_amount(&entry.amount)? })
+    let address = entry.solana_address.as_str().ok_or(format!("invalid solana_address: {}", entry.solana_address))?;
+    let wallet = Pubkey::from_str(address).map_err(|error| format!("invalid solana_address {address}: {error}"))?;
+    Ok(Claim { entry, address, wallet, amount: parse_amount(&entry.amount)? })
 }
 
 fn main() {
@@ -131,7 +133,7 @@ fn main() {
         .enumerate()
         .map(|(index, claim)| {
             json!({
-                "solana_address": claim.entry.solana_address,
+                "solana_address": claim.address,
                 "source_address": claim.entry.source_address,
                 "amount": claim.amount.to_string(),
                 "index": index,
