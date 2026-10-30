@@ -1,0 +1,12 @@
+[package]
+name = "token-swap-native"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+solana-program = "1.10.31"
+solana-sdk = "1.10.31"
+borsh = "0.10.3"
+borsh-derive = "0.10.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
