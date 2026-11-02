@@ -44,9 +44,9 @@ jobs:
           for lock in $(git ls-files '*Cargo.lock'); do
             dir=$(dirname "$lock")
             cargo audit --file "$lock" --json \
-              | jq -r '.vulnerabilities.list[].package | "\(.name)@\(.version)"' \
+              | jq -r '.vulnerabilities.list[].package | "--package=\(.name)@\(.version)"' \
               | sort -u \
-              | xargs -r -n1 cargo update --manifest-path "$dir/Cargo.toml" -p \
+              | xargs -r cargo update --manifest-path "$dir/Cargo.toml" \
               || echo "::warning::cargo update failed in $dir"
           done
 
