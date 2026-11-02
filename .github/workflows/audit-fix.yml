@@ -1,0 +1,74 @@
+name: Audit Fix
+
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: audit-fix
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  audit-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
+        with:
+          tool: cargo-audit
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: lts/*
+
+      - name: Override vulnerable pnpm packages
+        run: |
+          for lock in $(git ls-files '*pnpm-lock.yaml'); do
+            dir=$(dirname "$lock")
+            (cd "$dir" && pnpm audit --fix >/dev/null) || true
+            git diff --quiet -- "$dir/package.json" && continue
+            (cd "$dir" && pnpm install --lockfile-only) || echo "::warning::lockfile refresh failed in $dir"
+          done
+
+      - name: Update vulnerable crates
+        run: |
+          for lock in $(git ls-files '*Cargo.lock'); do
+            dir=$(dirname "$lock")
+            cargo audit --file "$lock" --json \
+              | jq -r '.vulnerabilities.list[].package | "--package=\(.name)@\(.version)"' \
+              | sort -u \
+              | xargs -r cargo update --manifest-path "$dir/Cargo.toml" \
+              || echo "::warning::cargo update failed in $dir"
+          done
+
+      - name: Verify audits pass
+        run: |
+          status=0
+          for lock in $(git ls-files '*Cargo.lock'); do
+            cargo audit --file "$lock" || status=1
+          done
+          for lock in $(git ls-files '*pnpm-lock.yaml'); do
+            (cd "$(dirname "$lock")" && pnpm audit) || status=1
+          done
+          exit $status
+
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: fix/audit-advisories
+          delete-branch: true
+          sign-commits: true
+          commit-message: 'fix(deps): resolve pnpm and cargo audit advisories'
+          title: 'fix(deps): resolve pnpm and cargo audit advisories'
+          body: |
+            Automated by the `Audit Fix` workflow: `pnpm audit --fix` and `cargo update -p` across every project lockfile, then the audits re-run clean.
+
+            Approve the pending workflow runs to start CI, and review forced overrides for major-version jumps before merging.
