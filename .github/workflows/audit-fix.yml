@@ -35,7 +35,7 @@ jobs:
           for lock in $(git ls-files '*pnpm-lock.yaml'); do
             dir=$(dirname "$lock")
             (cd "$dir" && pnpm audit --fix >/dev/null) || true
-            git diff --quiet -- "$dir/package.json" && continue
+            [ -z "$(git status --porcelain -- "$dir/package.json" "$dir/pnpm-workspace.yaml")" ] && continue
             (cd "$dir" && pnpm install --lockfile-only) || echo "::warning::lockfile refresh failed in $dir"
           done
 
