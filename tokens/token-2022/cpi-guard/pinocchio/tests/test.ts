@@ -97,7 +97,7 @@ describe('Token-2022 CPI Guard (Pinocchio)', () => {
                 { address: source, role: AccountRole.WRITABLE }, // source token account
                 { address: mint, role: AccountRole.READONLY }, // mint account
                 { address: destination, role: AccountRole.WRITABLE }, // destination token account
-                { address: payer.address, role: AccountRole.READONLY_SIGNER, signer: payer }, // authority (owner)
+                { address: payer.address, role: AccountRole.READONLY_SIGNER as const, signer: payer }, // authority (owner)
                 { address: TOKEN_2022_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token-2022 program
             ],
         };
