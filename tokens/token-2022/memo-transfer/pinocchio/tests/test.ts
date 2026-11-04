@@ -92,9 +92,9 @@ describe('Token-2022 Memo Transfer (Pinocchio)', () => {
         const ix = {
             programAddress: programId,
             accounts: [
-                { address: tokenAccount.address, role: AccountRole.WRITABLE_SIGNER, signer: tokenAccount }, // token account
+                { address: tokenAccount.address, role: AccountRole.WRITABLE_SIGNER as const, signer: tokenAccount }, // token account
                 { address: mint, role: AccountRole.READONLY }, // mint account
-                { address: payer.address, role: AccountRole.WRITABLE_SIGNER, signer: payer }, // payer (owner)
+                { address: payer.address, role: AccountRole.WRITABLE_SIGNER as const, signer: payer }, // payer (owner)
                 { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // system program
                 { address: TOKEN_2022_PROGRAM_ADDRESS, role: AccountRole.READONLY }, // Token-2022 program
             ],
