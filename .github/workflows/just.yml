@@ -95,9 +95,15 @@ jobs:
     name: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Each example pins its Solana CLI in Cargo.toml `[workspace.metadata.cli]`.
+      - name: Read pinned Solana version
+        id: solana
+        working-directory: ${{ matrix.project }}
+        run: echo "version=$(sed -n 's/^solana = "\(.*\)"/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/setup
         with:
-          node-version-file: ${{ matrix.project }}/.nvmrc
+          solana-version: ${{ steps.solana.outputs.version || 'stable' }}
+          node-version-file: .nvmrc
           pnpm-lock-glob: ${{ matrix.project }}/pnpm-lock.yaml
           install-just: 'true'
           cargo-cache-workspaces: ${{ matrix.project }}
