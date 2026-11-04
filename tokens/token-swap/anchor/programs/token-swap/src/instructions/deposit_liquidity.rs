@@ -10,11 +10,7 @@ use crate::{
     state::Pool,
 };
 
-pub fn deposit_liquidity(
-    ctx: Context<DepositLiquidity>,
-    amount_a: u64,
-    amount_b: u64,
-) -> Result<()> {
+pub fn deposit_liquidity(ctx: Context<DepositLiquidity>, amount_a: u64, amount_b: u64) -> Result<()> {
     // Prevent depositing assets the depositor does not own
     let mut amount_a = if amount_a > ctx.accounts.depositor_account_a.amount {
         ctx.accounts.depositor_account_a.amount
@@ -36,6 +32,7 @@ pub fn deposit_liquidity(
         // Add as is if there is no liquidity
         (amount_a, amount_b)
     } else {
+        require!(pool_a.amount > 0 && pool_b.amount > 0, TutorialError::DepositTooSmall);
         // u128 is enough precision here
         let amount_a_u128 = amount_a as u128;
         let amount_b_u128 = amount_b as u128;
@@ -43,41 +40,39 @@ pub fn deposit_liquidity(
         let pool_b_u128 = pool_b.amount as u128;
 
         // Calculate the amount of B required if we deposit all of A provided
-        let amount_b_required = amount_a_u128
-            .checked_mul(pool_b_u128)
-            .unwrap()
-            .checked_div(pool_a_u128)
-            .unwrap();
+        let amount_b_required = amount_a_u128.checked_mul(pool_b_u128).unwrap().checked_div(pool_a_u128).unwrap();
 
         if amount_b_required <= amount_b_u128 {
             // We have enough B to match the A provided
             (amount_a, amount_b_required as u64)
         } else {
             // We don't have enough B, so we must limit by B and calculate A required
-            let amount_a_required = amount_b_u128
-                .checked_mul(pool_a_u128)
-                .unwrap()
-                .checked_div(pool_b_u128)
-                .unwrap();
+            let amount_a_required = amount_b_u128.checked_mul(pool_a_u128).unwrap().checked_div(pool_b_u128).unwrap();
             (amount_a_required as u64, amount_b)
         }
     };
 
-    // Computing the amount of liquidity about to be deposited.
-    // Multiply in u128 so the product of two u64 amounts cannot overflow.
-    let mut liquidity = (amount_a as u128)
-        .checked_mul(amount_b as u128)
-        .unwrap()
-        .isqrt() as u64;
-
-    // Lock some minimum liquidity on the first deposit
-    if pool_creation {
-        if liquidity < MINIMUM_LIQUIDITY {
-            return err!(TutorialError::DepositTooSmall);
-        }
-
-        liquidity -= MINIMUM_LIQUIDITY;
-    }
+    let liquidity = if pool_creation {
+        // The initial share supply is the geometric mean, less the locked minimum.
+        let initial = ((amount_a as u128) * (amount_b as u128)).isqrt() as u64;
+        initial.checked_sub(MINIMUM_LIQUIDITY).ok_or(TutorialError::DepositTooSmall)?
+    } else {
+        // Withdrawal accounts for the unminted locked minimum as part of supply.
+        // Limit shares by both actual deposits so rounding cannot dilute existing LPs.
+        let supply = ctx.accounts.mint_liquidity.supply as u128 + MINIMUM_LIQUIDITY as u128;
+        let shares_a = (amount_a as u128)
+            .checked_mul(supply)
+            .ok_or(TutorialError::MathOverflow)?
+            .checked_div(pool_a.amount as u128)
+            .ok_or(TutorialError::MathOverflow)?;
+        let shares_b = (amount_b as u128)
+            .checked_mul(supply)
+            .ok_or(TutorialError::MathOverflow)?
+            .checked_div(pool_b.amount as u128)
+            .ok_or(TutorialError::MathOverflow)?;
+        u64::try_from(shares_a.min(shares_b)).map_err(|_| TutorialError::MathOverflow)?
+    };
+    require!(liquidity > 0, TutorialError::DepositTooSmall);
 
     // Transfer tokens to the pool
     token::transfer(

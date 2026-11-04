@@ -159,6 +159,11 @@ impl Env {
     }
 
     fn deposit(&mut self, amount_a: u64, amount_b: u64) {
+        let admin = self.admin.insecure_clone();
+        self.deposit_as(&admin, amount_a, amount_b);
+    }
+
+    fn deposit_as(&mut self, depositor: &Keypair, amount_a: u64, amount_b: u64) {
         let keys = self.keys();
         let ix = Instruction::new_with_bytes(
             swap_example::id(),
@@ -166,15 +171,15 @@ impl Env {
             swap_example::accounts::DepositLiquidity {
                 pool: keys.pool,
                 pool_authority: keys.pool_authority,
-                depositor: self.admin.pubkey(),
+                depositor: depositor.pubkey(),
                 mint_liquidity: keys.mint_liquidity,
                 mint_a: self.mint_a.pubkey(),
                 mint_b: self.mint_b.pubkey(),
                 pool_account_a: keys.pool_account_a,
                 pool_account_b: keys.pool_account_b,
-                depositor_account_liquidity: self.liquidity_account(),
-                depositor_account_a: self.holder_a(),
-                depositor_account_b: self.holder_b(),
+                depositor_account_liquidity: get_associated_token_address(&depositor.pubkey(), &keys.mint_liquidity),
+                depositor_account_a: get_associated_token_address(&depositor.pubkey(), &self.mint_a.pubkey()),
+                depositor_account_b: get_associated_token_address(&depositor.pubkey(), &self.mint_b.pubkey()),
                 payer: self.payer.pubkey(),
                 token_program: spl_token::ID,
                 associated_token_program: associated_token::ID,
@@ -182,7 +187,7 @@ impl Env {
             }
             .to_account_metas(None),
         );
-        send(&mut self.svm, &self.payer, &[ix], &[&self.admin]).unwrap();
+        send(&mut self.svm, &self.payer, &[ix], &[depositor]).unwrap();
     }
 
     fn withdraw(&mut self, amount: u64) {
@@ -352,6 +357,48 @@ fn deposit_with_different_ratio_is_limited_by_pool_ratio() {
     let expected_additional_a = second_b * initial_a / initial_b;
     assert_eq!(env.balance(&keys.pool_account_a), initial_a + expected_additional_a);
     assert_eq!(env.balance(&keys.pool_account_b), initial_b + second_b);
+}
+
+#[test]
+fn deposit_after_fee_growth_preserves_existing_lp_share() {
+    let mut env = Env::with_pool();
+    env.deposit(4_000_000, 4_000_000);
+    env.swap(true, 2_000_000, 1);
+
+    let keys = env.keys();
+    let before_a = env.balance(&keys.pool_account_a);
+    let before_b = env.balance(&keys.pool_account_b);
+    let existing_lp = env.balance(&env.liquidity_account());
+    let new_lp = Keypair::new();
+    let new_lp_account = get_associated_token_address(&new_lp.pubkey(), &keys.mint_liquidity);
+    let mut setup = Vec::new();
+    for (mint, source) in [(env.mint_a.pubkey(), env.holder_a()), (env.mint_b.pubkey(), env.holder_b())] {
+        let destination = get_associated_token_address(&new_lp.pubkey(), &mint);
+        setup.push(create_associated_token_account(&env.payer.pubkey(), &new_lp.pubkey(), &mint, &spl_token::ID));
+        setup.push(
+            spl_token::instruction::transfer(
+                &spl_token::ID,
+                &source,
+                &destination,
+                &env.admin.pubkey(),
+                &[],
+                2_000_000,
+            )
+            .unwrap(),
+        );
+    }
+    send(&mut env.svm, &env.payer, &setup, &[&env.admin]).unwrap();
+    env.deposit_as(&new_lp, 1_000_000, 1_000_000);
+
+    let added_a = env.balance(&keys.pool_account_a) - before_a;
+    let added_b = env.balance(&keys.pool_account_b) - before_b;
+    let effective_supply = existing_lp + MINIMUM_LIQUIDITY;
+    let max_lp_a = (added_a as u128 * effective_supply as u128 / before_a as u128) as u64;
+    let max_lp_b = (added_b as u128 * effective_supply as u128 / before_b as u128) as u64;
+    let minted_lp = env.balance(&new_lp_account);
+    assert!(minted_lp > 0);
+    assert_eq!(minted_lp, max_lp_a.min(max_lp_b), "new shares must reflect the actual contribution to both reserves");
+    assert_eq!(env.balance(&env.liquidity_account()), existing_lp);
 }
 
 #[test]
