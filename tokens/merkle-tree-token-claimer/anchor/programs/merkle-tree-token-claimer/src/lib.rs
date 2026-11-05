@@ -235,7 +235,7 @@ pub enum ClaimError {
     InvalidAmount,
 }
 
-// The tree builder must pad odd levels with a zero hash (see scripts/merkle.ts):
+// The tree builder must pad odd levels with a zero hash (see examples/generate_merkle_tree.rs):
 // duplicating the last node instead would make its parent sha256(C || C), which
 // verifies at two indices and therefore two receipt PDAs.
 fn compute_merkle_root(leaf: &[u8], hashes: &[u8], mut index: u64) -> Result<[u8; 32]> {
