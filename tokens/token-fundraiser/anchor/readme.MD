@@ -199,16 +199,18 @@ impl<'info> Contribute<'info> {
             FundraiserError::ContributionTooSmall
         );
 
+        let max_contribution = (u128::from(self.fundraiser.amount_to_raise)
+            * u128::from(MAX_CONTRIBUTION_PERCENTAGE)) / u128::from(PERCENTAGE_SCALER);
+
         // Check if the amount to contribute is less than the maximum allowed contribution
         require!(
-            amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER,
+            u128::from(amount) <= max_contribution,
             FundraiserError::ContributionTooBig
         );
 
         // Check if the maximum contributions per contributor have been reached
         require!(
-            (self.contributor_account.amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER)
-                && (self.contributor_account.amount + amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER),
+            u128::from(self.contributor_account.amount) + u128::from(amount) <= max_contribution,
             FundraiserError::MaximumContributionsReached
         );
 

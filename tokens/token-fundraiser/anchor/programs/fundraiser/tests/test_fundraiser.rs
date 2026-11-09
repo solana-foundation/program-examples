@@ -262,3 +262,51 @@ fn check_contributions_rejects_mint_other_than_recorded() {
     assert_eq!(state.mint_to_raise, real_mint);
     assert_eq!(token_balance(&env.svm, &fake_vault), amount_to_raise);
 }
+
+#[test]
+fn large_targets_accept_contributions_and_enforce_ten_percent_cap() {
+    for target in [u64::MAX / 10 + 1, u64::MAX] {
+        let mut env = setup();
+        let mint = create_mint(&mut env.svm, &env.payer, &env.payer.pubkey());
+        let contributor_ata = get_associated_token_address(&env.payer.pubkey(), &mint);
+        let setup_ixs = [
+            create_associated_token_account(&env.payer.pubkey(), &env.payer.pubkey(), &mint, &spl_token::ID),
+            spl_token::instruction::mint_to(
+                &spl_token::ID,
+                &mint,
+                &contributor_ata,
+                &env.payer.pubkey(),
+                &[],
+                u64::MAX,
+            )
+            .unwrap(),
+        ];
+        send(&mut env.svm, &setup_ixs, &env.payer, &[&env.payer]).unwrap();
+        let ix = initialize(&env, &mint, target, 1);
+        send(&mut env.svm, &[ix], &env.maker, &[&env.maker]).unwrap();
+        let campaign = Campaign {
+            mint,
+            vault: get_associated_token_address(&env.fundraiser, &mint),
+            contributor_ata,
+            contributor_account: Pubkey::find_program_address(
+                &[b"contributor", env.fundraiser.as_ref(), env.payer.pubkey().as_ref()],
+                &fundraiser::id(),
+            )
+            .0,
+        };
+        let ix = campaign.contribute(&env, 1_000_000);
+        send(&mut env.svm, &[ix], &env.payer, &[&env.payer]).unwrap();
+        assert_eq!(token_balance(&env.svm, &campaign.vault), 1_000_000);
+        let cap = target / 10;
+        let ix = campaign.contribute(&env, cap + 1);
+        assert_anchor_error(send(&mut env.svm, &[ix], &env.payer, &[&env.payer]), "ContributionTooBig");
+        let ix = campaign.contribute(&env, cap - 1_000_000);
+        send(&mut env.svm, &[ix], &env.payer, &[&env.payer]).unwrap();
+        let ix = campaign.contribute(&env, 1);
+        assert_anchor_error(send(&mut env.svm, &[ix], &env.payer, &[&env.payer]), "MaximumContributionsReached");
+        assert_eq!(token_balance(&env.svm, &campaign.vault), cap);
+        assert_eq!(token_balance(&env.svm, &contributor_ata), u64::MAX - cap);
+        assert_eq!(read::<Contributor>(&env.svm, &campaign.contributor_account).amount, cap);
+        assert_eq!(read::<Fundraiser>(&env.svm, &env.fundraiser).current_amount, cap);
+    }
+}
