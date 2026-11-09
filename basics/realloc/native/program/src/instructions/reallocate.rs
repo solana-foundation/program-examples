@@ -2,7 +2,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use {
     solana_account_info::{next_account_info, AccountInfo},
     solana_cpi::invoke,
-    solana_program_error::ProgramResult,
+    solana_program_error::{ProgramError, ProgramResult},
     solana_sysvar::{rent::Rent, Sysvar},
 };
 
@@ -14,17 +14,23 @@ pub fn reallocate_without_zero_init(accounts: &[AccountInfo], args: EnhancedAddr
     let payer = next_account_info(accounts_iter)?;
     let system_program = next_account_info(accounts_iter)?;
 
+    if !payer.is_signer {
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+
     let address_info_data = AddressInfo::try_from_slice(&target_account.data.borrow())?;
     let enhanced_address_info_data = EnhancedAddressInfo::from_address_info(address_info_data, args.state, args.zip);
 
     let account_span = borsh::to_vec(&enhanced_address_info_data)?.len();
     let lamports_required = (Rent::get()?).minimum_balance(account_span);
 
-    let diff = lamports_required - target_account.lamports();
-    invoke(
-        &solana_system_interface::instruction::transfer(payer.key, target_account.key, diff),
-        &[payer.clone(), target_account.clone(), system_program.clone()],
-    )?;
+    let rent_shortfall = lamports_required.saturating_sub(target_account.lamports());
+    if rent_shortfall > 0 {
+        invoke(
+            &solana_system_interface::instruction::transfer(payer.key, target_account.key, rent_shortfall),
+            &[payer.clone(), target_account.clone(), system_program.clone()],
+        )?;
+    }
 
     target_account.resize(account_span)?;
 
