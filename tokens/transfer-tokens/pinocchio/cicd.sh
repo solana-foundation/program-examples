@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # This script is for quick building & deploying of the program.
 # It also serves as a reference for the commands used for building & deploying Solana programs.
