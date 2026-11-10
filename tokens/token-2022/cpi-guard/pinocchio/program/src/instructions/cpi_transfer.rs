@@ -29,7 +29,7 @@ const TRANSFER_AMOUNT: u64 = 1;
 ///
 /// Accounts:
 ///   0. `[writable]`         source token account (owned by `authority`)
-///   1. `[]`                 mint account (its `decimals` are read here)
+///   1. `[]`                 mint account (owned by Token-2022; its `decimals` are read here)
 ///   2. `[writable]`         destination token account
 ///   3. `[signer]`           authority (the source account's owner)
 ///   4. `[]`                 Token-2022 program
@@ -39,6 +39,12 @@ pub fn cpi_transfer(accounts: &mut [AccountView]) -> ProgramResult {
     let [source, mint, destination, authority, _token_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
+
+    // Only trust the mint's bytes once Token-2022 is known to own the account;
+    // any program can create an account whose data looks like a mint.
+    if !mint.owned_by(&TOKEN_2022_PROGRAM_ID) {
+        return Err(ProgramError::InvalidAccountOwner);
+    }
 
     // `TransferChecked` requires the decimals to match the mint, so read them
     // straight from the mint account's data.
