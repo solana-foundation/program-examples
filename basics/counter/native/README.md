@@ -15,5 +15,5 @@ in-process `solana-bankrun` runtime — no local validator required.
 
 ```shell
 pnpm build
-pnpm deploy
+pnpm run deploy
 ```
