@@ -6,4 +6,4 @@ set -e
 # Run this bad boy with "bash cicd.sh" or "./cicd.sh"
 
 cargo build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=./program/target/so
-solana program deploy ./program/target/so/*.so
+solana program deploy ./program/target/so/transfer_sol_program.so

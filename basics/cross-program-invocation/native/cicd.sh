@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 # This script is for quick building & deploying of the program.
 # It also serves as a reference for the commands used for building & deploying Solana programs.
@@ -6,6 +7,6 @@
 
 cargo build-sbf --sbf-out-dir=./target/so
 echo "Hand:"
-solana program deploy ./target/so/hand.so | grep "Program Id:"
+solana program deploy ./target/so/cross_program_invocatio_native_hand.so | grep "Program Id:"
 echo "Lever:"
-solana program deploy ./target/so/lever.so | grep "Program Id:"
+solana program deploy ./target/so/cross_program_invocatio_native_lever.so | grep "Program Id:"
