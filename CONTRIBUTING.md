@@ -70,6 +70,8 @@ Specifically for code in this repo:
 test = "cargo test"
 ```
 
+If the tests need mainnet programs or accounts, fetch them into `tests/fixtures/` in that script before `cargo test` (see `tokens/create-token/anchor/Anchor.toml`).
+
 6. TypeScript, JavaScript and JSON files are formatted using
    [Prettier](https://prettier.io/). Execute the following command to format your code at the root of this project before submitting a pull request:
 

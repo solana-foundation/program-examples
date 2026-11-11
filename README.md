@@ -16,7 +16,7 @@ Each folder includes examples for one or more of the following:
 
 - `anchor` - Written using [Anchor](https://www.anchor-lang.com/), the most popular framework for Solana development, which uses Rust.
   Use `anchor build` and `anchor deploy` to build and deploy the program.
-  Tests are Rust LiteSVM tests in `programs/<program>/tests/`: run `anchor build`, then `cargo test`.
+  Tests are Rust LiteSVM tests in `programs/<program>/tests/`. Run `anchor build`, then `anchor test --skip-build --skip-local-validator --skip-deploy`: some examples' `Anchor.toml` test scripts fetch mainnet fixtures before `cargo test`.
 
 - `pinocchio` - Written using [Pinocchio](https://github.com/febo/pinocchio), a zero-copy, zero-allocation library for Solana programs.
   Build and test commands are the same as native examples.
