@@ -22,7 +22,7 @@ const DEFAULT_ACCOUNT_STATE_EXTENSION: u8 = 28;
 const DEFAULT_ACCOUNT_STATE_INITIALIZE: u8 = 0;
 const DEFAULT_ACCOUNT_STATE_UPDATE: u8 = 1;
 
-/// `AccountState` variants — the extension's single-byte payload, mirroring
+/// `AccountState` variants, the extension's single-byte payload, mirroring
 /// `spl_token_2022::state::AccountState`.
 const ACCOUNT_STATE_INITIALIZED: u8 = 1;
 const ACCOUNT_STATE_FROZEN: u8 = 2;
@@ -41,7 +41,7 @@ const ACCOUNT_STATE_FROZEN: u8 = 2;
 /// Accounts:
 ///   0. `[signer, writable]` mint account (a fresh keypair to initialize)
 ///   1. `[]`                 mint authority (also set as the freeze authority)
-///   2. `[signer, writable]` payer (funds the account; signs the update as the freeze authority — same key as the mint authority)
+///   2. `[signer, writable]` payer (funds the account; signs the update as the freeze authority, same key as the mint authority)
 ///   3. `[]`                 rent sysvar
 ///   4. `[]`                 system program
 ///   5. `[]`                 Token-2022 program
@@ -66,7 +66,7 @@ pub fn create_mint(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
         .invoke()?;
 
     // The `DefaultAccountState` extension must be initialized *before* the mint
-    // itself — extensions live in the space past the base mint and Token-2022
+    // itself, extensions live in the space past the base mint and Token-2022
     // rejects initializing them once `InitializeMint` has run.
     log!("Initializing default account state extension (Frozen)");
     let init_state_data = [DEFAULT_ACCOUNT_STATE_EXTENSION, DEFAULT_ACCOUNT_STATE_INITIALIZE, ACCOUNT_STATE_FROZEN];

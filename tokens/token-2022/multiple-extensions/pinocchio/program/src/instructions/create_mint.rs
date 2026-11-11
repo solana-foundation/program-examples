@@ -21,7 +21,7 @@ const INITIALIZE_NON_TRANSFERABLE_MINT: u8 = 32;
 /// Creates a new SPL Token-2022 mint that carries *two* extensions at once:
 /// `MintCloseAuthority` (lets the configured authority later close the mint and
 /// reclaim its rent) and `NonTransferable` (tokens minted from it can never be
-/// moved — every transfer, outside of burning or closing the account, is
+/// moved, every transfer, outside of burning or closing the account, is
 /// rejected by the Token-2022 program).
 ///
 /// Both extensions must be initialized *before* `InitializeMint`: extensions live

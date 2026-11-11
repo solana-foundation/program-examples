@@ -77,7 +77,7 @@ pub fn create_mint(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
         .ok_or(ProgramError::InvalidInstructionData)?;
 
     // The `TransferFeeConfig` extension must be initialized *before* the mint
-    // itself — extensions live in the space past the base mint and Token-2022
+    // itself, extensions live in the space past the base mint and Token-2022
     // rejects initializing them once `InitializeMint` has run.
     log!("Initializing transfer fee config (1%)");
     let init_fee_data = build_initialize_transfer_fee_config_data(payer, INITIAL_FEE_BASIS_POINTS, max_fee);

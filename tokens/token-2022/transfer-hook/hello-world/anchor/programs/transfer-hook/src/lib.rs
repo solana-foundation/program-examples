@@ -54,7 +54,7 @@ pub mod transfer_hook {
 
         // initialize ExtraAccountMetaList account with extra accounts
         // .map_err() needed because spl-tlv-account-resolution uses solana-program-error 2.x
-        // while anchor-lang 1.0 uses 3.x — structurally identical but different semver types
+        // while anchor-lang 1.0 uses 3.x, structurally identical but different semver types
         ExtraAccountMetaList::init::<ExecuteInstruction>(
             &mut ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?,
             &extra_account_metas,
@@ -78,7 +78,7 @@ fn check_is_transferring(ctx: &Context<TransferHook>) -> Result<()> {
     let source_token_info = ctx.accounts.source_token.to_account_info();
     let mut account_data_ref: RefMut<&mut [u8]> = source_token_info.try_borrow_mut_data()?;
     // .map_err() needed because spl-token-2022 uses solana-program-error 2.x
-    // while anchor-lang 1.0 uses 3.x — structurally identical but different semver types
+    // while anchor-lang 1.0 uses 3.x, structurally identical but different semver types
     let mut account = PodStateWithExtensionsMut::<PodAccount>::unpack(*account_data_ref)
         .map_err(|_| ProgramError::InvalidAccountData)?;
     let account_extension = account.get_extension_mut::<TransferHookAccount>()
@@ -116,7 +116,7 @@ impl<'info> Initialize<'info> {
         let mint = &self.mint_account.to_account_info();
         let mint_data = mint.data.borrow();
         // .map_err() needed because spl-token-2022 uses solana-program-error 2.x
-        // while anchor-lang 1.0 uses 3.x — structurally identical but different semver types
+        // while anchor-lang 1.0 uses 3.x, structurally identical but different semver types
         let mint_with_extension = StateWithExtensions::<MintState>::unpack(&mint_data)
             .map_err(|_| ProgramError::InvalidAccountData)?;
         let extension_data = mint_with_extension.get_extension::<TransferHookExtension>()
@@ -149,7 +149,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
         init,
         seeds = [b"extra-account-metas", mint.key().as_ref()],
         bump,
-        // size_of returns Result with spl's ProgramError — unwrap is safe for known-good input
+        // size_of returns Result with spl's ProgramError, unwrap is safe for known-good input
         space = ExtraAccountMetaList::size_of(
             InitializeExtraAccountMetaList::extra_account_metas_count()
         ).unwrap(),

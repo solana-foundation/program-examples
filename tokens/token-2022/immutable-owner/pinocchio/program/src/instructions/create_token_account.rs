@@ -18,7 +18,7 @@ const INITIALIZE_ACCOUNT_3: u8 = 18;
 const INITIALIZE_IMMUTABLE_OWNER: u8 = 22;
 
 /// Creates a new SPL Token-2022 token account that carries the `ImmutableOwner`
-/// extension. Once initialized, the account's owner can never be changed — a
+/// extension. Once initialized, the account's owner can never be changed, a
 /// `SetAuthority(AccountOwner)` on it will always fail.
 ///
 /// Accounts:
@@ -53,7 +53,7 @@ pub fn create_token_account(accounts: &mut [AccountView]) -> ProgramResult {
     .invoke()?;
 
     // `InitializeImmutableOwner` must run *before* the account itself is
-    // initialized — the extension can only be added to an uninitialized account.
+    // initialized, the extension can only be added to an uninitialized account.
     log!("Initializing immutable owner extension");
     let immutable_owner_accounts = [InstructionAccount::writable(token_account.address())];
     invoke(

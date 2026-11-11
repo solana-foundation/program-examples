@@ -1,10 +1,10 @@
 //! The real `settle_pull` → cc-vrf → Light Protocol CPI chain, with genuine
-//! validity proofs — plus the claim and refund paths that depend on a real
+//! validity proofs, plus the claim and refund paths that depend on a real
 //! settle. Complements the LiteSVM suite in `../integration-tests`, which
 //! covers everything that fails before the cc-vrf CPI.
 //!
 //! The ECVRF proof and beta are synthetic bytes: the program never verifies
-//! them on-chain (detection, not prevention — see the program CLAUDE.md), so
+//! them on-chain (detection, not prevention, see the program CLAUDE.md), so
 //! these tests exercise exactly what the chain enforces: the operator's frozen
 //! registry record, one commit per pull, and tier selection from `beta`.
 
@@ -74,7 +74,7 @@ async fn setup(freeze: bool) -> Env {
     // the first u64 of the sysvar data is the effective lamports-per-byte rate
     // (6960). This crate's older runtime (litesvm 0.7 / agave 2.x) still
     // serves the legacy layout, whose first u64 is 3480 with a separate 2.0
-    // exemption threshold — the program would fund PDAs at half the runtime's
+    // exemption threshold, the program would fund PDAs at half the runtime's
     // minimum. Rewriting the sysvar as 6960 x 1.0 makes both readers compute
     // the same (canonical) minimums.
     rpc.context.set_sysvar(&solana_sdk::rent::Rent {
@@ -478,7 +478,7 @@ async fn settle_replay_rejected() {
     assert_gacha_err(&err, gacha::GachaError::PullNotPending);
 
     // The marquee guarantee: even bypassing the gacha program entirely, the
-    // operator cannot commit a second reveal for the same pull — the commit
+    // operator cannot commit a second reveal for the same pull, the commit
     // address (authority, sha256(pull)) already exists in the registry.
     let memo_hash = sha256(pull.as_ref());
     let outcome = try_replay_commit(&mut env.rpc, &env.operator, env.authority_address, memo_hash).await;
@@ -516,7 +516,7 @@ async fn settle_by_unregistered_operator_rejected() {
 
     // A second pool whose operator was never registered in cc-vrf. The settle
     // is signed by that operator and reuses the frozen record of the first
-    // operator — but the program serializes owner/pk from pool state, so the
+    // operator, but the program serializes owner/pk from pool state, so the
     // record hash bound by the proof cannot match.
     let admin2 = Keypair::new();
     let operator2 = Keypair::new();

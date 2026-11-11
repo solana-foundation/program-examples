@@ -18,7 +18,7 @@ const INITIALIZE_MINT: u8 = 0;
 const INITIALIZE_NON_TRANSFERABLE_MINT: u8 = 32;
 
 /// Creates a new SPL Token-2022 mint that carries the `NonTransferable`
-/// extension. Tokens minted from it can never be transferred — every attempt to
+/// extension. Tokens minted from it can never be transferred, every attempt to
 /// move them (outside of burning or closing the account) is rejected by the
 /// Token-2022 program.
 ///
@@ -50,7 +50,7 @@ pub fn create_mint(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
         .invoke()?;
 
     // The `NonTransferable` extension must be initialized *before* the mint
-    // itself — extensions live in the space past the base mint and Token-2022
+    // itself, extensions live in the space past the base mint and Token-2022
     // rejects initializing them once `InitializeMint` has run.
     log!("Initializing non-transferable extension");
     let non_transferable_data = build_initialize_non_transferable_data();

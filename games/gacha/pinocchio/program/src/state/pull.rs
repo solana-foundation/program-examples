@@ -15,10 +15,10 @@ pub const TIER_UNSET: u8 = u8::MAX;
 /// A single pull against a [`Pool`](super::pool::Pool).
 ///
 /// Created at commit with a fixed VRF input `alpha = SHA-256(pull_address ||
-/// client_seed)`, where `client_seed` is buyer-supplied entropy — so the operator
+/// client_seed)`, where `client_seed` is buyer-supplied entropy, so the operator
 /// cannot precompute `beta` for a pull that has not been bought yet. On reveal the
 /// operator supplies `beta`; the program records it, the selected `tier`, and the
-/// `settled_slot`. The 80-byte proof is not stored — it is anchored in the cc-vrf
+/// `settled_slot`. The 80-byte proof is not stored, it is anchored in the cc-vrf
 /// registry and emitted in the settle event for off-chain verification.
 ///
 /// **PDA seeds:** `["pull", pool, buyer, index_le]`

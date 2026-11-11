@@ -22,7 +22,7 @@ pub const MINT_SIZE: usize = 82;
 pub const TOKEN_DECIMALS: u8 = 0;
 
 /// Seed prefix for the program's mint-authority PDA (`[b"authority"]`). The PDA
-/// is never initialized — it exists only to sign the Metaplex CPIs.
+/// is never initialized, it exists only to sign the Metaplex CPIs.
 pub const AUTHORITY_SEED: &[u8] = b"authority";
 
 /// The Metaplex Token Metadata program ID
@@ -137,7 +137,7 @@ pub(crate) fn create_metadata_cpi(
         InstructionAccount::readonly(mint.address()),
         InstructionAccount::readonly_signer(mint_authority.address()),
         InstructionAccount::writable_signer(payer.address()),
-        // Update authority — the same PDA; recorded only, not required to sign.
+        // Update authority, the same PDA; recorded only, not required to sign.
         InstructionAccount::readonly(mint_authority.address()),
         InstructionAccount::readonly(system_program.address()),
     ];

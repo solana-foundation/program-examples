@@ -191,7 +191,7 @@ describe('Token-2022 Immutable Owner (Pinocchio)', () => {
             throw new Error(`Account setup failed: ${createResult.err()}`);
         }
 
-        // Try to reassign the account owner — Token-2022 must reject this because
+        // Try to reassign the account owner, Token-2022 must reject this because
         // the account carries the ImmutableOwner extension.
         const newOwner = await generateKeyPairSigner();
         const setAuthorityTx = pipe(

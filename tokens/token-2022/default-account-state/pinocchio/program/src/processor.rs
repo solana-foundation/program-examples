@@ -6,7 +6,7 @@ use crate::instructions::create_mint;
 /// Entrypoint for the program.
 ///
 /// This example exposes a single instruction (creating a Token-2022 mint with
-/// the `DefaultAccountState` extension), so — like the `create-token` example —
+/// the `DefaultAccountState` extension), so, like the `create-token` example,
 /// there is no leading discriminator byte. The whole instruction data is the
 /// Borsh-encoded `CreateTokenArgs`, matching the wire format of the `native`
 /// version:

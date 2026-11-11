@@ -67,7 +67,7 @@ impl<'a> TryFrom<&'a mut [AccountView]> for WithdrawFeesAccounts<'a> {
 /// [`FeesWithdrawnEvent`].
 ///
 /// The withdrawable amount is capped at the vault balance minus the vault's own
-/// rent floor and minus `pending_pulls * entry_fee` — the fees still owed as
+/// rent floor and minus `pending_pulls * entry_fee`, the fees still owed as
 /// refunds if the operator never settles those pulls. The admin can therefore
 /// only ever take revenue from *settled* pulls, never a pending buyer's escrow.
 pub fn process(accounts: &mut [AccountView], data: &WithdrawFeesData) -> ProgramResult {

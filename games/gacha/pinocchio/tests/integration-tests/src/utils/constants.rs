@@ -4,7 +4,7 @@
 
 use solana_address::Address;
 
-/// The gacha program, as the generated client declares it — so a program-ID
+/// The gacha program, as the generated client declares it, so a program-ID
 /// mismatch between the program and its client fails the whole suite.
 pub const PROGRAM_ID: Address = gacha_client::GACHA_ID;
 

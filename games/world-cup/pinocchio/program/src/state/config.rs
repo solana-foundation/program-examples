@@ -14,7 +14,7 @@ use crate::{
 /// `best_score`/`best_closeness`/`best_index` form the on-chain ranking key: the
 /// highest score, tiebroken by the smallest `|guess - actual_goals|`, and finally by
 /// the smallest submission index (earliest entrant wins). Because the index is unique
-/// per bracket, the key is total — exactly one bracket can match it. The key is only
+/// per bracket, the key is total, exactly one bracket can match it. The key is only
 /// meaningful once the oracle is complete and `refreshed_count == entrant_count`.
 ///
 /// **PDA seeds:** `["config"]`

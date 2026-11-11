@@ -19,7 +19,7 @@ const INITIALIZE_PERMANENT_DELEGATE: u8 = 35;
 
 /// Creates a new SPL Token-2022 mint that carries the `PermanentDelegate`
 /// extension. The configured delegate may `Transfer` or `Burn` any of the
-/// mint's token accounts without the owner's approval — permanently.
+/// mint's token accounts without the owner's approval, permanently.
 ///
 /// Accounts:
 ///   0. `[signer, writable]` mint account (a fresh keypair to initialize)
@@ -52,7 +52,7 @@ pub fn create_mint(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
         .invoke()?;
 
     // The `PermanentDelegate` extension must be initialized *before* the mint
-    // itself — extensions live in the space past the base mint and Token-2022
+    // itself, extensions live in the space past the base mint and Token-2022
     // rejects initializing them once `InitializeMint` has run.
     log!("Initializing permanent delegate extension");
     let permanent_delegate_data = build_initialize_permanent_delegate_data(permanent_delegate);

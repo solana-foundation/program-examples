@@ -1,7 +1,7 @@
 #![no_std]
 
 // The `entrypoint!` macro installs the default (bump) global allocator, so the
-// `alloc` crate is available — we use it to build the variable-length Metaplex
+// `alloc` crate is available, we use it to build the variable-length Metaplex
 // instruction data at runtime.
 extern crate alloc;
 

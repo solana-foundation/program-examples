@@ -6,14 +6,14 @@
 //! call it directly. `settle_pull` invokes `commit_proof_with_beta`, which
 //! anchors the pull's `{memo_hash, proof_hash, alpha_hash, beta}` in the
 //! registry as a Light Protocol compressed account whose address derives from
-//! `(authority, memo_hash)` — committing twice for the same pull fails at the
+//! `(authority, memo_hash)`, committing twice for the same pull fails at the
 //! Light system program, which is what gives each pull exactly one reveal.
 //!
 //! cc-vrf reads everything past its `owner` signer from *remaining accounts*
 //! (the Light Protocol account set), and validates the operator's registered
 //! authority record through a Light validity proof. The record's fields are
 //! hashed into that proof, so this program serializes them from its own pool
-//! state — an operator cannot substitute a different registration.
+//! state, an operator cannot substitute a different registration.
 
 use light_sdk_types::constants as light;
 use pinocchio::{cpi::invoke, instruction::InstructionAccount, instruction::InstructionView, Address, ProgramResult};
@@ -88,7 +88,7 @@ pub const COMMIT_ACCOUNTS_LEN: usize = 11;
 ///
 /// Packed account indices are relative to the tree slice of the remaining
 /// accounts (after the six fixed Light system accounts): authority state tree =
-/// 0, its queue = 1, address tree = 2, output queue = 3 — matching the order in
+/// 0, its queue = 1, address tree = 2, output queue = 3, matching the order in
 /// [`commit_proof_with_beta`].
 #[allow(clippy::too_many_arguments)]
 fn build_commit_data(
@@ -104,7 +104,7 @@ fn build_commit_data(
 
     data[0..8].copy_from_slice(&COMMIT_PROOF_WITH_BETA_DISC);
 
-    // proof: Option<CompressedProof> — always Some for a with-beta commit.
+    // proof: Option<CompressedProof>, always Some for a with-beta commit.
     data[8] = 1;
     data[9..137].copy_from_slice(&ctx.validity_proof);
 

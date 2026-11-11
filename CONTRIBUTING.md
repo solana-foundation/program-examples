@@ -50,7 +50,7 @@ Specifically for code in this repo:
 - Project path structure: `/program-examples/category/example-name/<framework_name>`
     - Project path structure example for anchor: `/program-examples/category/example-name/anchor`
 
-3. Tests for Anchor and Solana native programs should be written with [LiteSVM](https://github.com/LiteSVM/litesvm). Non-Anchor tests use [@solana/kit](https://github.com/anza-xyz/kit) with litesvm 1.x; Anchor tests use [anchor-litesvm](https://www.npmjs.com/package/anchor-litesvm) with @solana/web3.js (until the Anchor JS client moves to kit).
+3. Tests run on [LiteSVM](https://github.com/LiteSVM/litesvm). Non-Anchor tests are TypeScript (mocha via tsx) with [@solana/kit](https://github.com/anza-xyz/kit) and litesvm 1.x. Anchor tests are Rust, in `programs/<program>/tests/*.rs`, on the `litesvm` crate, built from the program's own `instruction`, `accounts` and account types.
 
 4. For Solana native programs ensure adding these mandatory pnpm run scripts to your `package.json` file for successful CI/CD builds:
 
@@ -63,11 +63,11 @@ Specifically for code in this repo:
 },
 ```
 
-5. Test command for Anchor should execute `pnpm test` instead of `yarn run test` for anchor programs. Replace `yarn` with `pnpm` in `[script]` table inside [Anchor.toml file.](https://www.anchor-lang.com/docs/manifest#scripts-required-for-testing)
+5. Anchor projects run their Rust tests through the `[scripts]` table in [Anchor.toml](https://www.anchor-lang.com/docs/manifest#scripts-required-for-testing):
 
 ```
 [scripts]
-test = "pnpm mocha --import=tsx -t 1000000 tests/**/*.ts"
+test = "cargo test"
 ```
 
 6. TypeScript, JavaScript and JSON files are formatted using

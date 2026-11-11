@@ -16,7 +16,7 @@ use pinocchio::{AccountView, Address, ProgramResult};
 
 use crate::errors::GachaError;
 
-/// Event authority PDA — no account data, only used for CPI event emission signing.
+/// Event authority PDA, no account data, only used for CPI event emission signing.
 #[derive(CodamaAccount)]
 #[codama(seed(type = string(utf8), value = "event_authority"))]
 pub struct EventAuthority;

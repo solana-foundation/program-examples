@@ -84,7 +84,7 @@ pub fn create_token(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult 
         InstructionAccount::readonly(mint_account.address()),
         InstructionAccount::readonly_signer(mint_authority.address()),
         InstructionAccount::writable_signer(payer.address()),
-        // Update authority — recorded only, not required to sign for V3.
+        // Update authority, recorded only, not required to sign for V3.
         InstructionAccount::readonly(mint_authority.address()),
         InstructionAccount::readonly(system_program.address()),
     ];

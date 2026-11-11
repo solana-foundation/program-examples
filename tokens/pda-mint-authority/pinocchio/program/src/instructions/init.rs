@@ -12,8 +12,8 @@ use crate::state::MintAuthorityPda;
 /// Creates the mint-authority PDA account and stores its canonical bump.
 ///
 /// The PDA (`[b"mint_authority"]`) becomes the mint and freeze authority for
-/// every token minted by this program, so a single program-owned address — not
-/// any wallet — controls minting.
+/// every token minted by this program, so a single program-owned address, not
+/// any wallet, controls minting.
 ///
 /// Accounts:
 ///   0. `[writable]`         mint authority PDA (created here)

@@ -130,7 +130,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
         init,
         seeds = [b"extra-account-metas", mint.key().as_ref()],
         bump,
-        // size_of returns Result with spl's ProgramError — unwrap is safe for known-good input
+        // size_of returns Result with spl's ProgramError, unwrap is safe for known-good input
         space = ExtraAccountMetaList::size_of(
             InitializeExtraAccountMetaList::extra_account_metas_count()
         ).unwrap(),
@@ -224,7 +224,7 @@ impl<'info> InitializeExtraAccountMetaList<'info> {
 // Box<InterfaceAccount> used for source_token, destination_token, wsol_mint,
 // delegate_wsol_token_account, and sender_wsol_token_account to avoid exceeding
 // the 4096-byte BPF stack frame limit in try_accounts deserialization.
-// This struct has 12 accounts — without Box, the generated code uses ~4160 bytes of stack.
+// This struct has 12 accounts, without Box, the generated code uses ~4160 bytes of stack.
 #[derive(Accounts)]
 pub struct TransferHook<'info> {
     #[account(token::mint = mint, token::authority = owner)]

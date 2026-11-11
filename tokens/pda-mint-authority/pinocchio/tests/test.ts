@@ -211,7 +211,7 @@ describe('PDA Mint Authority (Pinocchio)', () => {
         assert.equal(amount, 1n);
 
         // The master edition account exists and is owned by the Token Metadata
-        // program — proof the CreateMasterEditionV3 CPI (signed by the PDA) succeeded.
+        // program, proof the CreateMasterEditionV3 CPI (signed by the PDA) succeeded.
         const editionAccount = svm.getAccount(editionAddress);
         if (!editionAccount?.exists) throw new Error('Master edition account not found');
         assert.equal(editionAccount.programAddress, TOKEN_METADATA_PROGRAM_ID);

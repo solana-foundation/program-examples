@@ -12,7 +12,7 @@ use anchor_spl::{
     token::Mint, 
     metadata::Metadata, 
 };
-// In Anchor 1.0, sysvar::instructions::ID moved — use the well-known address directly
+// In Anchor 1.0, sysvar::instructions::ID moved, use the well-known address directly
 const INSTRUCTIONS_SYSVAR_ID: Pubkey = anchor_lang::solana_program::pubkey::pubkey!("Sysvar1nstructions1111111111111111111111111");
 
 #[derive(Accounts)]

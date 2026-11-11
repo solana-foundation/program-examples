@@ -272,7 +272,7 @@ pub enum ReplayOutcome {
     BlockedAtProofGeneration,
     /// The transaction was rejected on-chain (batched address queue duplicate).
     BlockedOnChain,
-    /// The commit landed — the registry failed to enforce one reveal per memo.
+    /// The commit landed, the registry failed to enforce one reveal per memo.
     Landed,
 }
 

@@ -31,7 +31,7 @@ pub const NFT_URI: &str = "https://example.com/gacha.json";
 /// Derives a pull's VRF input: `SHA-256(pull_address || client_seed)`.
 ///
 /// Binding the buyer's `client_seed` makes `alpha` unpredictable to the operator
-/// before the buy transaction lands — a *fixed* alpha (like the pull address
+/// before the buy transaction lands, a *fixed* alpha (like the pull address
 /// alone) is not enough, because `beta = VRF(operator_key, alpha)` is
 /// deterministic and an operator who can predict alpha can precompute every
 /// outcome. Hashing in the pull address makes alpha unique per pull even if a
@@ -46,7 +46,7 @@ pub fn derive_alpha(pull: &Address, client_seed: &[u8; 32]) -> [u8; 32] {
 /// The first 16 bytes of `beta` are read as a little-endian `u128` and reduced
 /// modulo the total weight; the resulting target walks the tiers in order. The
 /// weights never change after init, so every pull faces identical odds and the
-/// outcome depends only on `beta` — never on how many other pulls exist or the
+/// outcome depends only on `beta`, never on how many other pulls exist or the
 /// order in which the operator settles them.
 pub fn select_tier(beta: &[u8; 64], weights: &[u32; MAX_TIERS], tier_count: u8) -> Result<u8, GachaError> {
     let count = (tier_count as usize).min(MAX_TIERS);

@@ -48,7 +48,7 @@ impl SettlePullData {
 /// Validated accounts for [`SettlePull`](crate::GachaInstruction::SettlePull).
 ///
 /// The Light passthrough accounts are forwarded opaquely to the cc-vrf CPI,
-/// which — together with the Light system program — validates them and rejects
+/// which, together with the Light system program, validates them and rejects
 /// any address tree other than the canonical one. Only the CPI target itself is
 /// pinned during account validation, so a settle cannot be redirected at an
 /// impostor program.
@@ -119,7 +119,7 @@ impl<'a> TryFrom<&'a mut [AccountView]> for SettlePullAccounts<'a> {
 ///
 /// The registry commit's address derives from the operator's authority record
 /// and `memo_hash = SHA-256(pull_address)`, so each pull can be committed at
-/// most once — an operator cannot re-roll a reveal even before this program's
+/// most once, an operator cannot re-roll a reveal even before this program's
 /// own status check. The commit also proves (via Light validity proof) that the
 /// operator's registration is frozen and unrevoked, and that its ECVRF key is
 /// exactly `pool.operator`.

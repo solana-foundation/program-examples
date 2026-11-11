@@ -9,7 +9,7 @@ pnpm build-and-test
 ```
 
 This builds the program with `cargo build-sbf` and runs the tests against an
-in-process `solana-bankrun` runtime — no local validator required.
+in-process LiteSVM runtime, with no local validator required.
 
 ## Deploy
 
