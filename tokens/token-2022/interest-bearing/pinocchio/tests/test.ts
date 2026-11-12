@@ -59,7 +59,7 @@ describe('Token-2022 Interest Bearing (Pinocchio)', () => {
                 { address: mint.address, role: AccountRole.WRITABLE_SIGNER as const, signer: mint }, // mint account
                 // The mint authority doubles as the freeze authority. It is the same
                 // key as the payer, which is also the rate authority and signs the
-                // post-init rate update — so one signature covers all of it.
+                // post-init rate update, so one signature covers all of it.
                 { address: payer.address, role: AccountRole.READONLY }, // mint authority
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER as const, signer: payer }, // payer
                 { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // rent sysvar
@@ -103,7 +103,7 @@ describe('Token-2022 Interest Bearing (Pinocchio)', () => {
         // The payer was stored as the rate authority.
         assert.equal(interestBearingExtension.rateAuthority, payer.address);
 
-        // The program initializes the rate to 0%, then updates it to 1% (100 bp) —
+        // The program initializes the rate to 0%, then updates it to 1% (100 bp),
         // so the current rate is the 1% one.
         assert.equal(interestBearingExtension.currentRate, 100);
 

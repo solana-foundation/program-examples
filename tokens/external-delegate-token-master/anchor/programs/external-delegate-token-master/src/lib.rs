@@ -178,7 +178,7 @@ fn verify_ethereum_signature(ethereum_address: &[u8; 20], digest: &[u8; 32], sig
     sig.copy_from_slice(&signature[..64]);
 
     if let Ok(pubkey) = secp256k1_recover(digest, recovery_id, &sig) {
-        // `to_bytes()` already returns the bare 64-byte X||Y with no 0x04 prefix — do not slice.
+        // `to_bytes()` already returns the bare 64-byte X||Y with no 0x04 prefix, do not slice.
         let pubkey_bytes = pubkey.to_bytes();
         let mut recovered_address = [0u8; 20];
         recovered_address.copy_from_slice(&keccak256(&pubkey_bytes[..])[12..]);

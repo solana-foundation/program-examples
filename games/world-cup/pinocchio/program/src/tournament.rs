@@ -3,7 +3,7 @@
 //! Runtime-independent and `no_std`-friendly so it can be unit-tested on the host.
 //! The bracket is a perfect binary tree stored leaves-first (Round of 32 at indices
 //! `0..=15`), plus a third-place playoff at index `31` contested by the two semifinal
-//! losers. Real-world team names are a client concern — on-chain a team is just a
+//! losers. Real-world team names are a client concern, on-chain a team is just a
 //! positional id `0..32`.
 
 use crate::WorldCupError;

@@ -2,7 +2,7 @@
 
 use codama::CodamaAccount;
 
-/// The pot vault — a program-owned, zero-data PDA that escrows pooled entry
+/// The pot vault, a program-owned, zero-data PDA that escrows pooled entry
 /// lamports. It carries no account data; this marker exists only so the generated
 /// client can derive its address.
 ///

@@ -11,7 +11,7 @@ mod tests {
     #[test]
     fn test_create_account() {
         let program_id = Pubkey::new_unique();
-        let program_bytes = include_bytes!("../deploy/create-account-asm-program.so");
+        let program_bytes = include_bytes!("../tests/fixtures/create-account-asm-program.so");
 
         let payer = Keypair::new();
         let new_keypair = Keypair::new();

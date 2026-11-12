@@ -60,7 +60,7 @@ pub fn transfer_tokens(accounts: &[AccountInfo], args: TransferTokensArgs) -> Pr
             from_associated_token_account.key,
             to_associated_token_account.key,
             owner.key,
-            // Empty: `owner` is a single signer, not a multisig — a non-empty
+            // Empty: `owner` is a single signer, not a multisig, a non-empty
             // list here wrongly required the recipient to also sign.
             &[],
             args.quantity,

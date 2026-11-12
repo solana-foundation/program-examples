@@ -58,7 +58,7 @@ impl<'info> TransferHook<'info> {
         let source_token_info = self.source_token_account.to_account_info();
         let mut account_data_ref = source_token_info.try_borrow_mut_data()?;
         // .map_err() needed because spl-token-2022 uses solana-program-error 2.x
-        // while anchor-lang 1.0 uses 3.x — structurally identical but different semver types
+        // while anchor-lang 1.0 uses 3.x, structurally identical but different semver types
         let mut account = PodStateWithExtensionsMut::<PodAccount>::unpack(*account_data_ref)
             .map_err(|_| ProgramError::InvalidAccountData)?;
         let account_extension = account.get_extension_mut::<TransferHookAccount>()

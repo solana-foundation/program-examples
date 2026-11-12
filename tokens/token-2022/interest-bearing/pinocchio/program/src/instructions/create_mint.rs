@@ -67,7 +67,7 @@ pub fn create_mint(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
         .invoke()?;
 
     // The `InterestBearingConfig` extension must be initialized *before* the mint
-    // itself — extensions live in the space past the base mint and Token-2022
+    // itself, extensions live in the space past the base mint and Token-2022
     // rejects initializing them once `InitializeMint` has run.
     log!("Initializing interest bearing config (0%)");
     let init_rate_data = build_initialize_interest_bearing_data(payer, INITIAL_RATE);

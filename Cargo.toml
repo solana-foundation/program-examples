@@ -86,7 +86,6 @@ overflow-checks = true
 
 # misc
 borsh = "1.8.1"
-borsh-derive = "1.8.1"
 
 
 # spl

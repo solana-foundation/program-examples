@@ -60,7 +60,7 @@ describe('Token-2022 Transfer Fee (Pinocchio)', () => {
                 { address: mint.address, role: AccountRole.WRITABLE_SIGNER as const, signer: mint }, // mint account
                 // The mint authority doubles as the freeze authority. It is the same key
                 // as the payer, which is also the transfer-fee config/withdraw authority
-                // and signs the post-init fee update — so one signature covers all of it.
+                // and signs the post-init fee update, so one signature covers all of it.
                 { address: payer.address, role: AccountRole.READONLY }, // mint authority
                 { address: payer.address, role: AccountRole.WRITABLE_SIGNER as const, signer: payer }, // payer
                 { address: SYSVAR_RENT_ADDRESS, role: AccountRole.READONLY }, // rent sysvar
@@ -106,7 +106,7 @@ describe('Token-2022 Transfer Fee (Pinocchio)', () => {
         assert.equal(transferFeeExtension.withdrawWithheldAuthority, payer.address);
 
         // The program initializes the fee to 1% (100 bp), then updates it to 10%
-        // (1000 bp) — so the newer (current) transfer fee is the 10% one.
+        // (1000 bp), so the newer (current) transfer fee is the 10% one.
         assert.equal(transferFeeExtension.newerTransferFee.transferFeeBasisPoints, 1000);
         assert.equal(transferFeeExtension.newerTransferFee.maximumFee, expectedMaxFee);
 

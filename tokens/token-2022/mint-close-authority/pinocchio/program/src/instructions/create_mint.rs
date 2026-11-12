@@ -51,7 +51,7 @@ pub fn create_mint(accounts: &mut [AccountView], data: &[u8]) -> ProgramResult {
         .invoke()?;
 
     // The `MintCloseAuthority` extension must be initialized *before* the mint
-    // itself — extensions live in the space past the base mint and Token-2022
+    // itself, extensions live in the space past the base mint and Token-2022
     // rejects initializing them once `InitializeMint` has run.
     log!("Initializing mint close authority extension");
     let close_authority_data = build_initialize_close_authority_data(close_authority);

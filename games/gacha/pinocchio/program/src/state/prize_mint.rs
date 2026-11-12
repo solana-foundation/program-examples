@@ -2,7 +2,7 @@
 
 use codama::CodamaAccount;
 
-/// The prize mint — a Token-2022 mint created by `claim_prize`, one per settled
+/// The prize mint, a Token-2022 mint created by `claim_prize`, one per settled
 /// pull. It is owned by the Token-2022 program, not this program; this marker
 /// exists only so the generated client can derive its address.
 ///

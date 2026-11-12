@@ -105,7 +105,7 @@ describe('Token-2022 Default Account State (Pinocchio)', () => {
         }
 
         // The program initializes the default state to `Frozen`, then updates it to
-        // `Initialized` — so the final stored default is `Initialized`.
+        // `Initialized`, so the final stored default is `Initialized`.
         assert.equal(defaultStateExtension.state, AccountState.Initialized);
 
         console.log('Mint address:', mint.address);

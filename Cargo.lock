@@ -19,7 +19,6 @@ name = "account-data-native-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -1039,7 +1038,6 @@ name = "close-account-native-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -1138,7 +1136,6 @@ name = "counter-solana-native"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-instruction 3.5.1",
@@ -1281,7 +1278,6 @@ name = "create-token-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-instruction 3.5.1",
@@ -1718,7 +1714,6 @@ name = "favorites-native"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -2548,7 +2543,6 @@ name = "pda-mint-authority-native-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-instruction 3.5.1",
@@ -2609,7 +2603,6 @@ name = "pda-rent-payer-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -2820,7 +2813,6 @@ name = "processing-instructions-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-instruction 3.5.1",
@@ -2838,7 +2830,6 @@ name = "program-derived-addresses-native-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -3034,7 +3025,6 @@ name = "realloc-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -3106,7 +3096,6 @@ name = "repository-layout-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-instruction 3.5.1",
@@ -5626,7 +5615,6 @@ name = "token-2022-default-account-state-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-msg",
@@ -5672,7 +5660,6 @@ name = "token-2022-mint-close-authority-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-msg",
@@ -5698,7 +5685,6 @@ name = "token-2022-multiple-extensions-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-msg",
@@ -5724,7 +5710,6 @@ name = "token-2022-non-transferable-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-msg",
@@ -5759,7 +5744,6 @@ name = "token-2022-transfer-fees-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-msg",
@@ -5865,7 +5849,6 @@ name = "transfer-sol-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "litesvm",
  "solana-account-info",
  "solana-cpi",
@@ -5895,7 +5878,6 @@ name = "transfer-tokens-program"
 version = "0.1.0"
 dependencies = [
  "borsh",
- "borsh-derive",
  "solana-account-info",
  "solana-cpi",
  "solana-instruction 3.5.1",

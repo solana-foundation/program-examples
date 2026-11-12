@@ -59,7 +59,7 @@ fn finalize_with_a_non_winning_bracket_fails() {
     refresh_score(&mut litesvm, &cranker, &winner.pubkey()).assert_ok();
     refresh_score(&mut litesvm, &cranker, &runner_up.pubkey()).assert_ok();
 
-    // runner_up scored 80, the best is 88 — cannot be finalized as the winner.
+    // runner_up scored 80, the best is 88, cannot be finalized as the winner.
     finalize(&mut litesvm, &admin, &runner_up.pubkey()).assert_err(WorldCupError::BracketNotBest);
 }
 

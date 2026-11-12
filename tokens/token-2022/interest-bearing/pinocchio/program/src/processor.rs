@@ -6,8 +6,8 @@ use crate::instructions::create_mint;
 /// Entrypoint for the program.
 ///
 /// This example exposes a single instruction (creating a Token-2022 mint with
-/// the `InterestBearingConfig` extension), so — like the `create-token` example
-/// — there is no leading discriminator byte. The whole instruction data is the
+/// the `InterestBearingConfig` extension), so, like the `create-token` example,
+/// there is no leading discriminator byte. The whole instruction data is the
 /// Borsh-encoded `CreateTokenArgs`:
 ///
 /// `[token_decimals: u8]`

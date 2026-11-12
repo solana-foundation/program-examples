@@ -84,7 +84,7 @@ pub fn chalk_bracket() -> [u8; 32] {
 }
 
 /// A valid bracket identical to chalk except the third-place pick is the *other*
-/// semifinal loser — so against a chalk oracle it loses exactly the third-place game.
+/// semifinal loser, so against a chalk oracle it loses exactly the third-place game.
 pub fn chalk_bracket_wrong_third() -> [u8; 32] {
     let mut p = chalk_bracket();
     let (l0, l1) = third_place_slots(&p);

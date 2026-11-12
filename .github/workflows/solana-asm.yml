@@ -163,9 +163,9 @@ jobs:
             fi
 
           # Run Rust unit tests
-            if [ -f "program/Cargo.toml" ]; then
+            if [ -f "Cargo.toml" ]; then
               echo "Running Rust unit tests for $project"
-              if ! cargo test --manifest-path=./program/Cargo.toml; then
+              if ! cargo test --manifest-path=./Cargo.toml; then
                 echo "::error::Rust unit tests failed for $project"
                 echo "$project: Rust unit tests failed with $solana_version" >> $GITHUB_WORKSPACE/failed_projects.txt
                 cd - > /dev/null

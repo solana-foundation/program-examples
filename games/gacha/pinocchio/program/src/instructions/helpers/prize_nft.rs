@@ -154,7 +154,7 @@ fn initialize_metadata(
     data.extend_from_slice(&(NFT_URI.len() as u32).to_le_bytes());
     data.extend_from_slice(NFT_URI.as_bytes());
 
-    // Accounts: metadata, update authority, mint, mint authority — the metadata
+    // Accounts: metadata, update authority, mint, mint authority, the metadata
     // lives in the mint itself and the pool PDA is both authorities.
     let pool_address = accounts.pool.address();
     let metas = [

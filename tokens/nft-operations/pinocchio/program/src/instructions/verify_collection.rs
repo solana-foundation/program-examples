@@ -10,7 +10,7 @@ use crate::instructions::{build_verify_collection_data, AUTHORITY_SEED, TOKEN_ME
 
 /// Verifies an NFT as a member of its collection via the Metaplex `Verify`
 /// instruction (`VerificationArgs::CollectionV1`), signed by the collection's
-/// update authority — the program's `[b"authority"]` PDA.
+/// update authority, the program's `[b"authority"]` PDA.
 ///
 /// Accounts:
 ///   0. `[signer, writable]` payer (transaction fee payer)

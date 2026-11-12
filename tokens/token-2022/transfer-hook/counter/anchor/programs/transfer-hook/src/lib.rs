@@ -45,7 +45,7 @@ pub mod transfer_hook {
 
         // initialize ExtraAccountMetaList account with extra accounts
         // .map_err() needed because spl-tlv-account-resolution uses solana-program-error 2.x
-        // while anchor-lang 1.0 uses 3.x — structurally identical but different semver types
+        // while anchor-lang 1.0 uses 3.x, structurally identical but different semver types
         ExtraAccountMetaList::init::<ExecuteInstruction>(
             &mut ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?,
             &extra_account_metas,
@@ -102,7 +102,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
         init,
         seeds = [b"extra-account-metas", mint.key().as_ref()],
         bump,
-        // size_of returns Result with spl's ProgramError — unwrap is safe for known-good input
+        // size_of returns Result with spl's ProgramError, unwrap is safe for known-good input
         space = ExtraAccountMetaList::size_of(
             InitializeExtraAccountMetaList::extra_account_metas_count()
         ).unwrap(),
@@ -121,7 +121,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
 impl<'info> InitializeExtraAccountMetaList<'info> {
     pub fn extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
         // .map_err() needed because spl-tlv-account-resolution uses solana-program-error 2.x
-        // while anchor-lang 1.0 uses 3.x — structurally identical but different semver types
+        // while anchor-lang 1.0 uses 3.x, structurally identical but different semver types
         Ok(vec![ExtraAccountMeta::new_with_seeds(
             &[Seed::Literal {
                 bytes: b"counter".to_vec(),

@@ -30,6 +30,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
 
 packages:
 
@@ -1919,7 +1922,6 @@ snapshots:
       '@typescript/typescript-sunos-x64': 7.0.2
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
-    optional: true
 
   undici-types@8.12.3: {}
 

@@ -49,7 +49,7 @@ impl<'a> TryFrom<&'a mut [AccountView]> for RefundPullAccounts<'a> {
 /// entry fee moves back from the vault to the buyer, the pull account closes
 /// (returning its rent to the buyer), and a [`PullRefundedEvent`] is emitted.
 ///
-/// This is the liveness escape hatch of the commit-reveal scheme — an operator
+/// This is the liveness escape hatch of the commit-reveal scheme, an operator
 /// who withholds a reveal (for example after seeing an unfavorable `beta`) can
 /// delay a payout, but can never keep the buyer's funds. A refunded pull can
 /// never be re-created: pull PDAs are seeded by a monotonic pool index.
