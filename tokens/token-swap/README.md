@@ -218,9 +218,7 @@ This code ensures that the amounts of tokens A and B being deposited are provide
 
 https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L63-L77
 
-This code calculates the amount of liquidity that is about to be deposited into the pool. It calculates the square root of the product of **`amount_a`** and **`amount_b`**, using fixed-point arithmetic to ensure precision.
-
-If this is the first deposit (pool creation), the function checks if the calculated liquidity is greater than the **`MINIMUM_LIQUIDITY`** constant (a minimum liquidity required for the pool). If it's not, the function returns an error to indicate that the deposit is too small. Additionally, it subtracts the **`MINIMUM_LIQUIDITY`** from the calculated liquidity to lock it as the initial liquidity.
+For the first deposit, the program uses the square root of `amount_a * amount_b` and subtracts `MINIMUM_LIQUIDITY`, which remains locked. Later deposits receive shares proportional to the existing reserves and effective LP supply (the minted supply plus the locked minimum). The program rounds down and uses the smaller share calculated from the two deposited amounts, so rounding cannot dilute existing providers. A deposit that would mint no shares is rejected.
 
 https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L79-L101
 
