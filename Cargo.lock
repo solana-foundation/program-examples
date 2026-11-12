@@ -1142,6 +1142,7 @@ dependencies = [
  "litesvm",
  "solana-account-info",
  "solana-instruction 3.5.1",
+ "solana-instruction-error 2.5.0",
  "solana-keypair",
  "solana-msg",
  "solana-native-token",
@@ -1151,6 +1152,7 @@ dependencies = [
  "solana-rent 4.4.0",
  "solana-system-interface 3.3.0",
  "solana-transaction",
+ "solana-transaction-error",
 ]
 
 [[package]]
@@ -1162,12 +1164,14 @@ dependencies = [
  "pinocchio-log",
  "solana-address 2.7.0",
  "solana-instruction 3.5.1",
+ "solana-instruction-error 2.5.0",
  "solana-keypair",
  "solana-native-token",
  "solana-pubkey 4.3.0",
  "solana-rent 4.4.0",
  "solana-system-interface 3.3.0",
  "solana-transaction",
+ "solana-transaction-error",
 ]
 
 [[package]]

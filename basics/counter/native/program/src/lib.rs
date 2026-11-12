@@ -18,17 +18,13 @@ use solana_program_entrypoint::entrypoint;
 entrypoint!(process_instruction);
 
 pub fn process_instruction(_program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8]) -> ProgramResult {
-    let (instruction_discriminant, instruction_data_inner) = instruction_data.split_at(1);
-    match instruction_discriminant[0] {
-        0 => {
+    match instruction_data.split_first() {
+        Some((&0, instruction_data_inner)) => {
             msg!("Instruction: Increment");
-            process_increment_counter(accounts, instruction_data_inner)?;
+            process_increment_counter(accounts, instruction_data_inner)
         }
-        _ => {
-            msg!("Error: unknown instruction")
-        }
+        _ => Err(ProgramError::InvalidInstructionData),
     }
-    Ok(())
 }
 
 pub fn process_increment_counter(accounts: &[AccountInfo], _instruction_data: &[u8]) -> Result<(), ProgramError> {

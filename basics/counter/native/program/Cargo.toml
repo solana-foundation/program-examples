@@ -33,5 +33,7 @@ solana-keypair.workspace = true
 solana-native-token.workspace = true
 solana-pubkey.workspace = true
 solana-transaction.workspace = true
+solana-instruction-error.workspace = true
+solana-transaction-error.workspace = true
 solana-rent.workspace = true
 solana-system-interface.workspace = true
