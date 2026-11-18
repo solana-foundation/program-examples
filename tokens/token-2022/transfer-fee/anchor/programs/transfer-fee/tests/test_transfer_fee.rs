@@ -1,6 +1,7 @@
 use {
     anchor_lang::{
         solana_program::{
+            clock::Clock,
             instruction::{AccountMeta, Instruction},
             pubkey::Pubkey,
             system_program,
@@ -104,8 +105,13 @@ fn transfer_harvest_withdraw_and_update_fee() {
     );
     send(&mut svm, &[initialize], &payer, &[&payer, &mint]);
     let config = fee_config(&svm, &mint.pubkey());
+    assert_eq!(Option::<Pubkey>::from(config.transfer_fee_config_authority), Some(payer.pubkey()));
+    assert_eq!(Option::<Pubkey>::from(config.withdraw_withheld_authority), Some(payer.pubkey()));
+    assert_eq!(u64::from(config.withheld_amount), 0);
     assert_eq!(u16::from(config.newer_transfer_fee.transfer_fee_basis_points), 100);
     assert_eq!(u64::from(config.newer_transfer_fee.maximum_fee), 1);
+    assert_eq!(u16::from(config.older_transfer_fee.transfer_fee_basis_points), 100);
+    assert_eq!(u64::from(config.older_transfer_fee.maximum_fee), 1);
 
     let mint_tokens = [
         create_associated_token_account(&payer.pubkey(), &payer.pubkey(), &mint.pubkey(), &spl_token_2022::ID),
@@ -167,9 +173,13 @@ fn transfer_harvest_withdraw_and_update_fee() {
         }
         .to_account_metas(None),
     );
+    let epoch = svm.get_sysvar::<Clock>().epoch;
     send(&mut svm, &[update_fee], &payer, &[&payer]);
+    // The new fee is scheduled two epochs out; the old one stays in force until then.
     let config = fee_config(&svm, &mint.pubkey());
     assert_eq!(u16::from(config.newer_transfer_fee.transfer_fee_basis_points), 0);
     assert_eq!(u64::from(config.newer_transfer_fee.maximum_fee), 0);
+    assert_eq!(u64::from(config.newer_transfer_fee.epoch), epoch + 2);
     assert_eq!(u16::from(config.older_transfer_fee.transfer_fee_basis_points), 100);
+    assert_eq!(u64::from(config.older_transfer_fee.maximum_fee), 1);
 }
