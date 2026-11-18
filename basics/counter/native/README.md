@@ -15,5 +15,5 @@ in-process LiteSVM runtime, with no local validator required.
 
 ```shell
 pnpm build
-pnpm deploy
+pnpm run deploy
 ```
