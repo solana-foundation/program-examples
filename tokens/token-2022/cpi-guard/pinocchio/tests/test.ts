@@ -32,6 +32,9 @@ const TOKEN_ACCOUNT_SIZE = 165n;
 //   base account length (165) + account-type byte (1) + CpiGuard TLV (5) = 171
 // The CpiGuard value is a single `bool` (`lock_cpi`).
 const CPI_GUARD_ACCOUNT_SIZE = 171n;
+// Token-2022's `TokenError::CpiGuardTransferBlocked`, returned as `Custom(42)`
+// when CpiGuard rejects an owner-authorized transfer made through a CPI.
+const CPI_GUARD_TRANSFER_BLOCKED = 42;
 
 // The compiled program artifact, produced by `build-and-test` into ./fixtures.
 // The npm scripts always run from the package root, so resolve from the cwd.
@@ -182,6 +185,12 @@ describe('Token-2022 CPI Guard (Pinocchio)', () => {
         );
         const blockedResult = svm.sendTransaction(await signTransactionMessageWithSigners(blockedTx));
         assert.instanceOf(blockedResult, FailedTransactionMetadata, 'expected the guarded CPI transfer to be rejected');
+        // Rejected by CpiGuard specifically, not by some other failure: the
+        // example's instruction (index 0) fails with Token-2022's error code.
+        assert.equal(
+            blockedResult.err().toString(),
+            `TransactionErrorInstructionError { index: 0, error: InstructionErrorCustom { code: ${CPI_GUARD_TRANSFER_BLOCKED} } }`,
+        );
 
         // Disable CpiGuard, then the same CPI transfer succeeds.
         const disableTx = pipe(
