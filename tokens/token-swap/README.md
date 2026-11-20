@@ -200,7 +200,7 @@ TLDR, this code defines the accounts instruction structure for the **`create_poo
 
 3.3 **deposite liquidity**
 
-https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L1-L30
+https://github.com/solana-foundation/program-examples/blob/64c3da9173fe1c14038525d4fbbae8623943d9b2/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L13-L24
 
 The above code defines a function named **`deposit_liquidity`** that allows depositing liquidity into the pool. It takes three parameters:
 
@@ -212,19 +212,19 @@ The function does the following:
 
 - It checks if the depositor has enough tokens for each type (A and B) before depositing and restricts the amounts to the available balances using the **`if`** conditions.
 
-https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L32-L61
+https://github.com/solana-foundation/program-examples/blob/64c3da9173fe1c14038525d4fbbae8623943d9b2/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L26-L61
 
-This code ensures that the amounts of tokens A and B being deposited are provided in the same proportion as the existing liquidity in the pool. If this is the first deposit (pool creation), the amounts are added as is. Otherwise, the function calculates the ratio of the existing liquidity (pool_a.amount and pool_b.amount) and adjusts the amounts being deposited accordingly.
+This code ensures that the amounts of tokens A and B being deposited are provided in the same proportion as the existing liquidity in the pool. If this is the first deposit (pool creation), the amounts are added as is. Otherwise, the function calculates the ratio of the existing liquidity (pool_a.amount and pool_b.amount) and adjusts the amounts being deposited accordingly. If only one reserve has tokens, the deposit fails with `InvalidPoolState`.
 
-https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L63-L77
+https://github.com/solana-foundation/program-examples/blob/64c3da9173fe1c14038525d4fbbae8623943d9b2/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L63-L83
 
 For the first deposit, the program uses the square root of `amount_a * amount_b` and subtracts `MINIMUM_LIQUIDITY`, which remains locked. Later deposits receive shares proportional to the existing reserves and effective LP supply (the minted supply plus the locked minimum). The program rounds down and uses the smaller share calculated from the two deposited amounts, so rounding cannot dilute existing providers. A deposit that would mint no shares is rejected.
 
-https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L79-L101
+https://github.com/solana-foundation/program-examples/blob/64c3da9173fe1c14038525d4fbbae8623943d9b2/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L85-L107
 
 This code uses the token::transfer function from the Anchor SPL token crate to transfer the deposited amounts of tokens A and B from the depositor's accounts (depositor_account_a and depositor_account_b, respectively) to the pool's accounts (pool_account_a and pool_account_b, respectively). It does this through cross-program invocation (CPI) using the token program, and the authority for the transfer is the depositor.
 
-https://github.com/solana-developers/program-examples/blob/419cb6b6c20e8b1c65711b68a4dde2527725cc1a/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L102-L124
+https://github.com/solana-foundation/program-examples/blob/64c3da9173fe1c14038525d4fbbae8623943d9b2/tokens/token-swap/anchor/programs/token-swap/src/instructions/deposit_liquidity.rs#L109-L130
 
 This code uses the **`token::mint_to`** function from the Anchor SPL token crate to mint the liquidity tokens to the depositor. It does this through cross-program invocation (CPI) using the token program. The minting is authorized by the pool authority (**`pool_authority`**).
 
