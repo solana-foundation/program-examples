@@ -3,8 +3,8 @@
   "scripts": {
     "test": "mocha --import=tsx -t 1000000 ./tests/test.ts",
     "build-and-test": "cargo build-sbf --sbf-out-dir=./tests/fixtures --manifest-path=programs/lever/Cargo.toml && cargo build-sbf --sbf-out-dir=./tests/fixtures --manifest-path=programs/hand/Cargo.toml && pnpm test",
-    "build": "cargo build-sbf --sbf-out-dir=./program/target/so",
-    "deploy": "solana program deploy ./program/target/so/program.so"
+    "build": "cargo build-sbf --sbf-out-dir=./target/so",
+    "deploy": "solana program deploy ./target/so/cross_program_invocatio_native_hand.so && solana program deploy ./target/so/cross_program_invocatio_native_lever.so"
   },
   "dependencies": {
     "@solana/kit": "^8.5.0",
