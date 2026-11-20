@@ -6,12 +6,12 @@ edition = "2021"
 [dependencies]
 block-list-client = { workspace = true }
 clap = { version = "3", features = ["cargo"] }
-solana-clap-v3-utils = { version = "4.3.2", features = ["agave-unstable-api"] }
-solana-cli-config = { version = "4.3.2", features = ["agave-unstable-api"] }
+solana-clap-v3-utils = { version = "~4.3.2", features = ["agave-unstable-api"] }
+solana-cli-config = { version = "~4.3.2", features = ["agave-unstable-api"] }
 solana-commitment-config = "3.1.1"
-solana-client = { version = "4.3.2", features = ["agave-unstable-api"] }
+solana-client = { version = "~4.3.2", features = ["agave-unstable-api"] }
 solana-logger = "3.0.0"
-solana-remote-wallet = { version = "4.3.2", default-features = false, features = ["agave-unstable-api"] }
+solana-remote-wallet = { version = "~4.3.2", default-features = false, features = ["agave-unstable-api"] }
 solana-sdk = "4.1.0"
 spl-tlv-account-resolution = "0.11.4"
 spl-transfer-hook-interface = "2.1.0"
