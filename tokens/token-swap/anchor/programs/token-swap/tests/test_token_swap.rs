@@ -359,7 +359,7 @@ fn deposit_with_different_ratio_is_limited_by_pool_ratio() {
     assert_eq!(env.balance(&keys.pool_account_b), initial_b + second_b);
 }
 
-fn assert_deposit_too_small(env: &mut Env, amount_a: u64, amount_b: u64) {
+fn assert_deposit_rejected(env: &mut Env, amount_a: u64, amount_b: u64, error: &str) {
     let keys = env.keys();
     let accounts = [
         env.holder_a(),
@@ -373,7 +373,7 @@ fn assert_deposit_too_small(env: &mut Env, amount_a: u64, amount_b: u64) {
     let before = snapshot(env);
     let admin = env.admin.insecure_clone();
     let logs = env.deposit_as(&admin, amount_a, amount_b).unwrap_err();
-    assert!(logs.iter().any(|log| log.contains("Error Code: DepositTooSmall.")), "{logs:?}");
+    assert!(logs.iter().any(|log| log.contains(&format!("Error Code: {error}."))), "{logs:?}");
     // Comparing token account and mint data also checks balances and LP supply.
     assert_eq!(snapshot(env), before);
 }
@@ -381,7 +381,7 @@ fn assert_deposit_too_small(env: &mut Env, amount_a: u64, amount_b: u64) {
 #[test]
 fn deposit_at_locked_minimum_is_rejected() {
     let mut env = Env::with_pool();
-    assert_deposit_too_small(&mut env, MINIMUM_LIQUIDITY, MINIMUM_LIQUIDITY);
+    assert_deposit_rejected(&mut env, MINIMUM_LIQUIDITY, MINIMUM_LIQUIDITY, "DepositTooSmall");
 }
 
 #[test]
@@ -395,7 +395,7 @@ fn deposit_rounding_to_zero_shares_is_rejected() {
                 .unwrap()
         });
     send(&mut env.svm, &env.payer, &transfers, &[&env.admin]).unwrap();
-    assert_deposit_too_small(&mut env, 1, 1);
+    assert_deposit_rejected(&mut env, 1, 1, "DepositTooSmall");
 }
 
 #[test]
@@ -409,7 +409,7 @@ fn deposit_into_one_sided_reserves_is_rejected() {
             spl_token::instruction::transfer(&spl_token::ID, &source, &destination, &env.admin.pubkey(), &[], 1_000)
                 .unwrap();
         send(&mut env.svm, &env.payer, &[transfer], &[&env.admin]).unwrap();
-        assert_deposit_too_small(&mut env, 1_000, 1_000);
+        assert_deposit_rejected(&mut env, 1_000, 1_000, "InvalidPoolState");
     }
 }
 

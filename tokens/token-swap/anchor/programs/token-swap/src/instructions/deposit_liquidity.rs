@@ -32,7 +32,7 @@ pub fn deposit_liquidity(ctx: Context<DepositLiquidity>, amount_a: u64, amount_b
         // Add as is if there is no liquidity
         (amount_a, amount_b)
     } else {
-        require!(pool_a.amount > 0 && pool_b.amount > 0, TutorialError::DepositTooSmall);
+        require!(pool_a.amount > 0 && pool_b.amount > 0, TutorialError::InvalidPoolState);
         // u128 is enough precision here
         let amount_a_u128 = amount_a as u128;
         let amount_b_u128 = amount_b as u128;
@@ -40,14 +40,22 @@ pub fn deposit_liquidity(ctx: Context<DepositLiquidity>, amount_a: u64, amount_b
         let pool_b_u128 = pool_b.amount as u128;
 
         // Calculate the amount of B required if we deposit all of A provided
-        let amount_b_required = amount_a_u128.checked_mul(pool_b_u128).unwrap().checked_div(pool_a_u128).unwrap();
+        let amount_b_required = amount_a_u128
+            .checked_mul(pool_b_u128)
+            .ok_or(TutorialError::MathOverflow)?
+            .checked_div(pool_a_u128)
+            .ok_or(TutorialError::MathOverflow)?;
 
         if amount_b_required <= amount_b_u128 {
             // We have enough B to match the A provided
             (amount_a, amount_b_required as u64)
         } else {
             // We don't have enough B, so we must limit by B and calculate A required
-            let amount_a_required = amount_b_u128.checked_mul(pool_a_u128).unwrap().checked_div(pool_b_u128).unwrap();
+            let amount_a_required = amount_b_u128
+                .checked_mul(pool_a_u128)
+                .ok_or(TutorialError::MathOverflow)?
+                .checked_div(pool_b_u128)
+                .ok_or(TutorialError::MathOverflow)?;
             (amount_a_required as u64, amount_b)
         }
     };
