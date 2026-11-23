@@ -19,4 +19,7 @@ pub enum TutorialError {
 
     #[msg("Math overflowed")]
     MathOverflow,
+
+    #[msg("Pool must have reserves of both tokens")]
+    InvalidPoolState,
 }
