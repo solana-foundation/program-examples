@@ -46,7 +46,7 @@ jobs:
             cargo audit --file "$lock" --json \
               | jq -r '.vulnerabilities.list[].package | "--package=\(.name)@\(.version)"' \
               | sort -u \
-              | xargs -r cargo update --manifest-path "$dir/Cargo.toml" \
+              | xargs -r cargo update --recursive --manifest-path "$dir/Cargo.toml" \
               || echo "::warning::cargo update failed in $dir"
           done
 
@@ -69,6 +69,6 @@ jobs:
           commit-message: 'fix(deps): resolve pnpm and cargo audit advisories'
           title: 'fix(deps): resolve pnpm and cargo audit advisories'
           body: |
-            Automated by the `Audit Fix` workflow: `pnpm audit --fix` and `cargo update -p` across every project lockfile, then the audits re-run clean.
+            Automated by the `Audit Fix` workflow: `pnpm audit --fix` and `cargo update -p --recursive` across every project lockfile, then the audits re-run clean.
 
             Approve the pending workflow runs to start CI, and review forced overrides for major-version jumps before merging.
