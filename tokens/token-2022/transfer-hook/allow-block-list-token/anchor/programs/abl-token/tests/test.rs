@@ -2,9 +2,12 @@ use {
     abl_token::{
         accounts::{InitConfig, InitMint, InitWallet, RemoveWallet, ResizeMetaList},
         instructions::{InitMintArgs, InitWalletArgs},
-        ABWallet, Config, Mode,
+        ABListError, ABWallet, Config, Mode,
     },
-    anchor_lang::solana_program::system_instruction::create_account,
+    anchor_lang::error::ERROR_CODE_OFFSET,
+    anchor_lang::solana_program::{
+        bpf_loader_upgradeable::get_program_data_address, system_instruction::create_account,
+    },
     anchor_lang::AccountDeserialize,
     anchor_lang::InstructionData,
     anchor_lang::ToAccountMetas,
@@ -48,22 +51,47 @@ fn setup() -> (LiteSVM, Keypair) {
     let bytecode = std::fs::read(so_path).unwrap();
 
     svm.add_program(PROGRAM_ID, &bytecode).unwrap();
+    set_upgrade_authority(&mut svm, &admin_pk);
 
     (svm, admin_kp)
 }
 
-fn init_config(svm: &mut LiteSVM, admin_kp: &Keypair) -> Pubkey {
-    let admin_pk = admin_kp.pubkey();
+/// `add_program` deploys through the upgradeable loader with no upgrade
+/// authority. Record `authority` in the ProgramData account, as a normal
+/// `solana program deploy` does for the deployer.
+fn set_upgrade_authority(svm: &mut LiteSVM, authority: &Pubkey) {
+    let program_data = get_program_data_address(&PROGRAM_ID);
+    let mut account = svm.get_account(&program_data).unwrap();
+    // UpgradeableLoaderState::ProgramData: u32 tag, u64 slot, then
+    // Option<Pubkey> as a 1-byte tag (offset 12) and the key (offset 13).
+    account.data[12] = 1;
+    account.data[13..45].copy_from_slice(authority.as_ref());
+    svm.set_account(program_data, account).unwrap();
+}
+
+/// Sends `init_config` signed and paid by `payer_kp`, returning the config
+/// address, or the transaction error rendered with `{:?}`.
+fn try_init_config(svm: &mut LiteSVM, payer_kp: &Keypair) -> Result<Pubkey, String> {
+    let payer = payer_kp.pubkey();
     let config = derive_config();
-    let accounts = InitConfig { payer: admin_pk, config, system_program: SYSTEM_PROGRAM_ID };
+    let accounts = InitConfig {
+        payer,
+        config,
+        program: PROGRAM_ID,
+        program_data: get_program_data_address(&PROGRAM_ID),
+        system_program: SYSTEM_PROGRAM_ID,
+    };
     let instruction = Instruction {
         program_id: PROGRAM_ID,
         accounts: accounts.to_account_metas(None),
         data: abl_token::instruction::InitConfig {}.data(),
     };
-    let tx = Transaction::new(&[admin_kp], Message::new(&[instruction], Some(&admin_pk)), svm.latest_blockhash());
-    svm.send_transaction(tx).unwrap();
-    config
+    let tx = Transaction::new(&[payer_kp], Message::new(&[instruction], Some(&payer)), svm.latest_blockhash());
+    svm.send_transaction(tx).map(|_| config).map_err(|failed| format!("{:?}", failed.err))
+}
+
+fn init_config(svm: &mut LiteSVM, admin_kp: &Keypair) -> Pubkey {
+    try_init_config(svm, admin_kp).unwrap()
 }
 
 fn init_wallet(svm: &mut LiteSVM, authority_kp: &Keypair, wallet: Pubkey, allowed: bool) -> Pubkey {
@@ -336,6 +364,30 @@ fn init_config_sets_the_payer_as_authority() {
     let account = svm.get_account(&config).unwrap();
     let config = Config::try_deserialize(&mut account.data.as_slice()).unwrap();
     assert_eq!(config.authority, admin_kp.pubkey());
+}
+
+#[test]
+fn init_config_rejects_a_payer_that_is_not_the_upgrade_authority() {
+    let (mut svm, _admin_kp) = setup();
+    let stranger_kp = Keypair::new();
+    svm.airdrop(&stranger_kp.pubkey(), 10 * LAMPORTS_PER_SOL).unwrap();
+
+    let err = try_init_config(&mut svm, &stranger_kp).unwrap_err();
+    let code = ERROR_CODE_OFFSET + ABListError::NotUpgradeAuthority as u32;
+    assert_eq!(err, format!("InstructionError(0, Custom({code}))"));
+    assert!(
+        svm.get_account(&derive_config()).is_none_or(|account| account.data.is_empty()),
+        "a stranger must not be able to claim the config"
+    );
+}
+
+#[test]
+fn init_config_cannot_run_twice() {
+    let (mut svm, admin_kp) = setup();
+    init_config(&mut svm, &admin_kp);
+    svm.expire_blockhash();
+
+    assert!(try_init_config(&mut svm, &admin_kp).is_err(), "the config must only be initialized once");
 }
 
 #[test]

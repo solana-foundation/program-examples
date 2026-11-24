@@ -16,4 +16,7 @@ pub enum ABListError {
 
     #[msg("Mint is not configured to use this transfer hook program")]
     MintNotUsingThisHook,
+
+    #[msg("Only the program's upgrade authority can initialize the config")]
+    NotUpgradeAuthority,
 }
